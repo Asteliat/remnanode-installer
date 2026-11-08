@@ -1183,14 +1183,39 @@ if [ "$USE_DNS" = "yes" ]; then
 [Resolve]
 DNS=94.140.14.14#dns.adguard-dns.com 94.140.15.15#dns.adguard-dns.com
 FallbackDNS=1.1.1.1#cloudflare-dns.com 8.8.8.8#dns.google
+# "~." — использовать эти DNS по умолчанию для ВСЕХ доменов,
+# иначе systemd-resolved может предпочесть DNS, приехавшие из DHCP
+Domains=~.
 DNSOverTLS=yes
 DNSSEC=allow-downgrade
 Cache=yes
 EOF
-    # не даём глобальным DNS из основного конфига перебивать наши
+
+    # 1) гасим старые глобальные DNS в основном конфиге
     if [ -f /etc/systemd/resolved.conf ]; then
         sed -i -E 's/^[[:space:]]*(DNS|FallbackDNS)=/#\1=/' /etc/systemd/resolved.conf
+        ok "глобальные DNS в /etc/systemd/resolved.conf закомментированы"
     fi
+
+    # 2) предупреждаем про другие drop-in'ы, которые тоже задают DNS
+    for _dnsf in /etc/systemd/resolved.conf.d/*.conf; do
+        [ -f "$_dnsf" ] || continue
+        [ "$_dnsf" = "/etc/systemd/resolved.conf.d/99-adguard-dot.conf" ] && continue
+        if grep -qE '^[[:space:]]*DNS=' "$_dnsf" 2>/dev/null; then
+            warn "найден ещё один DNS-конфиг: $_dnsf — он может перебивать AdGuard"
+        fi
+    done
+    unset _dnsf 2>/dev/null || true
+
+    # 3) cloud-init не должен возвращать свой resolv.conf после перезагрузки
+    if [ -d /etc/cloud/cloud.cfg.d ]; then
+        cat > /etc/cloud/cloud.cfg.d/99-remnawave-resolv.cfg <<'EOF'
+# remnawave-installer: не трогать /etc/resolv.conf — им управляет systemd-resolved
+manage_resolv_conf: false
+EOF
+        ok "cloud-init отключён от управления /etc/resolv.conf"
+    fi
+
     systemctl enable systemd-resolved >/dev/null 2>&1 || true
     systemctl restart systemd-resolved || warn "systemd-resolved не перезапустился"
     ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || \
@@ -1199,6 +1224,7 @@ EOF
     sleep 1
     if resolvectl query example.com >/dev/null 2>&1; then
         ok "AdGuard DoT активен, резолвинг работает"
+        note "проверить: resolvectl status | grep -E 'DNS Servers|DNSOverTLS|Current DNS'"
     else
         warn "DNS не отвечает — проверьте: resolvectl status"
     fi

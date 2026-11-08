@@ -93,7 +93,14 @@ bash install.sh --yes \
 9. **Selfsteal** `/opt/selfsteal`: Caddy на `127.0.0.1:9443`, ACME через 80,
    редирект, security-заголовки, выбранный сайт-заглушка,
    публичный `:80` привязан к основному IP.
-10. **DNS-фильтр AdGuard DoT** (опционально, по вопросу).
+10. **DNS-фильтр AdGuard DoT** (опционально, по вопросу):
+    - `DNS=`/`FallbackDNS=` в `/etc/systemd/resolved.conf` **закомментированы**,
+      чтобы старые глобальные DNS не перебивали AdGuard;
+    - `Domains=~.` — AdGuard используется для всех доменов, а не только для тех,
+      что не пришли из DHCP;
+    - `/etc/resolv.conf` → `stub-resolv.conf`, cloud-init отключён от его
+      управления (`manage_resolv_conf: false`);
+    - предупреждение, если другие drop-in'ы в `resolved.conf.d` тоже задают `DNS=`.
 11. **Автообновление**: таймер `rw-node-update.timer` (ежедневно ~04:30)
     с откатом на предыдущий образ, если новый контейнер не поднялся;
     плюс `unattended-upgrades` для обновлений безопасности ОС без ребута.

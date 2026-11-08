@@ -466,11 +466,24 @@ toggle_dns() {
 [Resolve]
 DNS=94.140.14.14#dns.adguard-dns.com 94.140.15.15#dns.adguard-dns.com
 FallbackDNS=1.1.1.1#cloudflare-dns.com 8.8.8.8#dns.google
+Domains=~.
 DNSOverTLS=yes
 DNSSEC=allow-downgrade
 Cache=yes
 EOF
+            # гасим старые глобальные DNS, иначе они могут выиграть у наших
+            if [ -f /etc/systemd/resolved.conf ]; then
+                sed -i -E 's/^[[:space:]]*(DNS|FallbackDNS)=/#\1=/' /etc/systemd/resolved.conf
+            fi
+            if [ -d /etc/cloud/cloud.cfg.d ]; then
+                cat > /etc/cloud/cloud.cfg.d/99-remnawave-resolv.cfg <<'EOF'
+# remnawave-installer: не трогать /etc/resolv.conf — им управляет systemd-resolved
+manage_resolv_conf: false
+EOF
+            fi
+            systemctl enable systemd-resolved >/dev/null 2>&1 || true
             systemctl restart systemd-resolved >/dev/null 2>&1 || true
+            ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf 2>/dev/null || true
             resolvectl flush-caches >/dev/null 2>&1 || true
             set_answer USE_DNS "yes"
             ok "AdGuard включён"
