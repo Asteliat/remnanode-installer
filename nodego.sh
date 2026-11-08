@@ -19,6 +19,7 @@ TEMPLATES_BASE="${RAW_BASE}/templates"
 STATE_DIR="/etc/remnawave-setup"
 ANSWERS="$STATE_DIR/answers.env"
 NET_ENV="$STATE_DIR/net.env"
+ALERTS_ENV="$STATE_DIR/alerts.env"
 NODE_DIR="/opt/remnanode"
 SELFSTEAL_DIR="/opt/selfsteal"
 CADDYFILE="$SELFSTEAL_DIR/Caddyfile"
@@ -98,10 +99,13 @@ load_conf() {
     PANEL_IP=""; NODE_PORT=""; USE_SELFSTEAL=""; DOMAIN=""; SELFSTEAL_PORT="9443"
     TEMPLATE=""; USE_DNS=""; AUTO_UPDATE=""
     XHTTP_PORT=""; GRPC_PORT=""; TCP_PORT=""
+    ALERTS="no"; TG_TOKEN=""; TG_CHAT=""
     # shellcheck disable=SC1090
     [ -f "$ANSWERS" ] && . "$ANSWERS"
     # shellcheck disable=SC1090
     [ -f "$NET_ENV" ] && . "$NET_ENV"
+    # shellcheck disable=SC1090
+    [ -f "$ALERTS_ENV" ] && . "$ALERTS_ENV"
     [ -n "${IP1:-}" ] || IP1="$(primary_ip)"
 }
 
@@ -476,8 +480,124 @@ EOF
     pause
 }
 
-show_config() {
-    hdr "Конфигурация"
+doctor() {
+    hdr "Диагностика"
+    if [ -x /usr/local/sbin/rw-healthcheck.sh ]; then
+        /usr/local/sbin/rw-healthcheck.sh --report 2>&1 | sed 's/^/  /'
+    else
+        warn "healthcheck-скрипт не найден (/usr/local/sbin/rw-healthcheck.sh)"
+    fi
+    say ""
+    dim "последние события docker за сутки:"
+    docker events --since 24h --until 0s --filter 'event=restart' \
+        --format '  {{.Time}} {{.Actor.Attributes.name}} restart' 2>/dev/null | tail -5 || true
+    pause
+}
+
+backup_now() {
+    hdr "Бэкап конфигов"
+    if [ ! -x /usr/local/sbin/rw-backup.sh ]; then
+        err "скрипт бэкапа не найден"
+        pause; return
+    fi
+    local f
+    f="$(/usr/local/sbin/rw-backup.sh create 2>&1)"
+    if [ -s "${f%%$'\n'*}" ] 2>/dev/null; then
+        ok "создан: $f"
+        say "  размер: $(du -h "$f" 2>/dev/null | cut -f1)"
+    else
+        warn "бэкап не создался"
+    fi
+    say ""
+    dim "последние бэкапы:"
+    /usr/local/sbin/rw-backup.sh list 2>/dev/null | head -5 | sed 's/^/  /'
+    pause
+}
+
+restore_menu() {
+    hdr "Восстановление из бэкапа"
+    local dir="/var/backups/remnanode"
+    local -a files=()
+    local i choice
+    mapfile -t files < <(ls -1t "$dir"/remnanode-*.tar.gz 2>/dev/null || true)
+    if [ "${#files[@]}" -eq 0 ]; then
+        warn "бэкапов нет ($dir)"
+        pause; return
+    fi
+    for i in "${!files[@]}"; do
+        printf "    %2d) %s  (%s)\n" "$((i+1))" "$(basename "${files[$i]}")" "$(du -h "${files[$i]}" 2>/dev/null | cut -f1)"
+    done
+    say ""
+    read -r -p "$(echo -e "${C_BLD}Номер [Enter — отмена]: ${C_OFF}")" choice || true
+    [ -z "$choice" ] && return
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#files[@]}" ]; then
+        warn "неверный номер"; pause; return
+    fi
+    local file="${files[$((choice-1))]}"
+    say ""
+    warn "файлы будут перезаписаны из $(basename "$file")"
+    if confirm "продолжить?" "n"; then
+        if /usr/local/sbin/rw-backup.sh restore "$file"; then
+            ok "восстановлено"
+            if confirm "перезапустить службы сейчас?" "y"; then
+                systemctl restart rw-secondary-ip.service >/dev/null 2>&1 || true
+                ( cd "$NODE_DIR" && docker compose up -d ) >/dev/null 2>&1 || true
+                docker restart selfsteal >/dev/null 2>&1 || true
+                ok "службы перезапущены"
+            fi
+        else
+            err "восстановление не удалось"
+        fi
+    fi
+    pause
+}
+
+write_alerts_env() {
+    mkdir -p "$STATE_DIR"
+    cat > "$ALERTS_ENV" <<EOF
+# Настройки алертов (меняются через nodego)
+ALERTS='$ALERTS'
+TG_TOKEN='$TG_TOKEN'
+TG_CHAT='$TG_CHAT'
+EOF
+    chmod 600 "$ALERTS_ENV"
+}
+
+toggle_alerts() {
+    hdr "Алерты в Telegram"
+    say "  сейчас: ${C_BLD}${ALERTS}${C_OFF}${TG_CHAT:+ (chat_id: $TG_CHAT)}"
+    if [ "$ALERTS" = "yes" ]; then
+        if confirm "выключить алерты?" "n"; then
+            ALERTS="no"
+            write_alerts_env
+            ok "алерты выключены"
+        fi
+    else
+        if confirm "включить алерты?" "y"; then
+            if [ -z "$TG_TOKEN" ]; then
+                ask TG_TOKEN "Токен бота (от @BotFather)" ""
+            fi
+            if [ -z "$TG_CHAT" ]; then
+                ask TG_CHAT "chat_id получателя" ""
+            fi
+            if [ -z "$TG_TOKEN" ] || [ -z "$TG_CHAT" ]; then
+                err "нужны и токен, и chat_id"
+                pause; return
+            fi
+            ALERTS="yes"
+            write_alerts_env
+            if curl -fsS --max-time 10 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+                    -d "chat_id=${TG_CHAT}" --data-urlencode "text=✅ nodego: алерты включены" >/dev/null 2>&1; then
+                ok "тестовое сообщение отправлено"
+            else
+                warn "не удалось отправить — проверьте токен/chat_id"
+            fi
+        fi
+    fi
+    pause
+}
+
+show_config() {    hdr "Конфигурация"
     say "  ${C_BLD}1)${C_OFF} answers.env (параметры установки)"
     say "  ${C_BLD}2)${C_OFF} net.env (схема сети)"
     say "  ${C_BLD}3)${C_OFF} .env ноды"
@@ -513,6 +633,17 @@ cli() {
         logs)    load_conf; docker logs --tail 100 remnanode 2>&1 ;;
         restart) load_conf; restart_node ;;
         update)  load_conf; /usr/local/sbin/rw-node-update.sh ;;
+        doctor)  load_conf; /usr/local/sbin/rw-healthcheck.sh --report ;;
+        backup)  load_conf; /usr/local/sbin/rw-backup.sh create ;;
+        restore)
+            load_conf
+            shift
+            /usr/local/sbin/rw-backup.sh restore "${1:-}"
+            ;;
+        alerts)
+            load_conf
+            say "алерты: ${ALERTS}${TG_CHAT:+ (chat_id: $TG_CHAT)}"
+            ;;
         net)     load_conf; shift; net_show ;;
         preset)
             load_conf
@@ -544,6 +675,10 @@ cli() {
             say "  nodego update          обновить ноду (с откатом)"
             say "  nodego net             показать схему сети"
             say "  nodego preset <имя>    сменить сайт-заглушку"
+            say "  nodego doctor          диагностика (7 проверок)"
+            say "  nodego backup          бэкап конфигов"
+            say "  nodego restore <файл>  восстановление из бэкапа"
+            say "  nodego alerts          статус алертов"
             ;;
         *) err "неизвестная команда: $1 (см. nodego --help)"; exit 1 ;;
     esac
@@ -580,6 +715,10 @@ while true; do
     say "  ${C_BLD}12)${C_OFF} Показать конфигурацию"
     say "  ${C_BLD}13)${C_OFF} Автообновление: включить/выключить"
     say "  ${C_BLD}14)${C_OFF} DNS-фильтр AdGuard: включить/выключить"
+    say "  ${C_BLD}15)${C_OFF} Диагностика (doctor)"
+    say "  ${C_BLD}16)${C_OFF} Бэкап конфигов сейчас"
+    say "  ${C_BLD}17)${C_OFF} Восстановить из бэкапа"
+    say "  ${C_BLD}18)${C_OFF} Алерты Telegram: включить/выключить"
     say "  ${C_BLD}0)${C_OFF} Выход"
     say ""
     read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" choice || true
@@ -598,6 +737,10 @@ while true; do
         12) show_config ;;
         13) toggle_autoupdate ;;
         14) toggle_dns ;;
+        15) doctor ;;
+        16) backup_now ;;
+        17) restore_menu ;;
+        18) toggle_alerts ;;
         0|q|Q|"") say ""; dim "выход"; exit 0 ;;
         *) warn "нет такого пункта" ;;
     esac

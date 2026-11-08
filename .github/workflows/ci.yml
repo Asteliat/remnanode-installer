@@ -57,14 +57,17 @@ jobs:
       - name: Embedded scripts are valid bash
         run: |
           set -euo pipefail
-          # вытаскиваем heredoc-скрипты, которые установщик пишет на сервер
           awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-secondary-ip.sh/{f=1;next} f&&/^SCRIPT_EOF$/{exit} f' install.sh > /tmp/secondary.sh
           awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-node-update.sh/{f=1;next} f&&/^EOS$/{exit} f' install.sh > /tmp/update.sh
-          test -s /tmp/secondary.sh || { echo "::error::secondary-ip script not found"; exit 1; }
-          test -s /tmp/update.sh    || { echo "::error::update script not found"; exit 1; }
-          bash -n /tmp/secondary.sh
-          bash -n /tmp/update.sh
-          echo "embedded scripts parse OK"
+          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-healthcheck.sh/{f=1;next} f&&/^HEALTH_EOF$/{exit} f' install.sh > /tmp/health.sh
+          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-backup.sh/{f=1;next} f&&/^BACKUP_EOF$/{exit} f' install.sh > /tmp/backup.sh
+          for pair in "/tmp/secondary.sh:secondary-ip" "/tmp/update.sh:update" "/tmp/health.sh:healthcheck" "/tmp/backup.sh:backup"; do
+            file="${pair%%:*}"
+            name="${pair##*:}"
+            test -s "$file" || { echo "::error::$name script not extracted"; exit 1; }
+            bash -n "$file" || { echo "::error::$name script has syntax errors"; exit 1; }
+            echo "$name: $(wc -l < "$file") lines, syntax ok"
+          done
 
   config:
     name: generated configs

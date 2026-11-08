@@ -71,6 +71,9 @@ IP2="${IP2:-}"                  # дополнительный/выходной 
 # --- дополнительные опции ---------------------------------------------------
 USE_DNS="${USE_DNS:-yes}"           # AdGuard DoT (блокировка рекламы)
 AUTO_UPDATE="${AUTO_UPDATE:-yes}"   # автообновление ноды через systemd-таймер
+ALERTS="${ALERTS:-no}"              # алерты в Telegram
+TG_TOKEN="${TG_TOKEN:-}"
+TG_CHAT="${TG_CHAT:-}"
 
 ASSUME_YES=false
 SKIP_TUNING=false
@@ -117,6 +120,10 @@ while [[ $# -gt 0 ]]; do
         --no-dns)          USE_DNS="no" ;;
         --autoupdate)      AUTO_UPDATE="${2:?}"; shift ;;
         --no-autoupdate)   AUTO_UPDATE="no" ;;
+        --alerts)          ALERTS="${2:?}"; shift ;;
+        --no-alerts)       ALERTS="no" ;;
+        --tg-token)        TG_TOKEN="${2:?}"; ALERTS="yes"; shift ;;
+        --tg-chat)         TG_CHAT="${2:?}"; ALERTS="yes"; shift ;;
         -v|--version)      echo "remnawave node installer v$VERSION"; exit 0 ;;
         -h|--help)         grep '^#  ' "$0" | sed 's/^#  //'; exit 0 ;;
         *) echo "Неизвестный параметр: $1 (см. --help)" >&2; exit 1 ;;
@@ -130,6 +137,7 @@ USE_SELFSTEAL="$(norm_yn "$USE_SELFSTEAL")"
 DUAL_IP="$(norm_yn "$DUAL_IP")"
 USE_DNS="$(norm_yn "$USE_DNS")"
 AUTO_UPDATE="$(norm_yn "$AUTO_UPDATE")"
+ALERTS="$(norm_yn "$ALERTS")"
 
 # ------------------------------------------------------------------ helpers
 if [ -t 1 ]; then
@@ -455,6 +463,39 @@ else
     note "Автообновление: выключено"
 fi
 
+# --- Алерты в Telegram -----------------------------------------------------
+say ""
+say "  ${C_BLD}Алерты:${C_OFF} проверка каждые 5 минут (нода, порт, диск, conntrack, сертификат)."
+say "  Сообщение приходит только при смене состояния — не спамит."
+ask_yesno ALERTS "Включить алерты в Telegram?" "no"
+
+if [ "$ALERTS" = "yes" ]; then
+    say ""
+    note "1) Создайте бота у @BotFather → получите токен вида 123456789:AA..."
+    note "2) Напишите боту любое сообщение, затем узнайте chat_id:"
+    note "   curl -s \"https://api.telegram.org/bot<ТОКЕН>/getUpdates\" | grep -o '\"id\":[-0-9]*' | head -1"
+    while [ -z "$TG_TOKEN" ] || ! [[ "$TG_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]{20,}$ ]]; do
+        [ "$ASSUME_YES" = true ] && die "Укажите корректный --tg-token"
+        ask TG_TOKEN "Токен бота" "${TG_TOKEN:-}"
+        [[ "$TG_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]{20,}$ ]] || warn "Формат токена: 123456789:AA..."
+    done
+    while [ -z "$TG_CHAT" ] || ! [[ "$TG_CHAT" =~ ^-?[0-9]+$ ]]; do
+        [ "$ASSUME_YES" = true ] && die "Укажите корректный --tg-chat"
+        ask TG_CHAT "chat_id получателя" "${TG_CHAT:-}"
+        [[ "$TG_CHAT" =~ ^-?[0-9]+$ ]] || warn "chat_id — это число (для канала с минусом)"
+    done
+    ok "Алерты включены (chat_id: $TG_CHAT)"
+    # проверяем, что бот/чат рабочие, но не блокируем установку
+    if curl -fsS --max-time 10 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -d "chat_id=${TG_CHAT}" --data-urlencode "text=✅ remnawave-installer: алерты подключены" >/dev/null 2>&1; then
+        ok "Тестовое сообщение отправлено"
+    else
+        warn "Не удалось отправить тестовое сообщение — проверьте токен/chat_id"
+    fi
+else
+    note "Алерты выключены"
+fi
+
 # --- Сводка и подтверждение ------------------------------------------------
 say ""
 say "  ${C_BLD}Итого:${C_OFF}"
@@ -475,6 +516,9 @@ else
 fi
 say "    DNS-фильтр ........ ${USE_DNS}"
 say "    автообновление .... ${AUTO_UPDATE}"
+say "    healthcheck ....... каждые 5 минут"
+say "    алерты Telegram ... ${ALERTS}"
+say "    бэкап конфигов .... ежедневно, хранится 14 копий"
 say ""
 
 if [ "$ASSUME_YES" = false ]; then
@@ -503,6 +547,9 @@ IP1='$IP1'
 IP2='$IP2'
 USE_DNS='$USE_DNS'
 AUTO_UPDATE='$AUTO_UPDATE'
+ALERTS='$ALERTS'
+TG_TOKEN='$TG_TOKEN'
+TG_CHAT='$TG_CHAT'
 EOF
 chmod 600 "$ANSWERS_FILE"
 
@@ -664,6 +711,10 @@ vm.vfs_cache_pressure = 50
 net.ipv4.tcp_mtu_probing = 1
 EOF
     echo "nf_conntrack" > /etc/modules-load.d/conntrack.conf
+    # hashsize: без него при 262k записей таблица деградирует в список коллизий
+    cat > /etc/modprobe.d/99-remnawave-conntrack.conf <<'EOF'
+options nf_conntrack hashsize=65536
+EOF
     modprobe nf_conntrack 2>/dev/null || true
     sysctl --system >/dev/null 2>&1 || warn "не все sysctl-ключи применились"
     ok "sysctl применены (conntrack_max=$(sysctl -n net.netfilter.nf_conntrack_max 2>/dev/null || echo n/a))"
@@ -684,6 +735,16 @@ EOF
     else
         warn "BBR недоступен в ядре — оставлен текущий алгоритм"
     fi
+
+    # --- journald ---------------------------------------------------------
+    mkdir -p /etc/systemd/journald.conf.d
+    cat > /etc/systemd/journald.conf.d/99-remnawave.conf <<'EOF'
+[Journal]
+SystemMaxUse=500M
+SystemMaxFileSize=50M
+EOF
+    systemctl restart systemd-journald >/dev/null 2>&1 || true
+    ok "journald ограничен 500M"
 
     systemctl daemon-reload
 fi
@@ -872,6 +933,8 @@ services:
     image: $NODE_IMAGE
     restart: always
     network_mode: host
+    # даём Xray время корректно закрыть сессии при stop/restart
+    stop_grace_period: 30s
     env_file:
       - .env
     cap_add:
@@ -1038,6 +1101,7 @@ services:
     container_name: selfsteal
     restart: unless-stopped
     network_mode: host
+    stop_grace_period: 15s
     # Caddyfile использует {\$SELF_STEAL_DOMAIN}/{\$SELF_STEAL_PORT} — переменные
     # должны быть в окружении контейнера, иначе шаблон раскроется в пустоту.
     env_file:
@@ -1171,7 +1235,7 @@ docker compose up -d --remove-orphans >>"$LOG" 2>&1 || say "compose up верн�
 sleep 30
 if [ "$(docker inspect -f '{{.State.Running}}' remnanode 2>/dev/null)" != "true" ]; then
     say "контейнер не поднялся — откатываю"
-    docker compose down >>"$LOG" 2>&1 || true
+    docker compose stop >>"$LOG" 2>&1 || true
     if [ -n "$OLD_ID" ]; then
         docker tag "$OLD_ID" remnawave/node:latest >>"$LOG" 2>&1 && say "восстановлен $OLD_ID"
     fi
@@ -1230,6 +1294,298 @@ ok "Обновления безопасности ОС включены (без 
 # ============================================================================
 hdr "12. Обслуживание"
 
+# ============================================================ healthcheck ===
+cat > "$STATE_DIR/alerts.env" <<EOF
+# Настройки алертов (меняются через nodego)
+ALERTS='$ALERTS'
+TG_TOKEN='$TG_TOKEN'
+TG_CHAT='$TG_CHAT'
+EOF
+chmod 600 "$STATE_DIR/alerts.env"
+
+cat > /usr/local/sbin/rw-healthcheck.sh <<'HEALTH_EOF'
+#!/bin/bash
+# Проверка состояния ноды.
+#   без аргументов — режим таймера: сравнивает с прошлым состоянием и
+#                    отправляет алерт в Telegram только при изменениях
+#   --report       — подробный отчёт без алертов (nodego doctor)
+set -uo pipefail
+
+CONF=/etc/remnawave-setup/alerts.env
+ANSWERS=/etc/remnawave-setup/answers.env
+NET=/etc/remnawave-setup/net.env
+NODE_ENV=/opt/remnanode/.env
+STATE_DIR=/var/lib/rw-healthcheck
+STATE="$STATE_DIR/state"
+
+REPORT=false
+[ "${1:-}" = "--report" ] && REPORT=true
+
+ALERTS=no; TG_TOKEN=""; TG_CHAT=""
+MODE=single; IP1=""; IP2=""; DOMAIN=""; SELFSTEAL_PORT="9443"
+# shellcheck disable=SC1090
+[ -f "$CONF" ]    && . "$CONF"
+# shellcheck disable=SC1090
+[ -f "$ANSWERS" ] && . "$ANSWERS"
+# shellcheck disable=SC1090
+[ -f "$NET" ]     && . "$NET"
+
+NODE_PORT="${NODE_PORT:-2222}"
+if [ -f "$NODE_ENV" ]; then
+    _p="$(grep -E '^NODE_PORT=' "$NODE_ENV" 2>/dev/null | head -1 | cut -d= -f2 | tr -d '"')"
+    [ -n "${_p:-}" ] && NODE_PORT="$_p"
+fi
+
+RESULTS=()
+problems=()
+
+run_check() { # run_check <key> <человеческое описание> <команда...>
+    local key="$1" label="$2"; shift 2
+    if "$@"; then
+        RESULTS+=("$key|ok|$label")
+    else
+        RESULTS+=("$key|fail|$label")
+        problems+=("$label")
+    fi
+}
+
+c_container() {
+    local st
+    st="$(docker inspect -f '{{.State.Running}}' remnanode 2>/dev/null || echo missing)"
+    [ "$st" = "true" ]
+}
+
+c_port() {
+    ss -tlnH "sport = :$NODE_PORT" 2>/dev/null | grep -q .
+}
+
+c_disk() {
+    local use
+    use="$(df -P / | awk 'NR==2 {gsub("%","",$5); print $5}')"
+    [ -n "$use" ] || return 0
+    [ "$use" -lt 85 ]
+}
+
+c_conntrack() {
+    local cur max
+    cur="$(cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null || echo "")"
+    max="$(cat /proc/sys/net/netfilter/nf_conntrack_max 2>/dev/null || echo "")"
+    [ -n "$cur" ] && [ -n "$max" ] && [ "$max" -gt 0 ] || return 0
+    [ $((cur * 100 / max)) -lt 70 ]
+}
+
+c_outbound() {
+    [ "$MODE" = "dual" ] && [ -n "${IP2:-}" ] || return 0
+    local ip
+    ip="$(curl -4 -fsS --max-time 8 --interface "$IP2" https://ifconfig.io 2>/dev/null || true)"
+    [ -z "$ip" ] && return 0
+    [ "$ip" = "$IP2" ]
+}
+
+c_restarts() {
+    local n
+    n="$(docker inspect -f '{{.RestartCount}}' remnanode 2>/dev/null || echo 0)"
+    [ -n "$n" ] || return 0
+    [ "$n" -lt 5 ]
+}
+
+c_cert() {
+    [ -n "${DOMAIN:-}" ] || return 0
+    [ -d /opt/selfsteal ] || return 0
+    command -v openssl >/dev/null 2>&1 || return 0
+    local end days
+    end="$(echo | timeout 8 openssl s_client -servername "$DOMAIN" \
+            -connect "127.0.0.1:${SELFSTEAL_PORT:-9443}" 2>/dev/null \
+            | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)"
+    [ -n "$end" ] || return 0
+    days=$(( ( $(date -d "$end" +%s 2>/dev/null || echo 0) - $(date +%s) ) / 86400 ))
+    [ "$days" -ge 7 ]
+}
+
+run_check container "контейнер ноды не запущен"               c_container
+run_check port      "порт ноды $NODE_PORT не слушается"      c_port
+run_check disk      "мало места на диске (<15%)"             c_disk
+run_check conntrack "таблица conntrack заполнена >70%"       c_conntrack
+run_check outbound  "исходящий IP не совпадает с $IP2"       c_outbound
+run_check restarts  "нода перезапускалась 5+ раз"            c_restarts
+run_check cert      "сертификат Caddy истекает (<7 дней)"    c_cert
+
+if [ "$REPORT" = true ]; then
+    echo "=== healthcheck $(date '+%F %T') ==="
+    for line in "${RESULTS[@]}"; do
+        IFS='|' read -r key st label <<< "$line"
+        if [ "$st" = "ok" ]; then printf '  [ok]   %s\n' "$key"
+        else printf '  [FAIL] %s — %s\n' "$key" "$label"; fi
+    done
+    echo
+    echo "контейнер:   $(docker inspect -f '{{.State.Status}} (restarts: {{.RestartCount}})' remnanode 2>/dev/null || echo missing)"
+    echo "порт ноды:   $NODE_PORT"
+    echo "схема сети:  $MODE${IP2:+ ($IP1 → $IP2)}"
+    echo "диск:        $(df -h / | awk 'NR==2 {print $5" занято, "$4" свободно"}')"
+    if [ -r /proc/sys/net/netfilter/nf_conntrack_count ]; then
+        echo "conntrack:   $(cat /proc/sys/net/netfilter/nf_conntrack_count)/$(cat /proc/sys/net/netfilter/nf_conntrack_max)"
+    fi
+    [ -f /var/run/reboot-required ] && echo "требуется перезагрузка: да"
+    echo
+    if [ "${#problems[@]}" -eq 0 ]; then
+        echo "проблем не найдено"
+    else
+        printf 'проблема: %s\n' "${problems[@]}"
+    fi
+    exit 0
+fi
+
+# --------------------------------------------------------------- таймер-режим
+tg_send() {
+    [ "$ALERTS" = "yes" ] && [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ] || return 0
+    curl -fsS --max-time 10 -X POST \
+        "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+        -d "chat_id=${TG_CHAT}" -d "disable_web_page_preview=true" \
+        --data-urlencode "text=$1" >/dev/null 2>&1 || true
+}
+
+mkdir -p "$STATE_DIR"
+old_state=""
+[ -f "$STATE" ] && old_state="$(cat "$STATE")"
+
+new_state=""
+message=""
+for line in "${RESULTS[@]}"; do
+    IFS='|' read -r key st label <<< "$line"
+    new_state+="${key}=${st}"$'\n'
+    prev="$(printf '%s\n' "$old_state" | grep -m1 "^${key}=" | cut -d= -f2 || true)"
+    if [ -n "$prev" ] && [ "$prev" != "$st" ]; then
+        if [ "$st" = "fail" ]; then
+            message+="🔴 ${label}"$'\n'
+        else
+            message+="🟢 восстановлено: ${key}"$'\n'
+        fi
+    fi
+done
+
+printf '%s' "$new_state" > "$STATE"
+
+if [ -n "$message" ]; then
+    tg_send "🖥 $(hostname) — нода
+${message}
+$(date '+%F %T')"
+fi
+exit 0
+HEALTH_EOF
+chmod 0755 /usr/local/sbin/rw-healthcheck.sh
+
+cat > /etc/systemd/system/rw-healthcheck.service <<'EOF'
+[Unit]
+Description=Remnawave node healthcheck
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/rw-healthcheck.sh
+EOF
+
+cat > /etc/systemd/system/rw-healthcheck.timer <<'EOF'
+[Unit]
+Description=Run Remnawave healthcheck every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target
+EOF
+
+# ================================================================ бэкапы ===
+cat > /usr/local/sbin/rw-backup.sh <<'BACKUP_EOF'
+#!/bin/bash
+# Бэкап конфигов Remnawave: create | list | restore <файл>
+set -uo pipefail
+
+DIR=/var/backups/remnanode
+KEEP=14
+
+create() {
+    mkdir -p "$DIR"
+    chmod 700 "$DIR"
+    local ts f
+    ts="$(date +%Y%m%d-%H%M%S)"
+    f="$DIR/remnawave-$ts.tar.gz"
+    tar czf "$f" --ignore-failed-read -C / \
+        etc/remnawave-setup \
+        opt/remnanode/.env \
+        opt/remnanode/docker-compose.yml \
+        opt/selfsteal/.env \
+        opt/selfsteal/Caddyfile \
+        opt/selfsteal/docker-compose.yml 2>/dev/null
+    if [ ! -s "$f" ]; then
+        echo "бэкап не создался" >&2
+        return 1
+    fi
+    chmod 600 "$f"
+    ls -1t "$DIR"/remnawave-*.tar.gz 2>/dev/null | tail -n +$((KEEP + 1)) | xargs -r rm -f
+    echo "$f"
+}
+
+list() {
+    ls -1t "$DIR"/remnawave-*.tar.gz 2>/dev/null || echo "(бэкапов пока нет)"
+}
+
+restore() {
+    local f="${1:-}"
+    [ -n "$f" ] || { echo "укажите файл бэкапа" >&2; return 1; }
+    [ -f "$f" ] || { echo "нет файла: $f" >&2; return 1; }
+    tar xzf "$f" -C /
+    echo "восстановлено из $f"
+    echo "перезапустите службы: systemctl restart remnanode selfsteal"
+}
+
+case "${1:-create}" in
+    create)  create ;;
+    list)    list ;;
+    restore) shift; restore "${1:-}" ;;
+    -h|--help)
+        echo "rw-backup.sh [create|list|restore <файл>]"
+        ;;
+    *) echo "неизвестная команда: $1" >&2; exit 1 ;;
+esac
+BACKUP_EOF
+chmod 0755 /usr/local/sbin/rw-backup.sh
+
+cat > /etc/systemd/system/rw-backup.service <<'EOF'
+[Unit]
+Description=Backup Remnawave configs
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/rw-backup.sh create
+EOF
+
+cat > /etc/systemd/system/rw-backup.timer <<'EOF'
+[Unit]
+Description=Daily Remnawave config backup
+
+[Timer]
+OnCalendar=*-*-* 03:45:00
+RandomizedDelaySec=15m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now rw-healthcheck.timer >/dev/null 2>&1 || warn "healthcheck-таймер не включился"
+systemctl enable --now rw-backup.timer >/dev/null 2>&1 || warn "бэкап-таймер не включился"
+ok "healthcheck раз в 5 минут, бэкап конфигов ежедневно (хранится 14 копий)"
+
+# первый прогон — чтобы не ждать 5 минут
+/usr/local/sbin/rw-healthcheck.sh >/dev/null 2>&1 || true
+/usr/local/sbin/rw-backup.sh create >/dev/null 2>&1 || warn "первый бэкап не создался"
+
 # --- меню управления nodego -------------------------------------------------
 NODEGO_OK=false
 if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/nodego.sh" ]; then
@@ -1258,8 +1614,7 @@ cat > /etc/logrotate.d/remnanode <<'EOF'
 EOF
 
 cat > /etc/cron.d/remnawave-maintenance <<'EOF'
-# чистка journald
-0 4 * * * root journalctl --vacuum-size=500M >/dev/null 2>&1 || true
+# journald ограничен через /etc/systemd/journald.conf.d, отдельная чистка не нужна
 # страховка по логам docker (поверх log-opts)
 30 4 * * * root find /var/lib/docker/containers -name '*-json.log' -size +100M -exec truncate -s 50M {} \; 2>/dev/null || true
 # раз в неделю — неиспользуемые образы
@@ -1309,6 +1664,12 @@ done
 if systemctl cat rw-node-update.timer >/dev/null 2>&1; then
     say "    rw-node-update.timer: $(systemctl is-enabled rw-node-update.timer 2>/dev/null || echo -), след. запуск: $(systemctl show -p NextElapseUSecRealtime --value rw-node-update.timer 2>/dev/null | cut -c1-19)"
 fi
+for _t in rw-healthcheck rw-backup; do
+    if systemctl cat "$_t.timer" >/dev/null 2>&1; then
+        say "    $_t.timer: $(systemctl is-active "$_t.timer" 2>/dev/null || echo -)"
+    fi
+done
+unset _t 2>/dev/null || true
 
 if [ "$DUAL_IP" = "yes" ]; then
     say ""

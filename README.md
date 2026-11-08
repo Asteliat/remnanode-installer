@@ -31,6 +31,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/Asteliat/remnanode-installer/m
 | Дополнительный IP | — | нужен только для схемы «2 IP» |
 | DNS-фильтр AdGuard | `да` | блокировка рекламы и трекеров, DNS-over-TLS |
 | Автообновление ноды | `да` | ежедневная проверка + откат при сбое |
+| Алерты в Telegram | `нет` | если да — спросит токен бота и chat_id |
 
 **Пропуск порта = порт не открывается.** В неинтерактивном режиме значение по
 умолчанию применяется, только если флаг не передан; чтобы порт не открывался —
@@ -96,10 +97,16 @@ bash install.sh --yes \
 11. **Автообновление**: таймер `rw-node-update.timer` (ежедневно ~04:30)
     с откатом на предыдущий образ, если новый контейнер не поднялся;
     плюс `unattended-upgrades` для обновлений безопасности ОС без ребута.
-12. **Обслуживание**: logrotate для логов ноды + cron (journald, docker-логи,
-    чистка неиспользуемых образов).
+12. **Обслуживание**:
+    - `rw-healthcheck.timer` — проверка каждые 5 минут: контейнер, порт ноды, диск,
+      conntrack, исходящий IP, число рестартов, срок сертификата;
+      алерт в Telegram **только при смене состояния**;
+    - `rw-backup.timer` — ежедневный бэкап конфигов в `/var/backups/remnanode`
+      (хранится 14 копий), восстановление: `nodego restore`;
+    - `logrotate` для логов ноды + cron (docker-логи, неиспользуемые образы);
+    - journald ограничен 500 МБ через `journald.conf.d` (без cron-обрезки).
 13. **Проверка**: контейнеры, порты, локальный запрос к Caddy, статус юнитов
-    и таймера, исходящий IP, DNS.
+    и таймеров, исходящий IP, DNS.
 14. **Итог**: что нажать в панели.
 
 ## Сайты-заглушки (10 пресетов)
@@ -192,6 +199,10 @@ curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer/main/t
 12) Показать конфигурацию
 13) Автообновление: включить/выключить
 14) DNS-фильтр AdGuard: включить/выключить
+15) Диагностика (doctor)
+16) Бэкап конфигов сейчас
+17) Восстановить из бэкапа
+18) Алерты Telegram: включить/выключить
 ```
 
 Без меню:
@@ -203,6 +214,10 @@ nodego restart         # перезапуск ноды
 nodego update          # обновление с откатом
 nodego net             # схема сети
 nodego preset blog     # сменить заглушку
+nodego doctor          # диагностика (7 проверок + события docker)
+nodego backup          # бэкап конфигов
+nodego restore <файл>  # восстановление
+nodego alerts          # статус алертов
 ```
 
 ### Смена схемы IP без переустановки
@@ -256,8 +271,12 @@ curl -4 --interface <IP2> https://ifconfig.io
 | `/usr/local/bin/nodego` | интерактивное меню управления |
 | `/usr/local/sbin/rw-secondary-ip.sh` | применение схемы сети из `net.env` |
 | `/usr/local/sbin/rw-node-update.sh` | обновление с откатом |
+| `/usr/local/sbin/rw-healthcheck.sh` | проверки + алерты (и `--report` для doctor) |
+| `/usr/local/sbin/rw-backup.sh` | бэкап/список/восстановление конфигов |
 | `/etc/remnawave-setup/answers.env` | сохранённые ответы (chmod 600) |
 | `/etc/remnawave-setup/net.env` | текущая схема IP (chmod 600) |
+| `/etc/remnawave-setup/alerts.env` | токен/chat_id для алертов (chmod 600) |
+| `/var/backups/remnanode/` | бэкапы конфигов (14 копий) |
 | `/var/log/remnanode/` | логи Xray (logrotate) |
 | `/var/log/remnawave-setup.log` | лог установки |
 
@@ -296,7 +315,7 @@ IP, а порт 80 — быть доступен снаружи. До выпус
 | `bash -n install.sh` | синтаксис |
 | **ShellCheck** (`-S style`, все уровни) для `install.sh` и `nodego.sh` | ошибки и плохие практики |
 | шаблоны | все 10 существуют, непустые и упомянуты в установщике |
-| встроенные скрипты | `rw-secondary-ip.sh` и `rw-node-update.sh` парсятся bash |
+| встроенные скрипты | `rw-secondary-ip.sh`, `rw-node-update.sh`, `rw-healthcheck.sh`, `rw-backup.sh` парсятся bash |
 | сгенерированные конфиги | оба `docker-compose.yml` валидны как YAML, Caddyfile структурно цел |
 
 Проверить локально:
