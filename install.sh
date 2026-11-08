@@ -73,15 +73,27 @@ USE_DNS="${USE_DNS:-yes}"           # AdGuard DoT (блокировка рекл
 AUTO_UPDATE="${AUTO_UPDATE:-yes}"   # автообновление ноды через systemd-таймер
 
 ASSUME_YES=false
-RECONFIGURE=false
 SKIP_TUNING=false
 SKIP_FIREWALL=false
+
+# Ответы прошлого запуска читаем ДО разбора флагов — чтобы флаги имели приоритет.
+for _arg in "$@"; do
+    case "$_arg" in
+        --yes|-y)      _PRE_YES=true ;;
+        --reconfigure) _PRE_RECONF=true ;;
+    esac
+done
+if [ "${_PRE_YES:-false}" = true ] && [ "${_PRE_RECONF:-false}" = false ] && [ -f "$ANSWERS_FILE" ]; then
+    # shellcheck disable=SC1090
+    . "$ANSWERS_FILE"
+fi
+unset _arg _PRE_YES _PRE_RECONF 2>/dev/null || true
 
 # --------------------------------------------------------------------- args
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --yes|-y)          ASSUME_YES=true ;;
-        --reconfigure)     RECONFIGURE=true ;;
+        --reconfigure)     : ;;   # учтён на этапе пред-сканирования аргументов
         --skip-tuning)     SKIP_TUNING=true ;;
         --skip-firewall)   SKIP_FIREWALL=true ;;
         --panel-ip)        PANEL_IP="${2:?}"; shift ;;
@@ -109,8 +121,15 @@ while [[ $# -gt 0 ]]; do
         -h|--help)         grep '^#  ' "$0" | sed 's/^#  //'; exit 0 ;;
         *) echo "Неизвестный параметр: $1 (см. --help)" >&2; exit 1 ;;
     esac
-    [ $# -gt 0 ] && shift || true
+    if [ $# -gt 0 ]; then shift; fi
 done
+
+# ---- нормализация булевых флагов (yes/no/true/да ...) ----------------------
+norm_yn() { case "${1,,}" in yes|y|да|д|true|1|on) echo yes ;; *) echo no ;; esac; }
+USE_SELFSTEAL="$(norm_yn "$USE_SELFSTEAL")"
+DUAL_IP="$(norm_yn "$DUAL_IP")"
+USE_DNS="$(norm_yn "$USE_DNS")"
+AUTO_UPDATE="$(norm_yn "$AUTO_UPDATE")"
 
 # ------------------------------------------------------------------ helpers
 if [ -t 1 ]; then
@@ -160,15 +179,16 @@ ask() { # ask VAR "текст" "дефолт"
 }
 
 ask_yesno() { # ask_yesno VAR "текст" default(y/n)
-    local __var="$1" __prompt="$2" __def="${3:-y}" __val=""
+    local __var="$1" __prompt="$2" __def="${3:-y}" __val="" __hint
     if [ "$ASSUME_YES" = true ] && [ -n "${!__var:-}" ]; then return 0; fi
+    if [ "$__def" = "y" ]; then __hint="Д/н"; else __hint="д/Н"; fi
     while true; do
-        read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} [${__def}]: ")" __val || true
+        read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} [${__hint}]: ")" __val || true
         __val="${__val:-$__def}"
         case "${__val,,}" in
             y|yes|д|да) printf -v "$__var" '%s' "yes"; return 0 ;;
             n|no|н|нет) printf -v "$__var" '%s' "no"; return 0 ;;
-            *) warn "Ответьте y или n" ;;
+            *) warn "Ответьте «д» (да) или «н» (нет)" ;;
         esac
     done
 }
@@ -219,7 +239,6 @@ if ! command -v apt-get >/dev/null 2>&1; then
     die "Поддерживаются только Debian/Ubuntu (apt-get не найден)."
 fi
 
-OS_PRETTY="$(sed -n 's/^PRETTY_NAME="\(.*\)"/\1/p' /etc/os-release 2>/dev/null || echo unknown)"
 ARCH="$(uname -m)"
 case "$ARCH" in
     x86_64|aarch64|arm64) : ;;
@@ -235,11 +254,6 @@ touch "$LOG_FILE" 2>/dev/null || true
 # ============================================================================
 # 1. Конфигурация (интерактивно или из ответов прошлого запуска)
 # ============================================================================
-if [ "$RECONFIGURE" = false ] && [ -f "$ANSWERS_FILE" ] && [ "$ASSUME_YES" = true ]; then
-    # shellcheck disable=SC1090
-    . "$ANSWERS_FILE"
-fi
-
 hdr "1. Параметры установки"
 
 # --- IP панели -------------------------------------------------------------
@@ -255,6 +269,9 @@ ok "Панель: $PANEL_IP"
 
 # --- Порт ноды -------------------------------------------------------------
 while ! is_port "$NODE_PORT"; do
+    if [ "$ASSUME_YES" = true ]; then
+        die "Некорректный --node-port: '$NODE_PORT' (ожидается 1-65535)"
+    fi
     ask NODE_PORT "Порт ноды (внутренний API, панель → нода)" "2222"
 done
 ok "Порт ноды: $NODE_PORT"
@@ -266,7 +283,7 @@ if [ -z "$SECRET_KEY" ]; then
     note "SECRET_KEY выдаётся панелью при создании ноды (Nodes → Management → +)."
     note "Скопируйте его из формы создания ноды и вставьте сюда."
     while [ -z "$SECRET_KEY" ]; do
-        ask SECRET_KEY "SECRET_KEY" ""
+        ask SECRET_KEY "Ключ ноды из панели (SECRET_KEY)" ""
         if [ -z "$SECRET_KEY" ]; then
             if [ ! -t 0 ]; then die "Ввод недоступен — передайте --secret-key KEY"; fi
             warn "Ключ обязателен."
@@ -283,11 +300,33 @@ note "Сами inbound'ы настраиваются в панели; здесь
 say ""
 
 ask_port XHTTP_PORT "Порт для xHTTP" "обычно 443"
-[ -n "$XHTTP_PORT" ] && ok "xHTTP: $XHTTP_PORT" || note "xHTTP: не открывается"
+if [ -n "$XHTTP_PORT" ]; then ok "xHTTP: $XHTTP_PORT"; else note "xHTTP: не открывается"; fi
 ask_port GRPC_PORT  "Порт для gRPC" "обычно 2096"
-[ -n "$GRPC_PORT" ] && ok "gRPC:  $GRPC_PORT" || note "gRPC: не открывается"
+if [ -n "$GRPC_PORT" ]; then ok "gRPC:  $GRPC_PORT"; else note "gRPC: не открывается"; fi
 ask_port TCP_PORT   "Порт для TCP/Vision" "обычно 4443"
-[ -n "$TCP_PORT" ] && ok "TCP:   $TCP_PORT" || note "TCP: не открывается"
+if [ -n "$TCP_PORT" ]; then ok "TCP:   $TCP_PORT"; else note "TCP: не открывается"; fi
+
+# Валидация портов, переданных флагами (в --yes промптов не было)
+for _pv in XHTTP_PORT GRPC_PORT TCP_PORT; do
+    _v="${!_pv:-}"
+    [ -z "$_v" ] && continue
+    is_port "$_v" || die "Некорректный порт в --${_pv,,}: '$_v' (ожидается 1-65535)"
+done
+
+# Предупреждения о пересечениях портов
+_used=""
+for _pv in XHTTP_PORT GRPC_PORT TCP_PORT; do
+    _v="${!_pv:-}"
+    [ -z "$_v" ] && continue
+    case " $_used " in
+        *" $_v "*) warn "Порт $_v указан дважды — inbound'ы в панели будут конфликтовать" ;;
+    esac
+    _used="$_used $_v"
+done
+case " $_used " in
+    *" $NODE_PORT "*) warn "Транспортный порт совпадает с портом ноды ($NODE_PORT) — так нельзя" ;;
+esac
+unset _pv _v _used 2>/dev/null || true
 
 # --- Selfsteal -------------------------------------------------------------
 say ""
@@ -305,24 +344,27 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
     ok "Домен: $DOMAIN"
 
     while ! is_port "$SELFSTEAL_PORT"; do
+        if [ "$ASSUME_YES" = true ]; then
+            die "Некорректный --selfsteal-port: '$SELFSTEAL_PORT' (ожидается 1-65535)"
+        fi
         ask SELFSTEAL_PORT "Внутренний HTTPS-порт Caddy (127.0.0.1)" "9443"
     done
     ok "Порт Caddy: 127.0.0.1:$SELFSTEAL_PORT"
 
     say ""
-    say "  ${C_BLD}Доступные сайты-заглушки:${C_OFF}"
+    say "  ${C_BLD}Доступные сайты-заглушки (введите номер):${C_OFF}"
     TEMPLATE_KEYS=(landing cloud speedtest blog 503 news forum torrent shop auth)
     TEMPLATE_DESCS=(
-        "Нейтральный лендинг (по умолчанию)"
-        "Облачное хранилище файлов"
-        "Спидтест"
-        "Блог со статьёй"
-        "Страница обслуживания 503"
-        "Новостной портал"
-        "Форум / обсуждения"
-        "Торрент-трекер"
-        "Интернет-магазин"
-        "Страница входа в «панель»"
+        "лендинг — визитка небольшой компании"
+        "облако — интерфейс файлового хранилища"
+        "спидтест — замер скорости соединения"
+        "блог — статья с текстом"
+        "503 — «сервис временно недоступен»"
+        "новости — лента новостей с сайдбаром"
+        "форум — темы и обсуждения"
+        "торрент — таблица раздач"
+        "магазин — карточки товаров"
+        "вход в панель — форма логина"
     )
     for i in "${!TEMPLATE_KEYS[@]}"; do
         printf "    %d) %-10s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
@@ -434,9 +476,9 @@ say "    автообновление .... ${AUTO_UPDATE}"
 say ""
 
 if [ "$ASSUME_YES" = false ]; then
-    read -r -p "$(echo -e "${C_BLD}Продолжить установку?${C_OFF} [Y/n]: ")" confirm || true
+    read -r -p "$(echo -e "${C_BLD}Продолжить установку?${C_OFF} [Д/н]: ")" confirm || true
     case "${confirm:-y}" in
-        n|N|no|no) die "Отменено пользователем." ;;
+        n|N|no|No|NO) die "Отменено пользователем." ;;
     esac
 fi
 
@@ -501,7 +543,7 @@ if ! docker compose version >/dev/null 2>&1; then
     note "Плагин compose отсутствует — ставлю…"
     apt-get install -y -qq docker-compose-plugin || {
         mkdir -p /usr/libexec/docker/cli-plugins
-        curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)" \
+        curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)" \
             -o /usr/libexec/docker/cli-plugins/docker-compose
         chmod +x /usr/libexec/docker/cli-plugins/docker-compose
     }
@@ -512,6 +554,40 @@ ok "docker compose: $(docker compose version --short 2>/dev/null || echo ok)"
 DOCKER_BIN="$(command -v docker || true)"
 [ -n "$DOCKER_BIN" ] || DOCKER_BIN="/usr/bin/docker"
 note "docker: $DOCKER_BIN"
+
+# --- daemon.json: ротация логов + live-restore -------------------------------
+DAEMON_RESTART=false
+mkdir -p /etc/docker
+if [ -s /etc/docker/daemon.json ] && ! grep -q '"log-opts"' /etc/docker/daemon.json; then
+    warn "/etc/docker/daemon.json уже существует — заменяю (бэкап рядом)"
+fi
+if ! grep -q '"log-opts"' /etc/docker/daemon.json 2>/dev/null; then
+    backup /etc/docker/daemon.json
+    cat > /etc/docker/daemon.json <<'EOF'
+{
+  "log-driver": "json-file",
+  "log-opts": { "max-size": "10m", "max-file": "3" },
+  "live-restore": true,
+  "userland-proxy": false,
+  "iptables": true
+}
+EOF
+    DAEMON_RESTART=true
+    ok "docker daemon: логи 10m×3, live-restore"
+else
+    ok "docker daemon.json уже настроен — не трогаю"
+fi
+
+if [ "$DAEMON_RESTART" = true ]; then
+    if [ -n "$(docker ps -q 2>/dev/null || true)" ]; then
+        warn "есть запущенные контейнеры — новые настройки демона применятся"
+        note "после их перезапуска (или перезагрузки сервера)"
+    elif systemctl restart docker >/dev/null 2>&1; then
+        ok "docker перезапущен с новым конфигом"
+    else
+        warn "docker не перезапустился — настройки применятся при следующем старте"
+    fi
+fi
 
 # ============================================================================
 # 5. Тюнинг системы
@@ -552,6 +628,12 @@ EOF
 [Service]
 LimitNOFILE=infinity
 EOF
+    systemctl daemon-reload
+    # Демон должен поднять свой лимит ДО создания контейнера с ulimits 1048576,
+    # иначе docker обрежет лимит внутри ноды.
+    if [ -z "$(docker ps -q 2>/dev/null || true)" ]; then
+        systemctl restart docker >/dev/null 2>&1 || true
+    fi
     ok "nofile=1048576 (host + docker.service)"
 
     # --- sysctl -----------------------------------------------------------
@@ -590,7 +672,9 @@ net.ipv4.tcp_congestion_control = bbr
 EOF
         sysctl --system >/dev/null 2>&1 || true
         IFACE="$(ip -o route show default | awk '{print $5; exit}' || true)"
-        [ -n "${IFACE:-}" ] && tc qdisc replace dev "$IFACE" root fq 2>/dev/null || true
+        if [ -n "${IFACE:-}" ]; then
+            tc qdisc replace dev "$IFACE" root fq 2>/dev/null || true
+        fi
         ok "BBR + FQ включены (${IFACE:-?})"
     else
         warn "BBR недоступен в ядре — оставлен текущий алгоритм"
@@ -606,10 +690,12 @@ hdr "6. Сеть"
 BIND_IP="0.0.0.0"   # на какой адрес биндить публичный :80 (Caddy)
 
 if [ "$DUAL_IP" = "yes" ]; then
-    IFACE="$(ip -o -4 addr show | awk -v ip="$IP1" '$4 ~ ("^" ip "/") {print $2; exit}')"
+    IFACE="$(ip -o -4 addr show | awk -v ip="$IP1" 'index($4, ip "/")==1 {print $2; exit}')"
     [ -n "${IFACE:-}" ] || IFACE="$(ip -o route show default | awk '{print $5; exit}')"
     GW="$(ip -o route show default | awk '{print $3; exit}')"
-    [ -n "${IFACE:-}" ] && [ -n "${GW:-}" ] || die "Не удалось определить интерфейс/шлюз для второго IP"
+    if [ -z "${IFACE:-}" ] || [ -z "${GW:-}" ]; then
+        die "Не удалось определить интерфейс/шлюз для второго IP"
+    fi
     ok "Интерфейс: $IFACE, шлюз: $GW"
     BIND_IP="$IP1"
 
@@ -628,9 +714,11 @@ TABLE=100
 # 1. Адрес на интерфейсе (идемпотентно)
 ip addr replace "\$IP2/32" dev "\$IFACE"
 
-# 2. Policy routing: пакеты с источником IP2 уходят через шлюз этого интерфейса
+# 2. Policy routing: пакеты с источником IP2 уходят через шлюз этого интерфейса.
+# Приоритет не задаём жёстко — ядро выдаст свободный (всё равно выше main),
+# иначе возможна коллизия с уже существующим правилом.
 ip rule del from "\$IP2/32" table \$TABLE 2>/dev/null || true
-ip rule add from "\$IP2/32" table \$TABLE priority 100
+ip rule add from "\$IP2/32" table \$TABLE
 ip route replace default via "\$GW" dev "\$IFACE" src "\$IP2" table \$TABLE
 
 # 3. SNAT только для новых исходящих соединений
@@ -700,6 +788,13 @@ else
     ufw allow from "$PANEL_IP" to any port "$NODE_PORT" proto tcp comment "remnanode API $NODE_PORT" >/dev/null
 
     ufw --force enable >/dev/null
+
+    # ufw перестраивает свои таблицы — на всякий случай применяем SNAT повторно
+    if [ "$DUAL_IP" = "yes" ]; then
+        if systemctl restart rw-secondary-ip.service >/dev/null 2>&1; then
+            note "SNAT переприменён после включения ufw"
+        fi
+    fi
     ok "Правила добавлены:"
     ufw status 2>/dev/null | sed -n '2,25p' | sed 's/^/    /' || true
 fi
@@ -728,6 +823,7 @@ SECRET_KEY=$SECRET_KEY
 EOF
 chmod 600 "$NODE_DIR/.env"
 
+# export:node-compose
 cat > "$NODE_DIR/docker-compose.yml" <<EOF
 services:
   remnanode:
@@ -752,6 +848,7 @@ services:
         max-size: "10m"
         max-file: "3"
 EOF
+    # export:end
 ok "docker-compose.yml и .env созданы в $NODE_DIR"
 
 cat > /etc/systemd/system/remnanode.service <<EOF
@@ -776,13 +873,13 @@ WantedBy=multi-user.target
 EOF
 
 note "Запускаю ноду…"
-(cd "$NODE_DIR" && compose pull -q && compose up -d) || warn "docker compose up вернул ошибку — смотрите: docker compose -f $NODE_DIR/docker-compose.yml logs"
+( cd "$NODE_DIR" && { compose pull -q >/dev/null 2>&1 || warn "образ не скачался — пробую локальный"; } ; compose up -d ) || warn "docker compose up вернул ошибку — смотрите: docker compose -f $NODE_DIR/docker-compose.yml logs"
 systemctl daemon-reload
 systemctl enable remnanode.service >/dev/null 2>&1 || true
 ok "Нода запущена, автозагрузка включена (remnanode.service)"
 
 # ============================================================================
-# 8. Caddy selfsteal
+# 9. Caddy selfsteal
 # ============================================================================
 if [ "$USE_SELFSTEAL" = "yes" ]; then
     hdr "9. Caddy selfsteal"
@@ -820,6 +917,7 @@ SELF_STEAL_PORT=$SELFSTEAL_PORT
 EOF
 
     # --- Caddyfile --------------------------------------------------------
+    # export:caddyfile
     cat > "$SELFSTEAL_DIR/Caddyfile" <<'EOF'
 {
 	https_port {$SELF_STEAL_PORT}
@@ -886,11 +984,14 @@ https://{$SELF_STEAL_DOMAIN} {
 }
 EOF
 
+    # export:end
+
     # Привязываем публичный :80 к основному IP (в схеме с двумя IP — только вход)
     sed -i "s|__BIND_IP__|$BIND_IP|g" "$SELFSTEAL_DIR/Caddyfile"
     note "Caddy :80 слушает $BIND_IP"
 
     # --- compose ----------------------------------------------------------
+    # export:selfsteal-compose
     cat > "$SELFSTEAL_DIR/docker-compose.yml" <<EOF
 services:
   caddy:
@@ -898,6 +999,13 @@ services:
     container_name: selfsteal
     restart: unless-stopped
     network_mode: host
+    # Caddyfile использует {\$SELF_STEAL_DOMAIN}/{\$SELF_STEAL_PORT} — переменные
+    # должны быть в окружении контейнера, иначе шаблон раскроется в пустоту.
+    env_file:
+      - .env
+    environment:
+      SELF_STEAL_DOMAIN: "$DOMAIN"
+      SELF_STEAL_PORT: "$SELFSTEAL_PORT"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./html:/var/www/html:ro
@@ -914,6 +1022,7 @@ volumes:
   selfsteal_data:
   selfsteal_config:
 EOF
+    # export:end
 
     # --- DNS-проверка (не блокирующая) ------------------------------------
     if command -v dig >/dev/null 2>&1; then
@@ -930,7 +1039,7 @@ EOF
     fi
 
     note "Запускаю Caddy…"
-    (cd "$SELFSTEAL_DIR" && compose pull -q && compose up -d) || warn "Caddy не стартовал — смотрите: docker compose -f $SELFSTEAL_DIR/docker-compose.yml logs"
+    ( cd "$SELFSTEAL_DIR" && { compose pull -q >/dev/null 2>&1 || warn "образ не скачался — пробую локальный"; } ; compose up -d ) || warn "Caddy не стартовал — смотрите: docker compose -f $SELFSTEAL_DIR/docker-compose.yml logs"
 
     cat > /etc/systemd/system/selfsteal.service <<EOF
 [Unit]
@@ -981,7 +1090,8 @@ EOF
     fi
     systemctl enable systemd-resolved >/dev/null 2>&1 || true
     systemctl restart systemd-resolved || warn "systemd-resolved не перезапустился"
-    ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+    ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || \
+        warn "не удалось подменить /etc/resolv.conf (файл защищён провайдером?)"
     resolvectl flush-caches >/dev/null 2>&1 || true
     sleep 1
     if resolvectl query example.com >/dev/null 2>&1; then

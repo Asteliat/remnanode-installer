@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: shellcheck + syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bash syntax (bash -n)
+        run: bash -n install.sh
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          scandir: "."
+          additional_files: install.sh
+        env:
+          SHELLCHECK_OPTS: -S style
+
+  templates:
+    name: templates consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Every template exists and is non-empty
+        run: |
+          set -euo pipefail
+          for t in landing cloud speedtest blog 503 news forum torrent shop auth; do
+            if [ ! -s "templates/$t/index.html" ]; then
+              echo "::error::missing or empty templates/$t/index.html"
+              exit 1
+            fi
+          done
+          echo "all 10 templates present"
+
+      - name: Every template is offered by the installer
+        run: |
+          set -euo pipefail
+          for t in $(ls templates); do
+            if ! grep -q -- "$t" install.sh; then
+              echo "::error::template '$t' is not referenced in install.sh"
+              exit 1
+            fi
+          done
+          echo "installer references every template"
+
+      - name: Embedded scripts are valid bash
+        run: |
+          set -euo pipefail
+          # вытаскиваем heredoc-скрипты, которые установщик пишет на сервер
+          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-secondary-ip.sh/{f=1;next} f&&/^EOF$/{exit} f' install.sh > /tmp/secondary.sh
+          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-node-update.sh/{f=1;next} f&&/^EOS$/{exit} f' install.sh > /tmp/update.sh
+          test -s /tmp/secondary.sh || { echo "::error::secondary-ip script not found"; exit 1; }
+          test -s /tmp/update.sh    || { echo "::error::update script not found"; exit 1; }
+          bash -n /tmp/secondary.sh
+          bash -n /tmp/update.sh
+          echo "embedded scripts parse OK"
+
+  config:
+    name: generated configs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract generated files
+        run: |
+          set -euo pipefail
+          extract() {
+            awk -v m="$1" '$0 ~ "# export:"m {f=1;next} f&&/# export:end/{exit} f' install.sh
+          }
+          extract node-compose      | sed '1d;$d' > /tmp/node.yml
+          extract selfsteal-compose | sed '1d;$d' > /tmp/selfsteal.yml
+          extract caddyfile         | sed '1d;$d' > /tmp/Caddyfile
+          for f in /tmp/node.yml /tmp/selfsteal.yml /tmp/Caddyfile; do
+            test -s "$f" || { echo "::error::empty $f"; exit 1; }
+          done
+          echo "extracted: $(wc -l < /tmp/node.yml) / $(wc -l < /tmp/selfsteal.yml) / $(wc -l < /tmp/Caddyfile) lines"
+
+      - name: docker-compose files are valid YAML
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml
+          python3 - <<'PY'
+          import yaml, sys
+          for path in ("/tmp/node.yml", "/tmp/selfsteal.yml"):
+              with open(path) as fh:
+                  doc = yaml.safe_load(fh)
+              assert isinstance(doc, dict) and "services" in doc, path
+              print(path, "->", ", ".join(doc["services"]))
+          PY
+
+      - name: Caddyfile sanity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          src = open("/tmp/Caddyfile").read()
+          if src.count("{") != src.count("}"):
+              raise SystemExit("unbalanced braces in Caddyfile")
+          for need in ("https_port", "auto_https", "file_server", "try_files", "tls"):
+              if need not in src:
+                  raise SystemExit(f"Caddyfile is missing {need}")
+          print("Caddyfile structure ok (bind placeholder:", "__BIND_IP__" in src, ")")
+          PY
+
