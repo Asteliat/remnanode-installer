@@ -470,7 +470,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq \
     curl wget ca-certificates openssl jq ufw logrotate dnsutils cron \
-    gnupg lsb-release tzdata || warn "Часть пакетов не установилась"
+    gnupg lsb-release tzdata iptables iproute2 || warn "Часть пакетов не установилась"
 ok "Базовые пакеты готовы"
 
 # ============================================================================
@@ -626,16 +626,16 @@ GW='$GW'
 TABLE=100
 
 # 1. Адрес на интерфейсе (идемпотентно)
-/sbin/ip addr replace "\$IP2/32" dev "\$IFACE"
+ip addr replace "\$IP2/32" dev "\$IFACE"
 
 # 2. Policy routing: пакеты с источником IP2 уходят через шлюз этого интерфейса
-/sbin/ip rule del from "\$IP2/32" table \$TABLE 2>/dev/null || true
-/sbin/ip rule add from "\$IP2/32" table \$TABLE priority 100
-/sbin/ip route replace default via "\$GW" dev "\$IFACE" src "\$IP2" table \$TABLE
+ip rule del from "\$IP2/32" table \$TABLE 2>/dev/null || true
+ip rule add from "\$IP2/32" table \$TABLE priority 100
+ip route replace default via "\$GW" dev "\$IFACE" src "\$IP2" table \$TABLE
 
 # 3. SNAT только для новых исходящих соединений
-/sbin/iptables -t nat -C POSTROUTING -o "\$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "\$IP2" 2>/dev/null || \
-    /sbin/iptables -t nat -A POSTROUTING -o "\$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "\$IP2"
+iptables -t nat -C POSTROUTING -o "\$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "\$IP2" 2>/dev/null || \
+    iptables -t nat -A POSTROUTING -o "\$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "\$IP2"
 EOF
     chmod 0755 /usr/local/sbin/rw-secondary-ip.sh
 
