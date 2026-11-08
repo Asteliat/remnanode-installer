@@ -62,7 +62,8 @@ bash install.sh --yes \
 ## Что делает скрипт
 
 1. **Проверки**: root, Debian/Ubuntu, архитектура, свободное место.
-2. **Пакеты**: curl, wget, jq, ufw, logrotate, dnsutils, cron, gnupg.
+2. **Пакеты**: `apt-get update` + `apt-get upgrade` (noninteractive, confdef/confold)
+   и установка curl, wget, jq, ufw, logrotate, dnsutils, cron, gnupg.
 3. **Время и NTP** — критично для ACME/TLS.
 4. **Docker** — официальный `get.docker.com` + compose v2.
 5. **Тюнинг**:
@@ -174,6 +175,51 @@ curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer/main/t
 
 ## Управление
 
+После установки на сервере появляется команда **`nodego`** — интерактивное меню:
+
+```
+1) Статус: контейнеры, службы, сеть, порты
+2) Логи ноды (live)
+3) Логи selfsteal (live)
+4) Лог автообновления
+5) Перезапустить ноду
+6) Перезапустить selfsteal
+7) Перезапустить всё
+8) Сеть: 1 IP / 2 IP, вход и выход
+9) Сменить сайт-заглушку
+10) Обновить ноду сейчас (с откатом)
+11) Проверить исходящий IP
+12) Показать конфигурацию
+13) Автообновление: включить/выключить
+14) DNS-фильтр AdGuard: включить/выключить
+```
+
+Без меню:
+
+```bash
+nodego status          # состояние
+nodego logs            # логи ноды
+nodego restart         # перезапуск ноды
+nodego update          # обновление с откатом
+nodego net             # схема сети
+nodego preset blog     # сменить заглушку
+```
+
+### Смена схемы IP без переустановки
+
+Схема хранится в `/etc/remnawave-setup/net.env`, применение — универсальный
+`/usr/local/sbin/rw-secondary-ip.sh`. Поэтому в меню `nodego → 8` можно:
+
+- перейти с 1 IP на 2 IP (ввести выходной адрес);
+- перейти с 2 IP на 1 IP (правила снимаются автоматически);
+- **поменять вход и выход местами** (например, было `1.1.1.1 вход → 2.2.2.2 выход`,
+  станет `2.2.2.2 вход → 1.1.1.1 выход`), Caddy при этом перевязывается на новый IP.
+
+То же самое можно сделать переустановкой: `--yes --two-ip --ip1 ... --ip2 ...`
+(флаги имеют приоритет над сохранёнными ответами).
+
+### Обычные команды
+
 ```bash
 systemctl status remnanode selfsteal rw-secondary-ip
 systemctl list-timers rw-node-update.timer
@@ -207,9 +253,11 @@ curl -4 --interface <IP2> https://ifconfig.io
 | `/etc/systemd/system/selfsteal.service` | автозапуск Caddy |
 | `/etc/systemd/system/rw-secondary-ip.service` | второй IP + SNAT |
 | `/etc/systemd/system/rw-node-update.{service,timer}` | автообновление |
-| `/usr/local/sbin/rw-secondary-ip.sh` | применённая схема IP |
+| `/usr/local/bin/nodego` | интерактивное меню управления |
+| `/usr/local/sbin/rw-secondary-ip.sh` | применение схемы сети из `net.env` |
 | `/usr/local/sbin/rw-node-update.sh` | обновление с откатом |
 | `/etc/remnawave-setup/answers.env` | сохранённые ответы (chmod 600) |
+| `/etc/remnawave-setup/net.env` | текущая схема IP (chmod 600) |
 | `/var/log/remnanode/` | логи Xray (logrotate) |
 | `/var/log/remnawave-setup.log` | лог установки |
 
@@ -246,7 +294,7 @@ IP, а порт 80 — быть доступен снаружи. До выпус
 | Проверка | Что ловит |
 |---|---|
 | `bash -n install.sh` | синтаксис |
-| **ShellCheck** (`-S style`, все уровни) | ошибки и плохие практики |
+| **ShellCheck** (`-S style`, все уровни) для `install.sh` и `nodego.sh` | ошибки и плохие практики |
 | шаблоны | все 10 существуют, непустые и упомянуты в установщике |
 | встроенные скрипты | `rw-secondary-ip.sh` и `rw-node-update.sh` парсятся bash |
 | сгенерированные конфиги | оба `docker-compose.yml` валидны как YAML, Caddyfile структурно цел |
@@ -254,7 +302,7 @@ IP, а порт 80 — быть доступен снаружи. До выпус
 Проверить локально:
 
 ```bash
-shellcheck -S style install.sh
+shellcheck -S style install.sh nodego.sh
 bash -n install.sh
 ```
 

@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           # вытаскиваем heredoc-скрипты, которые установщик пишет на сервер
-          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-secondary-ip.sh/{f=1;next} f&&/^EOF$/{exit} f' install.sh > /tmp/secondary.sh
+          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-secondary-ip.sh/{f=1;next} f&&/^SCRIPT_EOF$/{exit} f' install.sh > /tmp/secondary.sh
           awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-node-update.sh/{f=1;next} f&&/^EOS$/{exit} f' install.sh > /tmp/update.sh
           test -s /tmp/secondary.sh || { echo "::error::secondary-ip script not found"; exit 1; }
           test -s /tmp/update.sh    || { echo "::error::update script not found"; exit 1; }

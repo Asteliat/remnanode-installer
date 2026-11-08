@@ -224,6 +224,8 @@ fetch() { # fetch URL DEST
 
 compose() { docker compose "$@"; }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
+
 # ============================================================================
 # 0. Preflight
 # ============================================================================
@@ -510,6 +512,9 @@ chmod 600 "$ANSWERS_FILE"
 hdr "2. Зависимости"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
+apt-get upgrade -y -qq \
+    -o Dpkg::Options::=--force-confdef \
+    -o Dpkg::Options::=--force-confold || warn "apt upgrade завершился с ошибкой (продолжаем)"
 apt-get install -y -qq \
     curl wget ca-certificates openssl jq ufw logrotate dnsutils cron \
     gnupg lsb-release tzdata iptables iproute2 || warn "Часть пакетов не установилась"
@@ -684,52 +689,89 @@ EOF
 fi
 
 # ============================================================================
-# 6. Сеть: схема с двумя IP (вход на IP1, выход через IP2)
+# 6. Сеть: схема с одним или двумя IP
 # ============================================================================
 hdr "6. Сеть"
-BIND_IP="0.0.0.0"   # на какой адрес биндить публичный :80 (Caddy)
+BIND_IP="0.0.0.0"
+IFACE="$(ip -o route show default | awk '{print $5; exit}' || true)"
+GW="$(ip -o route show default | awk '{print $3; exit}' || true)"
 
 if [ "$DUAL_IP" = "yes" ]; then
     IFACE="$(ip -o -4 addr show | awk -v ip="$IP1" 'index($4, ip "/")==1 {print $2; exit}')"
     [ -n "${IFACE:-}" ] || IFACE="$(ip -o route show default | awk '{print $5; exit}')"
-    GW="$(ip -o route show default | awk '{print $3; exit}')"
+    [ -n "${GW:-}" ] || GW="$(ip -o route show default | awk '{print $3; exit}')"
     if [ -z "${IFACE:-}" ] || [ -z "${GW:-}" ]; then
         die "Не удалось определить интерфейс/шлюз для второго IP"
     fi
-    ok "Интерфейс: $IFACE, шлюз: $GW"
     BIND_IP="$IP1"
+    ok "Вход: $IP1 → выход: $IP2 (интерфейс $IFACE, шлюз $GW)"
+else
+    ok "Один IP: вход и выход через один адрес"
+fi
 
-    cat > /usr/local/sbin/rw-secondary-ip.sh <<EOF
-#!/bin/bash
-# Вход на $IP1, выход через $IP2.
-# SNAT применяется ТОЛЬКО к новым исходящим соединениям (conntrack --ctstate NEW),
-# поэтому ответы на входящие соединения уходят с исходного IP и клиенты не рвутся.
-set -euo pipefail
-
-IP2='$IP2'
-IFACE='$IFACE'
-GW='$GW'
-TABLE=100
-
-# 1. Адрес на интерфейсе (идемпотентно)
-ip addr replace "\$IP2/32" dev "\$IFACE"
-
-# 2. Policy routing: пакеты с источником IP2 уходят через шлюз этого интерфейса.
-# Приоритет не задаём жёстко — ядро выдаст свободный (всё равно выше main),
-# иначе возможна коллизия с уже существующим правилом.
-ip rule del from "\$IP2/32" table \$TABLE 2>/dev/null || true
-ip rule add from "\$IP2/32" table \$TABLE
-ip route replace default via "\$GW" dev "\$IFACE" src "\$IP2" table \$TABLE
-
-# 3. SNAT только для новых исходящих соединений
-iptables -t nat -C POSTROUTING -o "\$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "\$IP2" 2>/dev/null || \
-    iptables -t nat -A POSTROUTING -o "\$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "\$IP2"
+# Состояние схемы храним в отдельном файле: так меню `nodego` может менять
+# настройки без переустановки, а скрипт применения — читать их из одного места.
+cat > "$STATE_DIR/net.env" <<EOF
+# Схема сети Remnawave Node (меняется через nodego или повторной установкой)
+MODE=$([ "$DUAL_IP" = "yes" ] && echo dual || echo single)
+IP1=$IP1
+IP2=$IP2
+IFACE=$IFACE
+GW=$GW
+BIND_IP=$BIND_IP
 EOF
-    chmod 0755 /usr/local/sbin/rw-secondary-ip.sh
+chmod 600 "$STATE_DIR/net.env"
 
-    cat > /etc/systemd/system/rw-secondary-ip.service <<'EOF'
+# Скрипт применения универсальный (читает net.env), поэтому смена схемы
+# 1 IP ↔ 2 IP или обмен входа/выхода не требует переустановки.
+cat > /usr/local/sbin/rw-secondary-ip.sh <<'SCRIPT_EOF'
+#!/bin/bash
+# Применяет схему сети из /etc/remnawave-setup/net.env.
+#   dual   : вход на IP1, выход через IP2 (SNAT только для новых соединений)
+#   single : правила не добавляются, все прежние снимаются
+set -uo pipefail
+
+CONF=/etc/remnawave-setup/net.env
+TABLE=100
+log() { echo "[$(date '+%F %T')] $*"; }
+
+[ -f "$CONF" ] || { log "нет $CONF"; exit 1; }
+# shellcheck disable=SC1090
+. "$CONF"
+
+# --- снимаем прежние правила этого типа (прошлый IP2 / прошлая схема) -------
+while ip rule show | grep -q "lookup $TABLE"; do
+    ip rule del table "$TABLE" 2>/dev/null || break
+done
+while read -r spec; do
+    [ -n "${spec:-}" ] || continue
+    # shellcheck disable=SC2086
+    iptables -t nat -D POSTROUTING $spec 2>/dev/null || true
+done < <(iptables -t nat -S POSTROUTING 2>/dev/null \
+         | grep -- '-m conntrack --ctstate NEW -j SNAT' \
+         | sed 's/^-A POSTROUTING //' || true)
+
+if [ "${MODE:-single}" != "dual" ]; then
+    log "режим single — правила сняты"
+    exit 0
+fi
+
+if [ -z "${IP2:-}" ] || [ -z "${IFACE:-}" ] || [ -z "${GW:-}" ]; then
+    log "в net.env не хватает IP2/IFACE/GW"
+    exit 1
+fi
+
+ip addr replace "$IP2/32" dev "$IFACE"
+ip rule add from "$IP2/32" table "$TABLE"
+ip route replace default via "$GW" dev "$IFACE" src "$IP2" table "$TABLE"
+iptables -t nat -A POSTROUTING -o "$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "$IP2"
+log "dual: вход ${IP1:-?}, выход $IP2 ($IFACE via $GW)"
+SCRIPT_EOF
+chmod 0755 /usr/local/sbin/rw-secondary-ip.sh
+
+cat > /etc/systemd/system/rw-secondary-ip.service <<'EOF'
 [Unit]
-Description=Remnawave secondary IP + SNAT (in on primary, out via secondary)
+Description=Remnawave network scheme (1 or 2 IP)
 After=network-online.target
 Wants=network-online.target
 
@@ -741,15 +783,15 @@ ExecStart=/usr/local/sbin/rw-secondary-ip.sh
 [Install]
 WantedBy=multi-user.target
 EOF
-    systemctl daemon-reload
-    systemctl enable rw-secondary-ip.service >/dev/null 2>&1 || true
-    if systemctl start rw-secondary-ip.service; then
-        ok "Второй IP настроен и включён в автозагрузку (rw-secondary-ip.service)"
-    else
-        warn "Не удалось применить второй IP — проверьте: journalctl -u rw-secondary-ip"
-    fi
+systemctl daemon-reload
+systemctl enable rw-secondary-ip.service >/dev/null 2>&1 || true
+if systemctl restart rw-secondary-ip.service; then
+    ok "Схема сети применена (rw-secondary-ip.service)"
+else
+    warn "Не удалось применить схему — смотрите: journalctl -u rw-secondary-ip"
+fi
 
-    # Проверяем фактический исходящий IP
+if [ "$DUAL_IP" = "yes" ]; then
     OUT_IP="$(curl -4 -fsS --max-time 10 --interface "$IP2" https://ifconfig.io 2>/dev/null || true)"
     if [ "$OUT_IP" = "$IP2" ]; then
         ok "Исходящий трафик идёт с $IP2"
@@ -758,8 +800,6 @@ EOF
     else
         warn "Не удалось проверить исходящий IP (нет сети или IP2 не поднят)"
     fi
-else
-    ok "Один IP: вход и выход через один адрес"
 fi
 
 # ============================================================================
@@ -888,7 +928,6 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
 
     # --- сайт-заглушка ----------------------------------------------------
     TEMPLATE_SRC=""
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
     if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/templates/$TEMPLATE/index.html" ]; then
         TEMPLATE_SRC="$SCRIPT_DIR/templates/$TEMPLATE/index.html"
         note "Шаблон взят локально: $TEMPLATE_SRC"
@@ -1190,6 +1229,22 @@ ok "Обновления безопасности ОС включены (без 
 # 12. Обслуживание: логи и очистка
 # ============================================================================
 hdr "12. Обслуживание"
+
+# --- меню управления nodego -------------------------------------------------
+NODEGO_OK=false
+if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/nodego.sh" ]; then
+    install -m 0755 "$SCRIPT_DIR/nodego.sh" /usr/local/bin/nodego && NODEGO_OK=true
+fi
+if [ "$NODEGO_OK" = false ]; then
+    if fetch "$RAW_BASE/nodego.sh" /usr/local/bin/nodego 2>/dev/null; then
+        chmod 0755 /usr/local/bin/nodego && NODEGO_OK=true
+    fi
+fi
+if [ "$NODEGO_OK" = true ]; then
+    ok "Меню управления: команда nodego"
+else
+    warn "Не удалось установить nodego (меню управления) — не критично"
+fi
 mkdir -p /var/log/remnanode
 cat > /etc/logrotate.d/remnanode <<'EOF'
 /var/log/remnanode/*.log {
