@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ветер — путешествия</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fbfbf9;color:#1a1c18;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0e0f0d;color:#d9dcd4}.card,.trip{background:#151714!important;border-color:#232621!important}}
+  .nav{padding:16px 22px;display:flex;align-items:center;gap:18px;border-bottom:1px solid #eceae3;background:#fff}
+  .logo{font-weight:700;letter-spacing:-.01em}
+  .nav a{color:inherit;text-decoration:none;font-size:14px;opacity:.65}
+  .nav .me{margin-left:auto;font-size:13px;opacity:.55}
+  .hero{padding:46px 22px;text-align:center;background:linear-gradient(180deg,#f2f5ea,#fbfbf9)}
+  @media (prefers-color-scheme:dark){.hero{background:linear-gradient(180deg,#161b12,#0e0f0d)}}
+  .hero h1{font-size:clamp(26px,4.6vw,40px);margin:0 0 10px;letter-spacing:-.025em}
+  .hero p{margin:0 auto;max-width:52ch;opacity:.7}
+  .search{max-width:560px;margin:22px auto 0;display:flex;gap:8px;background:#fff;border:1px solid #e4e7de;border-radius:12px;padding:8px}
+  .search input{flex:1;border:0;padding:9px 11px;font:inherit;background:transparent;color:inherit;outline:none}
+  .search button{padding:10px 18px;border:0;border-radius:9px;background:#3f6212;color:#f7ffe9;font:600 14px/1 inherit;cursor:pointer}
+  .wrap{max-width:1000px;margin:0 auto;padding:26px 20px 70px}
+  h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.5;margin:0 0 12px}
+  .trips{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .trip{background:#fff;border:1px solid #eceae3;border-radius:12px;overflow:hidden}
+  .trip .img{height:130px;background:linear-gradient(150deg,#cfe0c2,#a8c48f)}
+  .trip:nth-child(2) .img{background:linear-gradient(150deg,#c2d6e0,#8fb2c4)}
+  .trip:nth-child(3) .img{background:linear-gradient(150deg,#e0d2c2,#c4a88f)}
+  .trip .body{padding:12px 14px}
+  .trip .t{font-weight:600;font-size:15px}
+  .trip .d{font-size:13px;opacity:.6}
+  .trip .p{margin-top:8px;font-weight:600;font-size:14px;color:#3f6212}
+  @media (prefers-color-scheme:dark){.trip .p{color:#a3c97a}}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="logo">Ветер</div>
+  <a href="#">Направления</a><a href="#">Маршруты</a><a href="#">Советы</a>
+  <div class="me">сохранено 4 маршрута</div>
+</div>
+<div class="hero">
+  <h1>Небольшие поездки без спешки</h1>
+  <p>Маршруты на 3–5 дней: природа, тихие города и дорога без пересадок.</p>
+  <form class="search" onsubmit="return false">
+    <input placeholder="Куда хотите поехать?" aria-label="destination">
+    <button type="submit">Найти</button>
+  </form>
+</div>
+<div class="wrap">
+  <h2>Популярно в ноябре</h2>
+  <div class="trips">
+    <div class="trip"><div class="img"></div><div class="body"><div class="t">Карелия · 4 дня</div><div class="d">Озёра, гранит, бани</div><div class="p">от 28 400 ₽</div></div></div>
+    <div class="trip"><div class="img"></div><div class="body"><div class="t">Дагестан · 5 дней</div><div class="d">Ущелья и старые аулы</div><div class="p">от 41 900 ₽</div></div></div>
+    <div class="trip"><div class="img"></div><div class="body"><div class="t">Алтай · 3 дня</div><div class="d">Тихие тропы, перевалы</div><div class="p">от 22 700 ₽</div></div></div>
+  </div>
+</div>
+</body>
+</html>

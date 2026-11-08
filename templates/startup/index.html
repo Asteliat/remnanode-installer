@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loop — меньше рутины</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fbfbfd;color:#14161a;font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0c0e12;color:#d6dae1}.box,.step{background:#12171f!important;border-color:#1e2632!important}}
+  .nav{max-width:1040px;margin:0 auto;padding:18px 22px;display:flex;align-items:center;gap:18px}
+  .logo{font-weight:800;letter-spacing:-.02em}
+  .nav a{color:inherit;text-decoration:none;font-size:14px;opacity:.65}
+  .nav .cta{margin-left:auto;padding:9px 16px;border-radius:9px;background:#111318;color:#fff;text-decoration:none;font-size:13.5px;opacity:1;font-weight:600}
+  @media (prefers-color-scheme:dark){.nav .cta{background:#e6eaf0;color:#0c0e12}}
+  .hero{max-width:1040px;margin:0 auto;padding:56px 22px 30px;text-align:center}
+  .hero .badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:99px;background:#eef2ff;color:#2545c8;margin-bottom:16px}
+  .hero h1{font-size:clamp(28px,5vw,46px);line-height:1.1;letter-spacing:-.03em;margin:0 0 14px}
+  .hero p{max-width:56ch;margin:0 auto 24px;opacity:.7}
+  .hero .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .btn{padding:12px 20px;border-radius:10px;background:#111318;color:#fff;text-decoration:none;font-weight:600;font-size:14.5px}
+  @media (prefers-color-scheme:dark){.btn{background:#e6eaf0;color:#0c0e12}}
+  .btn.ghost{background:transparent;color:inherit;border:1px solid #dfe3ea}
+  .steps{max-width:1040px;margin:0 auto;padding:30px 22px 80px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .step{background:#fff;border:1px solid #e9ecf2;border-radius:12px;padding:16px 18px}
+  .step .n{font-size:12px;font-weight:700;color:#2545c8;margin-bottom:6px}
+  .step .t{font-weight:600;margin-bottom:4px}
+  .step .d{font-size:14px;opacity:.65}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="logo">Loop</div>
+  <a href="#">Продукт</a><a href="#">Цены</a><a href="#">Документация</a>
+  <a class="cta" href="#">Начать бесплатно</a>
+</div>
+<div class="hero">
+  <div class="badge">14 дней бесплатно · без карты</div>
+  <h1>Меньше рутины. Больше деплоев.</h1>
+  <p>Loop собирает изменения из репозитория, прогоняет проверки и выкатывает
+     на серверы. Всё, что раньше делалось руками по инструкции.</p>
+  <div class="row"><a class="btn" href="#">Попробовать</a><a class="btn ghost" href="#">Смотреть демо</a></div>
+</div>
+<div class="steps">
+  <div class="step"><div class="n">01</div><div class="t">Подключите репозиторий</div><div class="d">Один клик, никаких токенов в файлах.</div></div>
+  <div class="step"><div class="n">02</div><div class="t">Опишите окружение</div><div class="d">Compose-файл или Dockerfile — достаточно.</div></div>
+  <div class="step"><div class="n">03</div><div class="t">Выкатывайте</div><div class="d">С откатом, логами и healthcheck.</div></div>
+</div>
+</body>
+</html>

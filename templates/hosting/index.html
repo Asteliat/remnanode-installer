@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layer — VPS и хостинг</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b0d11;color:#e6e9ee;font:15px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .nav{padding:15px 22px;display:flex;align-items:center;gap:20px;border-bottom:1px solid #1b2027}
+  .logo{font-weight:700}
+  .logo i{color:#38bdf8;font-style:normal}
+  .nav a{color:#98a2b0;text-decoration:none;font-size:14px}
+  .nav .me{margin-left:auto;font-size:13px;color:#7c8794}
+  .hero{max-width:1000px;margin:0 auto;padding:56px 22px 30px;text-align:center}
+  .hero h1{font-size:clamp(28px,5vw,44px);line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}
+  .hero p{max-width:54ch;margin:0 auto 24px;color:#a2acb9}
+  .hero .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .btn{padding:12px 20px;border-radius:10px;background:#38bdf8;color:#06202b;font-weight:700;text-decoration:none;font-size:14.5px}
+  .btn.ghost{background:transparent;border:1px solid #2a323c;color:#e6e9ee}
+  .plans{max-width:1000px;margin:0 auto;padding:14px 22px 80px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .plan{background:#121820;border:1px solid #1f2834;border-radius:14px;padding:18px}
+  .plan .n{font-weight:600;font-size:14px}
+  .plan .p{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:6px 0 10px}
+  .plan .p span{font-size:13px;font-weight:400;color:#8b95a3}
+  .plan ul{margin:0;padding-left:17px;color:#9aa4b2;font-size:13.5px}
+  .plan li{margin-bottom:4px}
+  .plan.hot{border-color:#38bdf8}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="logo">Layer<i>.</i></div>
+  <a href="#">Серверы</a><a href="#">Сеть</a><a href="#">Документация</a>
+  <div class="me">панель управления</div>
+</div>
+<div class="hero">
+  <h1>Серверы, которые не мешают работать</h1>
+  <p>KVM, локальный диск NVMe, честный канал. Поднимается за минуту,
+     оплата по часам.</p>
+  <div class="row"><a class="btn" href="#">Поднять сервер</a><a class="btn ghost" href="#">Тарифы</a></div>
+</div>
+<div class="plans">
+  <div class="plan"><div class="n">Start</div><div class="p">390 ₽<span>/мес</span></div><ul><li>1 vCPU</li><li>1 ГБ RAM</li><li>20 ГБ NVMe</li></ul></div>
+  <div class="plan hot"><div class="n">Work</div><div class="p">890 ₽<span>/мес</span></div><ul><li>2 vCPU</li><li>4 ГБ RAM</li><li>60 ГБ NVMe</li></ul></div>
+  <div class="plan"><div class="n">Scale</div><div class="p">1 790 ₽<span>/мес</span></div><ul><li>4 vCPU</li><li>8 ГБ RAM</li><li>120 ГБ NVMe</li></ul></div>
+</div>
+</body>
+</html>

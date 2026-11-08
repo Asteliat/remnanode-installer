@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel — видео</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f8f8fa;color:#17181c;font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0c0d10;color:#d6d7dc}.top,.item{background:#131419!important;border-color:#202127!important}}
+  .top{background:#fff;border-bottom:1px solid #e8e8ee;padding:12px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0}
+  .logo{font-weight:700}
+  .top input{padding:8px 12px;border:1px solid #e2e2e9;border-radius:9px;font:inherit;background:transparent;color:inherit;min-width:260px}
+  .top .me{margin-left:auto;font-size:13px;opacity:.6}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 70px;display:grid;grid-template-columns:1fr 300px;gap:20px}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+  .player{aspect-ratio:16/9;border-radius:12px;background:linear-gradient(135deg,#1f2937,#111827);position:relative;display:grid;place-items:center;color:#e5e7eb}
+  .player .btn{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;font-size:20px;cursor:pointer}
+  .player .dur{position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,.6);padding:2px 8px;border-radius:5px;font-size:12px}
+  h1{font-size:19px;margin:14px 0 4px;letter-spacing:-.01em}
+  .meta{font-size:13px;opacity:.55;margin-bottom:12px}
+  .desc{font-size:14px;opacity:.75}
+  .side h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.45;margin:0 0 10px}
+  .item{display:flex;gap:10px;background:#fff;border:1px solid #e8e8ee;border-radius:9px;padding:8px;margin-bottom:8px}
+  .thumb{width:96px;height:54px;border-radius:6px;background:#dbe3f5;flex-shrink:0}
+  .thumb.b{background:#f5dbe3}.thumb.c{background:#dbf5e3}
+  .item .t{font-size:13px;font-weight:600;line-height:1.35}
+  .item .a{font-size:12px;opacity:.55;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">Reel</div>
+  <input placeholder="Поиск видео" aria-label="search">
+  <div class="me">1 284 просмотра · 24 подписчика</div>
+</div>
+<div class="wrap">
+  <main>
+    <div class="player"><div class="btn">▶</div><span class="dur">18:42</span></div>
+    <h1>Как работает BBR и зачем он нужен</h1>
+    <div class="meta">Corvid Tech · 12 480 просмотров · 3 дня назад</div>
+    <div class="desc">Разбираем congestion control: чем BBR отличается от CUBIC, где он помогает
+      на дальних маршрутах, и в каких случаях ничего не меняет. Таймкоды в описании.</div>
+  </main>
+  <aside class="side">
+    <h3>Дальше</h3>
+    <div class="item"><div class="thumb"></div><div><div class="t">Настройка очередй fq_codel</div><div class="a">Corvid Tech · 9 мин</div></div></div>
+    <div class="item"><div class="thumb b"></div><div><div class="t">Диагностика потерь на маршруте</div><div class="a">Corvid Tech · 14 мин</div></div></div>
+    <div class="item"><div class="thumb c"></div><div><div class="t">MTU: почему ломается всё</div><div class="a">Corvid Tech · 11 мин</div></div></div>
+  </aside>
+</div>
+</body>
+</html>

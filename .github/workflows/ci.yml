@@ -32,27 +32,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Every template exists and is non-empty
+      - name: Manifest matches folders
         run: |
           set -euo pipefail
-          for t in landing cloud speedtest blog 503 news forum torrent shop auth; do
-            if [ ! -s "templates/$t/index.html" ]; then
-              echo "::error::missing or empty templates/$t/index.html"
-              exit 1
-            fi
-          done
-          echo "all 10 templates present"
+          python3 - <<'PY'
+          import os, sys
+          root = "templates"
+          dirs = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
+          keys = []
+          for line in open(os.path.join(root, "manifest.tsv"), encoding="utf-8"):
+              line = line.strip()
+              if not line or line.startswith("#"):
+                  continue
+              keys.append(line.split("|", 1)[0].strip())
+          if len(keys) != len(set(keys)):
+              sys.exit("duplicate keys in manifest.tsv")
+          missing_dir = [k for k in keys if k not in dirs]
+          missing_key = [d for d in dirs if d not in keys]
+          if missing_dir:
+              sys.exit(f"manifest keys without folder: {missing_dir}")
+          if missing_key:
+              sys.exit(f"folders without manifest entry: {missing_key}")
+          for d in dirs:
+              p = os.path.join(root, d, "index.html")
+              if not os.path.isfile(p) or os.path.getsize(p) < 200:
+                  sys.exit(f"{p}: missing or too small")
+          print(f"templates ok: {len(keys)}")
+          PY
 
-      - name: Every template is offered by the installer
+      - name: Installer and nodego read the manifest
         run: |
           set -euo pipefail
-          for t in $(ls templates); do
-            if ! grep -q -- "$t" install.sh; then
-              echo "::error::template '$t' is not referenced in install.sh"
-              exit 1
-            fi
+          for f in install.sh nodego.sh; do
+            grep -q 'manifest.tsv' "$f" || { echo "::error::$f does not read templates/manifest.tsv"; exit 1; }
           done
-          echo "installer references every template"
+          echo "manifest wiring ok"
 
       - name: Embedded scripts are valid bash
         run: |

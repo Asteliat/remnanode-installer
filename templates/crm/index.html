@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay CRM — deals</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f7f8fb;color:#161a20;font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0d1016;color:#d5dae1}.top,.panel{background:#131a22!important;border-color:#1f2833!important}tr:hover td{background:#161e27!important}}
+  .top{background:#fff;border-bottom:1px solid #e6e9f0;padding:13px 22px;display:flex;align-items:center;gap:18px}
+  .logo{font-weight:700}
+  .top nav a{color:inherit;text-decoration:none;opacity:.65;font-size:13.5px;margin-right:16px}
+  .top .me{margin-left:auto;font-size:13px;opacity:.6}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 60px}
+  h1{font-size:19px;margin:0 0 4px}
+  .sub{font-size:13px;opacity:.6;margin-bottom:18px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  @media (max-width:860px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .panel{background:#fff;border:1px solid #e6e9f0;border-radius:11px;padding:14px 16px}
+  .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;opacity:.5}
+  .v{font-size:22px;font-weight:600;margin-top:2px;letter-spacing:-.02em}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.5;padding:8px;border-bottom:1px solid #e9ecf3}
+  td{padding:10px 8px;border-bottom:1px solid #f1f3f8}
+  tr:hover td{background:#fafbfe}
+  .stage{font-size:11.5px;padding:2px 8px;border-radius:99px;background:#eef2ff;color:#2545c8}
+  .stage.w{background:#fef3c7;color:#92400e}.stage.g{background:#dcfce7;color:#166534}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">Relay CRM</div>
+  <nav><a href="#">Deals</a><a href="#">Contacts</a><a href="#">Companies</a><a href="#">Reports</a></nav>
+  <div class="me">sales@corvid.example</div>
+</div>
+<div class="wrap">
+  <h1>Pipeline</h1>
+  <div class="sub">Q4 · 18 открытых сделок</div>
+
+  <div class="stats">
+    <div class="panel"><div class="k">Открыто</div><div class="v">$184 200</div></div>
+    <div class="panel"><div class="k">Вероятно</div><div class="v">$62 400</div></div>
+    <div class="panel"><div class="k">В этом месяце</div><div class="v">$21 800</div></div>
+    <div class="panel"><div class="k">Средний цикл</div><div class="v">27 дней</div></div>
+  </div>
+
+  <div class="panel">
+    <table>
+      <tr><th>Сделка</th><th>Компания</th><th>Стадия</th><th class="num">Сумма</th><th>Владелец</th></tr>
+      <tr><td>Расширение кластера</td><td>Northwind</td><td><span class="stage g">переговоры</span></td><td class="num">$48 000</td><td>Дарья К.</td></tr>
+      <tr><td>Аудит инфраструктуры</td><td>Sigma Labs</td><td><span class="stage">оценка</span></td><td class="num">$12 500</td><td>Иван П.</td></tr>
+      <tr><td>Поддержка 12 мес.</td><td>Vela Group</td><td><span class="stage w">ждём ЛПР</span></td><td class="num">$36 000</td><td>Никита В.</td></tr>
+      <tr><td>Миграция стенда</td><td>Orbit</td><td><span class="stage g">переговоры</span></td><td class="num">$9 800</td><td>Дарья К.</td></tr>
+      <tr><td>Резервное копирование</td><td>Kedr</td><td><span class="stage">оценка</span></td><td class="num">$4 200</td><td>Иван П.</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>

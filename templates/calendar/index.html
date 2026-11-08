@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar — October</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f7f8fa;color:#171a1f;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0d1015;color:#d5d9e0}.top,.grid,.side{background:#131922!important;border-color:#1f2733!important}.cell{border-color:#1f2733!important}}
+  .top{background:#fff;border-bottom:1px solid #e6e8ee;padding:12px 20px;display:flex;align-items:center;gap:14px}
+  .logo{font-weight:700}
+  .top .nav{display:flex;gap:6px}
+  .top .nav button{border:1px solid #e2e6ee;background:transparent;color:inherit;border-radius:7px;padding:5px 10px;font:inherit;cursor:pointer}
+  .top h1{font-size:16px;margin:0 0 0 6px}
+  .top .me{margin-left:auto;font-size:13px;opacity:.6}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 18px 60px;display:grid;grid-template-columns:1fr 260px;gap:18px}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}.side{display:none}}
+  .grid{background:#fff;border:1px solid #e6e8ee;border-radius:12px;overflow:hidden}
+  .dow{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.45;padding:10px 0;border-bottom:1px solid #eef0f4}
+  .dow span{text-align:center}
+  .cells{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:96px}
+  .cell{border-right:1px solid #eef0f4;border-bottom:1px solid #eef0f4;padding:6px 7px;font-size:12.5px;position:relative}
+  .cell:nth-child(7n){border-right:0}
+  .cell .d{opacity:.6}
+  .cell.out .d{opacity:.25}
+  .cell.today{background:#f2f6ff}
+  .cell.today .d{color:#2545c8;font-weight:700;opacity:1}
+  .ev{margin-top:4px;font-size:11px;padding:2px 6px;border-radius:5px;background:#e0e9ff;color:#1e3fae;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ev.b{background:#ffe4e6;color:#9f1239}.ev.c{background:#dcfce7;color:#166534}
+  .side{background:#fff;border:1px solid #e6e8ee;border-radius:12px;padding:14px 16px;height:max-content}
+  .side h4{margin:0 0 10px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.45}
+  .side .it{padding:8px 0;border-bottom:1px solid #f1f3f7;font-size:13px}
+  .side .it:last-child{border-bottom:0}
+  .side .it b{display:block;font-weight:600}
+  .side .it span{opacity:.55;font-size:12px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">Calendar</div>
+  <div class="nav"><button type="button">←</button><button type="button">→</button></div>
+  <h1>October</h1>
+  <div class="me">week 41 · 4 events today</div>
+</div>
+<div class="wrap">
+  <div class="grid">
+    <div class="dow"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+    <div class="cells">
+      <div class="cell out"><div class="d">29</div></div>
+      <div class="cell out"><div class="d">30</div></div>
+      <div class="cell"><div class="d">1</div></div>
+      <div class="cell"><div class="d">2</div><div class="ev">Standup 10:00</div></div>
+      <div class="cell"><div class="d">3</div></div>
+      <div class="cell"><div class="d">4</div></div>
+      <div class="cell"><div class="d">5</div></div>
+
+      <div class="cell"><div class="d">6</div></div>
+      <div class="cell today"><div class="d">7</div><div class="ev">Review 11:30</div><div class="ev b">Postmortem 15:00</div></div>
+      <div class="cell"><div class="d">8</div></div>
+      <div class="cell"><div class="d">9</div><div class="ev c">Release 18:00</div></div>
+      <div class="cell"><div class="d">10</div></div>
+      <div class="cell"><div class="d">11</div></div>
+      <div class="cell"><div class="d">12</div></div>
+
+      <div class="cell"><div class="d">13</div><div class="ev">Planning 10:00</div></div>
+      <div class="cell"><div class="d">14</div></div>
+      <div class="cell"><div class="d">15</div></div>
+      <div class="cell"><div class="d">16</div></div>
+      <div class="cell"><div class="d">17</div></div>
+      <div class="cell"><div class="d">18</div></div>
+      <div class="cell"><div class="d">19</div></div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <h4>Today</h4>
+    <div class="it"><b>11:30 — Architecture review</b><span>Weekly · room 2</span></div>
+    <div class="it"><b>15:00 — Postmortem</b><span>Incident 4412</span></div>
+    <div class="it"><b>18:00 — Release window</b><span>gateway v2.4.1</span></div>
+  </aside>
+</div>
+</body>
+</html>

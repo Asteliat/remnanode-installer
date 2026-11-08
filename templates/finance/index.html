@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anchor Bank — интернет-банк</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f5f7fa;color:#141a22;font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0c1015;color:#d6dbe2}.top,.card{background:#121821!important;border-color:#1e2732!important}}
+  .top{background:#fff;border-bottom:1px solid #e5e9ef;padding:13px 22px;display:flex;align-items:center;gap:18px}
+  .logo{font-weight:700;color:#123a7a}
+  .top nav a{color:inherit;text-decoration:none;font-size:13.5px;opacity:.6;margin-right:14px}
+  .top .me{margin-left:auto;font-size:13px;opacity:.55}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 20px 70px}
+  .row{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:16px}
+  @media (max-width:860px){.row{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid #e5e9ef;border-radius:13px;padding:18px 20px}
+  .card .k{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;opacity:.5}
+  .balance{font-size:31px;font-weight:700;letter-spacing:-.02em;margin:6px 0 2px}
+  .acc{font-size:13px;opacity:.55}
+  .chart{display:flex;align-items:flex-end;gap:3px;height:74px;margin-top:16px}
+  .chart i{flex:1;background:#bfd3f7;border-radius:2px}
+  .actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .actions button{padding:9px 14px;border:1px solid #dbe2ec;background:transparent;color:inherit;border-radius:9px;font:600 13px/1 inherit;cursor:pointer}
+  .actions button.primary{background:#123a7a;color:#fff;border:0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.5;padding:7px 8px;border-bottom:1px solid #e8ecf2}
+  td{padding:10px 8px;border-bottom:1px solid #f1f4f8}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .in{color:#15803d}.out{color:#b91c1c}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">Anchor Bank</div>
+  <nav><a href="#">Счета</a><a href="#">Платежи</a><a href="#">Карты</a></nav>
+  <div class="me">А. Мере · выход</div>
+</div>
+<div class="wrap">
+  <div class="row">
+    <div class="card">
+      <div class="k">Расчётный счёт</div>
+      <div class="balance">412 380,15 ₽</div>
+      <div class="acc">•• 4412 · открыт 12.03.2019</div>
+      <div class="chart">
+        <i style="height:52%"></i><i style="height:58%"></i><i style="height:48%"></i><i style="height:64%"></i>
+        <i style="height:60%"></i><i style="height:72%"></i><i style="height:68%"></i><i style="height:80%"></i>
+        <i style="height:74%"></i><i style="height:88%"></i><i style="height:84%"></i><i style="height:92%"></i>
+      </div>
+      <div class="actions">
+        <button class="primary" type="button">Перевести</button>
+        <button type="button">Выписка</button>
+        <button type="button">Реквизиты</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k">Ближайшие платежи</div>
+      <table>
+        <tr><td>Аренда офиса</td><td class="num">120 000 ₽</td></tr>
+        <tr><td>Налог, взносы</td><td class="num">48 200 ₽</td></tr>
+        <tr><td>Хостинг</td><td class="num">6 400 ₽</td></tr>
+      </table>
+      <div class="k" style="margin-top:16px">Всего в этом месяце</div>
+      <div style="font-size:20px;font-weight:600;margin-top:2px">174 600 ₽</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="k" style="margin-bottom:8px">Последние операции</div>
+    <table>
+      <tr><th>Дата</th><th>Назначение</th><th class="num">Сумма</th></tr>
+      <tr><td>08.11</td><td>Оплата хостинга</td><td class="num out">−6 400 ₽</td></tr>
+      <tr><td>07.11</td><td>Поступление от Northwind</td><td class="num in">+184 000 ₽</td></tr>
+      <tr><td>06.11</td><td>Комиссия банка</td><td class="num out">−320 ₽</td></tr>
+      <tr><td>05.11</td><td>Оператор связи</td><td class="num out">−1 900 ₽</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>

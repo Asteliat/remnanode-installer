@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Квадрат — недвижимость</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f8f9fa;color:#16181c;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0d1013;color:#d5d9de}.nav,.obj,.filters{background:#131920!important;border-color:#1f2731!important}}
+  .nav{padding:13px 22px;display:flex;align-items:center;gap:18px;background:#fff;border-bottom:1px solid #e7eaee}
+  .logo{font-weight:700}
+  .nav a{color:inherit;text-decoration:none;font-size:14px;opacity:.62}
+  .nav .me{margin-left:auto;font-size:13px;opacity:.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 70px;display:grid;grid-template-columns:240px 1fr;gap:20px}
+  @media (max-width:880px){.wrap{grid-template-columns:1fr}}
+  .filters{background:#fff;border:1px solid #e7eaee;border-radius:12px;padding:15px 16px;height:max-content;font-size:13.5px}
+  .filters h3{margin:0 0 10px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;opacity:.5}
+  .filters .f{margin-bottom:12px}
+  .filters input,.filters select{width:100%;padding:8px 10px;border:1px solid #e0e5ec;border-radius:8px;font:inherit;background:transparent;color:inherit}
+  .filters label{display:block;font-size:12px;opacity:.6;margin-bottom:3px}
+  h1{font-size:20px;margin:0 0 12px}
+  .obj{background:#fff;border:1px solid #e7eaee;border-radius:12px;overflow:hidden;margin-bottom:10px;display:flex}
+  .obj .img{width:180px;min-height:130px;background:linear-gradient(150deg,#dbe3ec,#b9c6d4);flex-shrink:0}
+  .obj:nth-child(3) .img{background:linear-gradient(150deg,#e3dbec,#c6b9d4)}
+  .obj:nth-child(4) .img{background:linear-gradient(150deg,#dbece3,#b9d4c6)}
+  .obj .body{padding:13px 16px}
+  .obj .price{font-size:18px;font-weight:700;letter-spacing:-.02em}
+  .obj .t{font-weight:600;margin-top:2px}
+  .obj .d{font-size:13px;opacity:.6}
+  .obj .tags{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap;font-size:11.5px;opacity:.75}
+  .obj .tags span{background:#f0f3f7;border-radius:5px;padding:1px 7px}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="logo">Квадрат</div>
+  <a href="#">Купить</a><a href="#">Снять</a><a href="#">Новостройки</a>
+  <div class="me">14 объявлений в избранном</div>
+</div>
+<div class="wrap">
+  <aside class="filters">
+    <h3>Фильтры</h3>
+    <div class="f"><label for="c">Комнат</label><select id="c"><option>Любое</option><option>1</option><option>2</option><option>3+</option></select></div>
+    <div class="f"><label for="p">Цена до, млн ₽</label><input id="p" value="14"></div>
+    <div class="f"><label for="a">Площадь от, м²</label><input id="a" value="48"></div>
+    <div class="f"><label for="d">Район</label><select id="d"><option>Любой</option><option>Центр</option><option>Север</option></select></div>
+  </aside>
+  <main>
+    <h1>Квартиры в продаже · 128 объектов</h1>
+    <div class="obj">
+      <div class="img"></div>
+      <div class="body">
+        <div class="price">12 400 000 ₽</div>
+        <div class="t">2 комнаты · 62 м² · 7/12 этаж</div>
+        <div class="d">ул. Северная, 18 · кирпичный дом, 2014</div>
+        <div class="tags"><span>балкон</span><span>ремонт 2023</span><span>рядом парк</span></div>
+      </div>
+    </div>
+    <div class="obj">
+      <div class="img"></div>
+      <div class="body">
+        <div class="price">8 650 000 ₽</div>
+        <div class="t">1 комната · 41 м² · 4/9 этаж</div>
+        <div class="d">ул. Тихая, 4 · панельный, 2008</div>
+        <div class="tags"><span>свободна</span><span>метро 12 мин</span></div>
+      </div>
+    </div>
+    <div class="obj">
+      <div class="img"></div>
+      <div class="body">
+        <div class="price">18 900 000 ₽</div>
+        <div class="t">3 комнаты · 88 м² · 5/8 этаж</div>
+        <div class="d">наб. Речная, 12 · монолит, 2019</div>
+        <div class="tags"><span>вид на воду</span><span>паркинг</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Гараж — автозапчасти</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f7f8f9;color:#161a1f;font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0d1013;color:#d5d9de}.top,.part,.side{background:#131920!important;border-color:#1f2731!important}}
+  .top{background:#fff;border-bottom:1px solid #e6eaef;padding:12px 20px;display:flex;align-items:center;gap:16px}
+  .logo{font-weight:800;letter-spacing:-.02em}
+  .logo i{color:#dc2626;font-style:normal}
+  .top input{flex:1;max-width:420px;padding:9px 12px;border:1px solid #e0e5ec;border-radius:9px;font:inherit;background:transparent;color:inherit}
+  .top .me{margin-left:auto;font-size:13px;opacity:.55}
+  .wrap{max-width:1060px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1fr 250px;gap:18px}
+  @media (max-width:860px){.wrap{grid-template-columns:1fr}.side{display:none}}
+  h1{font-size:19px;margin:0 0 12px}
+  .part{background:#fff;border:1px solid #e6eaef;border-radius:11px;padding:13px 15px;margin-bottom:9px;display:flex;gap:14px;align-items:center}
+  .ico{width:52px;height:52px;border-radius:9px;background:#f1f4f8;display:grid;place-items:center;font-size:11px;color:#64748b;flex-shrink:0}
+  .part .t{font-weight:600;font-size:14px}
+  .part .d{font-size:12.5px;opacity:.6}
+  .part .p{margin-left:auto;text-align:right;flex-shrink:0}
+  .part .p b{font-size:16px}
+  .part .p span{display:block;font-size:11.5px;color:#16a34a}
+  .side{background:#fff;border:1px solid #e6eaef;border-radius:12px;padding:14px 16px;height:max-content;font-size:13px}
+  .side h4{margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;opacity:.45}
+  .side .it{padding:6px 0;border-bottom:1px solid #f1f3f7;opacity:.75}
+  .side .it:last-child{border-bottom:0}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">Гараж<i>.</i></div>
+  <input placeholder="Поиск по номеру детали или названию" aria-label="search">
+  <div class="me">корзина · 2</div>
+</div>
+<div class="wrap">
+  <main>
+    <h1>Тормозная система · для вашего авто</h1>
+    <div class="part">
+      <div class="ico">IMG</div>
+      <div><div class="t">Колодки передние, комплект</div><div class="d">Артикул BP-4412 · в наличии 18 шт</div></div>
+      <div class="p"><b>3 240 ₽</b><span>доставка завтра</span></div>
+    </div>
+    <div class="part">
+      <div class="ico">IMG</div>
+      <div><div class="t">Диск тормозной, вентилируемый</div><div class="d">Артикул BD-7781 · в наличии 6 шт</div></div>
+      <div class="p"><b>4 890 ₽</b><span>доставка завтра</span></div>
+    </div>
+    <div class="part">
+      <div class="ico">IMG</div>
+      <div><div class="t">Жидкость тормозная DOT-4, 1 л</div><div class="d">Артикул FL-0042 · в наличии 40 шт</div></div>
+      <div class="p"><b>740 ₽</b><span>самовывоз сегодня</span></div>
+    </div>
+    <div class="part">
+      <div class="ico">IMG</div>
+      <div><div class="t">Шланг тормозной, передний левый</div><div class="d">Артикул HS-1190 · под заказ 2 дня</div></div>
+      <div class="p"><b>1 460 ₽</b><span>под заказ</span></div>
+    </div>
+  </main>
+  <aside class="side">
+    <h4>Ваш автомобиль</h4>
+    <div class="it">Седан · 2017 · 1.6</div>
+    <div class="it">VIN сохранён</div>
+    <h4 style="margin-top:14px">Помощь</h4>
+    <div class="it">Подбор по VIN</div>
+    <div class="it">Сроки доставки</div>
+    <div class="it">Возврат в 14 дней</div>
+  </aside>
+</div>
+</body>
+</html>

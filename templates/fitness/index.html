@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Форма — тренировки</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0f1113;color:#e9ebee;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .nav{padding:16px 22px;display:flex;align-items:center;gap:20px;border-bottom:1px solid #1e2227}
+  .logo{font-weight:800;letter-spacing:-.02em;text-transform:uppercase;font-size:15px}
+  .logo i{color:#c6f24e;font-style:normal}
+  .nav a{color:#9aa2ac;text-decoration:none;font-size:14px}
+  .nav .me{margin-left:auto;font-size:13px;color:#7c848e}
+  .hero{max-width:980px;margin:0 auto;padding:60px 22px 36px}
+  .hero .kick{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#c6f24e}
+  .hero h1{font-size:clamp(30px,5.4vw,50px);line-height:1.05;letter-spacing:-.03em;margin:12px 0 16px;text-transform:uppercase}
+  .hero p{max-width:48ch;color:#a4acb6;margin:0 0 22px}
+  .hero a{display:inline-block;padding:12px 20px;border-radius:10px;background:#c6f24e;color:#12150a;font-weight:700;text-decoration:none}
+  .plans{max-width:980px;margin:0 auto;padding:10px 22px 80px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .plan{background:#161a1f;border:1px solid #222831;border-radius:14px;padding:18px}
+  .plan .t{font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:14px}
+  .plan .p{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:8px 0 12px}
+  .plan ul{margin:0;padding-left:18px;color:#a4acb6;font-size:13.5px}
+  .plan li{margin-bottom:5px}
+  .plan.hot{border-color:#c6f24e}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="logo">Форма<i>.</i></div>
+  <a href="#">Тренировки</a><a href="#">Тренеры</a><a href="#">Расписание</a>
+  <div class="me">зал открыт до 23:00</div>
+</div>
+<div class="hero">
+  <div class="kick">Сила · выносливость · техника</div>
+  <h1>Тренируйся<br>без лишнего</h1>
+  <p>Групповые занятия малыми группами и персональные тренировки.
+     Пробное занятие — бесплатно.</p>
+  <a href="#">Записаться на пробное</a>
+</div>
+<div class="plans">
+  <div class="plan"><div class="t">Разовое</div><div class="p">900 ₽</div><ul><li>Любая групповая тренировка</li><li>Душ и шкафчик</li></ul></div>
+  <div class="plan hot"><div class="t">8 занятий</div><div class="p">6 400 ₽</div><ul><li>−20% от разового</li><li>Действует 2 месяца</li><li>Заморозка 1 раз</li></ul></div>
+  <div class="plan"><div class="t">Безлимит</div><div class="p">9 800 ₽/мес</div><ul><li>Все групповые</li><li>Сауна</li><li>Гостевой визит</li></ul></div>
+</div>
+</body>
+</html>

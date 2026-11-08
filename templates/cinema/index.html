@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kino — смотреть онлайн</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b0c0f;color:#eceef2;font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .top{padding:14px 22px;display:flex;align-items:center;gap:20px;border-bottom:1px solid #1c1e24}
+  .logo{font-weight:800;letter-spacing:-.02em;font-size:17px}
+  .logo i{color:#f59e0b;font-style:normal}
+  .top nav a{color:#98a0ad;text-decoration:none;font-size:14px;margin-right:16px}
+  .top .me{margin-left:auto;font-size:13px;color:#7b8493}
+  .hero{margin:0;padding:56px 22px;background:linear-gradient(120deg,#1b1f2b,#0b0c0f 70%)}
+  .hero .in{max-width:1100px;margin:0 auto}
+  .hero .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#f59e0b}
+  .hero h1{font-size:clamp(26px,4.4vw,40px);margin:8px 0 10px;letter-spacing:-.02em}
+  .hero p{max-width:58ch;color:#a7aeba;margin:0 0 18px}
+  .hero button{padding:11px 20px;border:0;border-radius:9px;background:#f59e0b;color:#181206;font:700 14px/1 inherit;cursor:pointer;margin-right:10px}
+  .hero .ghost{background:transparent;color:#d5dae3;border:1px solid #333844}
+  .row{max-width:1100px;margin:0 auto;padding:26px 22px 0}
+  .row h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#8b93a1;margin:0 0 12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .film .poster{aspect-ratio:2/3;border-radius:10px;background:linear-gradient(160deg,#2a3142,#151a24);margin-bottom:7px;position:relative}
+  .film .poster span{position:absolute;left:8px;top:8px;font-size:11px;background:#f59e0b;color:#181206;font-weight:700;padding:1px 6px;border-radius:4px}
+  .film .t{font-size:13px;font-weight:600;line-height:1.3}
+  .film .y{font-size:12px;color:#7b8493}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">Kino<i>.</i></div>
+  <nav><a href="#">Фильмы</a><a href="#">Сериалы</a><a href="#">Подборки</a></nav>
+  <div class="me">профиль · выход</div>
+</div>
+<div class="hero">
+  <div class="in">
+    <div class="tag">Премьера недели</div>
+    <h1>Тихий север</h1>
+    <p>Драма о бригаде, которая зимой держит связь на краю страны.
+       Медленное кино про людей и провода.</p>
+    <button type="button">▶ Смотреть</button>
+    <button class="ghost" type="button">В список</button>
+  </div>
+</div>
+<div class="row">
+  <h2>Популярное</h2>
+  <div class="grid">
+    <div class="film"><div class="poster"><span>HD</span></div><div class="t">Северный ветер</div><div class="y">2025 · драма</div></div>
+    <div class="film"><div class="poster"><span>4K</span></div><div class="t">Полёт над городом</div><div class="y">2024 · документальный</div></div>
+    <div class="film"><div class="poster"></div><div class="t">Три станции</div><div class="y">2023 · триллер</div></div>
+    <div class="film"><div class="poster"></div><div class="t">Долгая смена</div><div class="y">2025 · драма</div></div>
+    <div class="film"><div class="poster"></div><div class="t">Провод</div><div class="y">2022 · короткий метр</div></div>
+    <div class="film"><div class="poster"></div><div class="t">Ночная смена</div><div class="y">2024 · комедия</div></div>
+  </div>
+</div>
+</body>
+</html>

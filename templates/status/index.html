@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Status — meridian</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f7f8fa;color:#191c21;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0e1116;color:#d5d9e0}.box{background:#141a21!important;border-color:#202833!important}.bar{background:#12171f!important}}
+  .top{padding:14px 22px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #e6e8ee;background:#fff}
+  .logo{font-weight:700}
+  .top .r{margin-left:auto;font-size:13.5px;opacity:.6}
+  .wrap{max-width:820px;margin:0 auto;padding:26px 20px 70px}
+  .banner{background:#e9f9ef;border:1px solid #b9ebc9;color:#166534;border-radius:12px;padding:16px 20px;font-weight:600;margin-bottom:22px;display:flex;align-items:center;gap:10px}
+  .dot{width:11px;height:11px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.18)}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{font-size:13.5px;opacity:.6;margin-bottom:22px}
+  .box{background:#fff;border:1px solid #e6e8ee;border-radius:12px;padding:16px 18px;margin-bottom:16px}
+  .svc{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #eef0f4;font-size:14.5px}
+  .svc:last-child{border-bottom:0}
+  .svc .st{margin-left:auto;font-size:12.5px;font-weight:600;color:#166534}
+  .bars{display:flex;gap:2px;margin-top:10px}
+  .bars i{flex:1;height:26px;border-radius:2px;background:#c9f0d7}
+  .bars i.warn{background:#fde68a}
+  .legend{display:flex;gap:16px;font-size:12px;opacity:.55;margin-top:8px}
+  .inc{font-size:14px;padding:10px 0;border-bottom:1px solid #eef0f4}
+  .inc:last-child{border-bottom:0}
+  .inc .d{font-size:12.5px;opacity:.55}
+</style>
+</head>
+<body>
+<div class="top"><div class="logo">meridian</div><div class="r">status.meridian.example</div></div>
+<div class="wrap">
+  <div class="banner"><span class="dot"></span> All systems operational</div>
+  <h1>System status</h1>
+  <div class="sub">Updated every 60 seconds · last check 12s ago</div>
+
+  <div class="box">
+    <div class="svc">API <span class="st">operational</span></div>
+    <div class="svc">Dashboard <span class="st">operational</span></div>
+    <div class="svc">Webhooks <span class="st">operational</span></div>
+    <div class="svc">Subscription delivery <span class="st">operational</span></div>
+  </div>
+
+  <div class="box">
+    <div style="font-size:13px;opacity:.6;margin-bottom:4px">API · last 30 days</div>
+    <div class="bars">
+      <i></i><i></i><i></i><i></i><i></i><i class="warn"></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div class="legend"><span>30 days ago</span><span style="margin-left:auto">today</span></div>
+  </div>
+
+  <div class="box">
+    <div style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.5;margin-bottom:6px">Past incidents</div>
+    <div class="inc">Elevated webhook retries <div class="d">Oct 28 · resolved in 22 min</div></div>
+    <div class="inc">Scheduled maintenance <div class="d">Oct 12 · completed</div></div>
+  </div>
+</div>
+</body>
+</html>

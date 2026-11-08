@@ -25,19 +25,30 @@ SELFSTEAL_DIR="/opt/selfsteal"
 CADDYFILE="$SELFSTEAL_DIR/Caddyfile"
 UPDATE_LOG="/var/log/remnawave-update.log"
 
-TEMPLATE_KEYS=(landing cloud speedtest blog 503 news forum torrent shop auth)
-TEMPLATE_DESCS=(
-    "лендинг — визитка небольшой компании"
-    "облако — интерфейс файлового хранилища"
-    "спидтест — замер скорости соединения"
-    "блог — статья с текстом"
-    "503 — «сервис временно недоступен»"
-    "новости — лента новостей с сайдбаром"
-    "форум — темы и обсуждения"
-    "торрент — таблица раздач"
-    "магазин — карточки товаров"
-    "вход в панель — форма логина"
-)
+TEMPLATE_KEYS=()
+TEMPLATE_DESCS=()
+
+load_templates() { # список сайтов из templates/manifest.tsv
+    TEMPLATE_KEYS=()
+    TEMPLATE_DESCS=()
+    local tmp k d
+    tmp="$(mktemp)"
+    if curl -fsSL --max-time 15 "$TEMPLATES_BASE/manifest.tsv" -o "$tmp" 2>/dev/null; then
+        while IFS='|' read -r k d; do
+            k="${k%$'\r'}"
+            [ -z "$k" ] && continue
+            case "$k" in \#*) continue ;; esac
+            TEMPLATE_KEYS+=("$k")
+            TEMPLATE_DESCS+=("${d:-$k}")
+        done < "$tmp"
+    fi
+    rm -f "$tmp"
+    if [ "${#TEMPLATE_KEYS[@]}" -eq 0 ]; then
+        warn "не удалось получить список шаблонов (нет сети?)"
+        TEMPLATE_KEYS=(landing)
+        TEMPLATE_DESCS=("лендинг — визитка небольшой компании")
+    fi
+}
 
 if [ -t 1 ]; then
     C_RED=$'\033[1;31m'; C_GRN=$'\033[1;32m'; C_YEL=$'\033[1;33m'
@@ -310,10 +321,11 @@ change_preset() {
         err "selfsteal не установлен"
         pause; return
     fi
+    load_templates
     local i choice key tmp
     say "  ${C_BLD}Доступные сайты (введите номер):${C_OFF}"
     for i in "${!TEMPLATE_KEYS[@]}"; do
-        printf "    %2d) %-10s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
+        printf "    %2d) %-12s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
     done
     say ""
     read -r -p "$(echo -e "${C_BLD}Выбор [1-${#TEMPLATE_KEYS[@]}, Enter — отмена]${C_OFF}: ")" choice || true
@@ -666,6 +678,7 @@ cli() {
         net)     load_conf; shift; net_show ;;
         preset)
             load_conf
+            load_templates
             if [ $# -lt 2 ]; then
                 err "укажите имя шаблона: ${TEMPLATE_KEYS[*]}"
                 exit 1

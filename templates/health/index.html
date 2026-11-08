@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Клиника — медицинский центр</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f7fafb;color:#152029;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0c1014;color:#d5dde3}.nav,.card{background:#121920!important;border-color:#1e2833!important}}
+  .nav{padding:14px 22px;display:flex;align-items:center;gap:18px;background:#fff;border-bottom:1px solid #e6edf1}
+  .logo{font-weight:700;color:#0e7490}
+  .nav a{color:inherit;text-decoration:none;font-size:14px;opacity:.62}
+  .nav .cta{margin-left:auto;padding:9px 15px;border-radius:9px;background:#0e7490;color:#fff;text-decoration:none;font-size:13.5px;opacity:1;font-weight:600}
+  .hero{max-width:1000px;margin:0 auto;padding:44px 22px 26px}
+  .hero h1{font-size:clamp(25px,4.2vw,36px);margin:0 0 10px;letter-spacing:-.02em}
+  .hero p{max-width:56ch;margin:0;opacity:.7}
+  .grid{max-width:1000px;margin:0 auto;padding:8px 22px 30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .card{background:#fff;border:1px solid #e6edf1;border-radius:12px;padding:15px 17px}
+  .card .t{font-weight:600;font-size:14.5px}
+  .card .d{font-size:13px;opacity:.6;margin-top:2px}
+  .card .p{margin-top:8px;font-size:13px;color:#0e7490;font-weight:600}
+  .info{max-width:1000px;margin:0 auto;padding:0 22px 70px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:760px){.info{grid-template-columns:1fr}}
+  .info .card{font-size:13.5px}
+  .info b{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.45;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="logo">Клиника «Ольха»</div>
+  <a href="#">Направления</a><a href="#">Врачи</a><a href="#">Анализы</a>
+  <a class="cta" href="#">Записаться</a>
+</div>
+<div class="hero">
+  <h1>Многопрофильный центр в центре города</h1>
+  <p>Терапия, диагностика, узкие специалисты. Приём по записи, результаты анализов —
+     в личном кабинете.</p>
+</div>
+<div class="grid">
+  <div class="card"><div class="t">Терапия</div><div class="d">Первичный приём, ведение</div><div class="p">от 2 400 ₽</div></div>
+  <div class="card"><div class="t">УЗИ</div><div class="d">Экспертный класс, 30 минут</div><div class="p">от 3 100 ₽</div></div>
+  <div class="card"><div class="t">Кардиология</div><div class="d">ЭКГ, холтер, консультация</div><div class="p">от 3 800 ₽</div></div>
+  <div class="card"><div class="t">Анализы</div><div class="d">Своя лаборатория, 1 день</div><div class="p">от 450 ₽</div></div>
+</div>
+<div class="info">
+  <div class="card"><b>Адрес</b>ул. Садовая, 24 · 3 этаж</div>
+  <div class="card"><b>Часы работы</b>Пн–Пт 08:00–20:00 · Сб 09:00–15:00</div>
+  <div class="card"><b>Телефон</b>+7 800 555-01-02</div>
+  <div class="card"><b>Лицензия</b>ЛО-77-01-000000 от 12.03.2019</div>
+</div>
+</body>
+</html>

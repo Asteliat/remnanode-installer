@@ -404,21 +404,32 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
 
     say ""
     say "  ${C_BLD}Доступные сайты-заглушки (введите номер):${C_OFF}"
-    TEMPLATE_KEYS=(landing cloud speedtest blog 503 news forum torrent shop auth)
-    TEMPLATE_DESCS=(
-        "лендинг — визитка небольшой компании"
-        "облако — интерфейс файлового хранилища"
-        "спидтест — замер скорости соединения"
-        "блог — статья с текстом"
-        "503 — «сервис временно недоступен»"
-        "новости — лента новостей с сайдбаром"
-        "форум — темы и обсуждения"
-        "торрент — таблица раздач"
-        "магазин — карточки товаров"
-        "вход в панель — форма логина"
-    )
+    # Список берём из templates/manifest.tsv — тогда новый шаблон не требует
+    # правок установщика (локальная копия или raw из репозитория).
+    TEMPLATE_KEYS=()
+    TEMPLATE_DESCS=()
+    _mf="$(mktemp)"
+    if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/templates/manifest.tsv" ]; then
+        cp "$SCRIPT_DIR/templates/manifest.tsv" "$_mf"
+    elif ! fetch "$TEMPLATES_BASE/manifest.tsv" "$_mf" 2>/dev/null; then
+        warn "не удалось получить список шаблонов — доступен только landing"
+        printf 'landing|лендинг — визитка небольшой компании\n' > "$_mf"
+    fi
+    while IFS='|' read -r _tk _td; do
+        _tk="${_tk%$'\r'}"
+        [ -z "$_tk" ] && continue
+        case "$_tk" in \#*) continue ;; esac
+        TEMPLATE_KEYS+=("$_tk")
+        TEMPLATE_DESCS+=("${_td:-$_tk}")
+    done < "$_mf"
+    rm -f "$_mf"
+    unset _tk _td _mf 2>/dev/null || true
+    if [ "${#TEMPLATE_KEYS[@]}" -eq 0 ]; then
+        TEMPLATE_KEYS=(landing)
+        TEMPLATE_DESCS=("лендинг — визитка небольшой компании")
+    fi
     for i in "${!TEMPLATE_KEYS[@]}"; do
-        printf "    %d) %-10s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
+        printf "    %2d) %-12s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
     done
 
     if [ "$ASSUME_YES" = false ]; then

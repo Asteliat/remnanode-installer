@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hall — галерея</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f7f6f3;color:#1c1a16;font:15px/1.6 Georgia,"Iowan Old Style",serif}
+  @media (prefers-color-scheme:dark){body{background:#0e0d0b;color:#ded9d0}}
+  header{max-width:1000px;margin:0 auto;padding:44px 22px 20px;display:flex;align-items:flex-end;gap:20px}
+  header h1{margin:0;font-size:30px;letter-spacing:-.02em;font-weight:600}
+  header p{margin:0 0 4px;font-size:14px;opacity:.6;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  header nav{margin-left:auto;font:13px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  header nav a{color:inherit;text-decoration:none;opacity:.6;margin-left:14px}
+  .grid{max-width:1000px;margin:0 auto;padding:10px 22px 80px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media (max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}
+  figure{margin:0}
+  .img{aspect-ratio:4/5;border-radius:4px;background:linear-gradient(150deg,#d9d3c6,#b9b1a0)}
+  figure:nth-child(2) .img{background:linear-gradient(150deg,#cfd8d3,#a8b8b1)}
+  figure:nth-child(3) .img{background:linear-gradient(150deg,#ddd2d8,#b8a7b2)}
+  figure:nth-child(4) .img{background:linear-gradient(150deg,#e0d9c4,#bfb497)}
+  figure:nth-child(5) .img{background:linear-gradient(150deg,#c9d4de,#9fb2c2)}
+  figure:nth-child(6) .img{background:linear-gradient(150deg,#dedad2,#b5afa3)}
+  figcaption{font:12.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;opacity:.6;margin-top:7px}
+  figcaption b{display:block;font-weight:600;opacity:1;color:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Зал</h1><p>Выставка «Тихие вещи», октябрь — ноябрь</p></div>
+  <nav><a href="#">О проекте</a><a href="#">Художники</a><a href="#">Контакты</a></nav>
+</header>
+<div class="grid">
+  <figure><div class="img"></div><figcaption><b>Стол, 2024</b>холст, масло</figcaption></figure>
+  <figure><div class="img"></div><figcaption><b>Окно, 2023</b>бумага, уголь</figcaption></figure>
+  <figure><div class="img"></div><figcaption><b>Ночь, 2024</b>холст, акрил</figcaption></figure>
+  <figure><div class="img"></div><figcaption><b>Провод, 2022</b>дерево, металл</figcaption></figure>
+  <figure><div class="img"></div><figcaption><b>Утро, 2025</b>холст, масло</figcaption></figure>
+  <figure><div class="img"></div><figcaption><b>Снег, 2023</b>бумага, гуашь</figcaption></figure>
+</div>
+</body>
+</html>

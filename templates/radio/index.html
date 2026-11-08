@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Радио — эфир</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:#101215;color:#e8e9ec;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:880px;margin:0 auto;padding:40px 20px 70px}
+  .head{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .logo{font-weight:700;letter-spacing:.02em}
+  .live{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#f87171}
+  .dot{width:8px;height:8px;border-radius:50%;background:#f87171;animation:p 1.6s infinite}
+  @keyframes p{50%{opacity:.25}}
+  .player{background:#171a1f;border:1px solid #232730;border-radius:16px;padding:22px 24px;display:flex;gap:22px;align-items:center;margin-bottom:22px}
+  .art{width:96px;height:96px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);flex-shrink:0}
+  .player h1{margin:0 0 4px;font-size:20px}
+  .player p{margin:0;font-size:13.5px;color:#9aa3b2}
+  .ctrl{margin-left:auto;display:flex;gap:10px}
+  .ctrl button{width:44px;height:44px;border-radius:50%;border:1px solid #2b3140;background:#1d222a;color:#e8e9ec;font-size:14px;cursor:pointer}
+  .ctrl button.main{background:#e8e9ec;color:#101215;border:0;width:52px;height:52px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .ch{background:#171a1f;border:1px solid #232730;border-radius:12px;padding:14px 16px}
+  .ch .n{font-weight:600;font-size:14.5px}
+  .ch .d{font-size:12.5px;color:#8f98a6;margin-top:2px}
+  .ch .now{margin-top:8px;font-size:12px;color:#7ee2a8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><div class="logo">Эфир</div><div class="live"><span class="dot"></span> в прямом эфире</div></div>
+
+  <div class="player">
+    <div class="art"></div>
+    <div><h1>Ночная волна</h1><p>Ambient · сейчас играет «Cold Harbour» — Vela</p></div>
+    <div class="ctrl"><button type="button">⏮</button><button class="main" type="button">▶</button><button type="button">⏭</button></div>
+  </div>
+
+  <div class="grid">
+    <div class="ch"><div class="n">Эфир 1 · Ночная волна</div><div class="d">Ambient, downtempo</div><div class="now">▶ Cold Harbour — Vela</div></div>
+    <div class="ch"><div class="n">Эфир 2 · Провод</div><div class="d">Техно, 124 bpm</div><div class="now">▶ Drift — Orbis</div></div>
+    <div class="ch"><div class="n">Эфир 3 · Читальня</div><div class="d">Аудиокниги</div><div class="now">▶ Глава 7 — «Тихий океан»</div></div>
+    <div class="ch"><div class="n">Эфир 4 · Новости</div><div class="d">Каждый час</div><div class="now">▶ выпуск 18:00</div></div>
+  </div>
+</div>
+</body>
+</html>

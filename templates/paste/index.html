@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>paste.dev — share text</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0f1115;color:#d7dbe2;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0f1115}}
+  .top{padding:14px 22px;display:flex;align-items:center;gap:18px;border-bottom:1px solid #1d2229}
+  .logo{font-weight:700;letter-spacing:-.01em}
+  .logo i{color:#4ade80;font-style:normal}
+  .top a{color:#9aa4b2;text-decoration:none;font-size:14px}
+  .top .me{margin-left:auto;font-size:13.5px;color:#7b8494}
+  .wrap{max-width:960px;margin:0 auto;padding:26px 22px 70px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;font-size:13.5px;color:#96a0ae}
+  select,input{padding:8px 11px;border:1px solid #232a33;border-radius:8px;background:#151a21;color:#d7dbe2;font:inherit}
+  textarea{width:100%;min-height:320px;padding:16px;border:1px solid #232a33;border-radius:12px;background:#12171e;color:#cfd6e0;font:13.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
+  textarea:focus{outline:2px solid #1f3a2b;outline-offset:1px}
+  .bottom{display:flex;gap:12px;align-items:center;margin-top:14px}
+  button{padding:10px 18px;border:0;border-radius:9px;background:#22c55e;color:#06210f;font:600 14px/1 inherit;cursor:pointer}
+  .hint{font-size:13px;color:#6f7887;margin-left:auto}
+  .list{margin-top:34px}
+  .list h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#69727f;margin:0 0 10px}
+  .item{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #1a1f26;font-size:13.5px}
+  .item .n{color:#7ee2a8;width:92px;flex-shrink:0}
+  .item .d{color:#9aa4b2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .t{margin-left:auto;color:#5f6773;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">paste<i>.dev</i></div>
+  <a href="#">api</a><a href="#">archive</a><a href="#">about</a>
+  <div class="me">anonymous · 3 pastes/day</div>
+</div>
+<div class="wrap">
+  <div class="row">
+    <select aria-label="syntax"><option>Plain text</option><option>Bash</option><option>Python</option><option>JSON</option><option>YAML</option></select>
+    <select aria-label="expiry"><option>Expire: 1 day</option><option>Expire: 1 week</option><option>Expire: 1 month</option></select>
+    <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto"> private</label>
+  </div>
+  <textarea spellcheck="false" placeholder="# вставьте текст сюда
+# Ctrl+Enter — сохранить">192.168.1.0/24 — lab subnet
+notes:
+  - replace switch in rack B
+  - check uplink after 18:00
+</textarea>
+  <div class="bottom">
+    <button type="button">Create paste</button>
+    <span class="hint">Ctrl+Enter · без регистрации</span>
+  </div>
+
+  <div class="list">
+    <h3>Recent public pastes</h3>
+    <div class="item"><span class="n">a8fg2k</span><span class="d">nginx conf for static site behind proxy</span><span class="t">2 min</span></div>
+    <div class="item"><span class="n">p0wq1m</span><span class="d">вывод iptables-save после миграции</span><span class="t">11 min</span></div>
+    <div class="item"><span class="n">zz91ab</span><span class="d">docker-compose for postgres + redis</span><span class="t">25 min</span></div>
+    <div class="item"><span class="n">k3l9sd</span><span class="d">journalctl fragment: unit failed</span><span class="t">48 min</span></div>
+  </div>
+</div>
+</body>
+</html>
