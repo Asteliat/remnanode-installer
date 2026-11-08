@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Daily Signal — World news</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#fcfcfd; color:#171a1f;
+         font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    body { background:#0f1216; color:#d6dae1; }
+    header, .story, .side { border-color:#1f2733 !important; }
+    .story h2 a, .story h3 a { color:#e7ebf2; }
+    .tag { background:#1a2230 !important; color:#8ab4ff !important; }
+  }
+  header { border-bottom:1px solid #e7e9ee; }
+  .bar { max-width:1080px; margin:0 auto; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .logo { font:800 20px/1 Georgia,serif; letter-spacing:-.02em; }
+  nav a { color:inherit; text-decoration:none; opacity:.7; font-size:14px; margin-left:18px; }
+  nav a:hover { opacity:1; }
+  .wrap { max-width:1080px; margin:0 auto; padding:26px 20px 70px; display:grid; gap:36px; grid-template-columns: 1fr 300px; }
+  @media (max-width:840px){ .wrap{ grid-template-columns:1fr; } }
+  .lead { border-bottom:1px solid #e7e9ee; padding-bottom:22px; margin-bottom:22px; }
+  .lead .tag, .story .tag { display:inline-block; font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+       background:#eef2ff; color:#2545c8; border-radius:5px; padding:3px 8px; font-weight:700; }
+  .lead h1 { font:700 30px/1.22 Georgia,serif; margin:12px 0 10px; letter-spacing:-.015em; }
+  .lead p { margin:0; opacity:.7; }
+  .story { display:grid; grid-template-columns: 1fr; gap:6px; padding:16px 0; border-bottom:1px solid #eef0f4; }
+  .story h3 { font:600 18px/1.35 Georgia,serif; margin:0; }
+  .story h3 a { color:inherit; text-decoration:none; }
+  .story .meta { font-size:13px; opacity:.5; }
+  .side .box { border:1px solid #e7e9ee; border-radius:12px; padding:16px; margin-bottom:18px; }
+  .side h4 { margin:0 0 10px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; opacity:.55; }
+  .side ul { margin:0; padding-left:18px; }
+  .side li { margin-bottom:8px; font-size:14.5px; }
+  .side li a { color:inherit; text-decoration:none; opacity:.85; }
+  .side li a:hover { text-decoration:underline; }
+  footer { max-width:1080px; margin:0 auto; padding:20px; font-size:13px; opacity:.45; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="logo">The Daily Signal</div>
+    <nav><a href="#">World</a><a href="#">Business</a><a href="#">Tech</a><a href="#">Science</a></nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <main>
+    <article class="lead">
+      <span class="tag">Infrastructure</span>
+      <h1>Grid operators report steady output after a week of record demand</h1>
+      <p>Regional transmission data shows margins holding despite unusual heat, though operators
+         warn that planned maintenance will squeeze capacity again next month.</p>
+    </article>
+
+    <article class="story">
+      <span class="tag">Markets</span>
+      <h3><a href="#">Shipping rates ease as port congestion clears in the north</a></h3>
+      <div class="meta">Business · 3 hours ago</div>
+    </article>
+    <article class="story">
+      <span class="tag">Technology</span>
+      <h3><a href="#">A quiet change in how browsers handle third-party storage</a></h3>
+      <div class="meta">Tech · 5 hours ago</div>
+    </article>
+    <article class="story">
+      <span class="tag">Science</span>
+      <h3><a href="#">Coastal monitoring network adds 40 new stations this year</a></h3>
+      <div class="meta">Science · 7 hours ago</div>
+    </article>
+    <article class="story">
+      <span class="tag">World</span>
+      <h3><a href="#">Talks resume over the alpine rail corridor timetable</a></h3>
+      <div class="meta">World · 9 hours ago</div>
+    </article>
+  </main>
+
+  <aside class="side">
+    <div class="box">
+      <h4>Most read</h4>
+      <ul>
+        <li><a href="#">Why the new tariff schedule changes nothing (yet)</a></li>
+        <li><a href="#">Inside the last analogue exchange</a></li>
+        <li><a href="#">A field guide to municipal budgets</a></li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>Newsletter</h4>
+      <p style="margin:0;font-size:14.5px;opacity:.75">A short briefing every weekday morning. No tracking pixels.</p>
+    </div>
+  </aside>
+</div>
+<footer>© <span id="y"></span> The Daily Signal · Editorial enquiries: desk@dailysignal.example</footer>
+<script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+</body>
+</html>

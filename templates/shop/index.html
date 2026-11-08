@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kedr Studio — Shop</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#faf9f7; color:#1c1a17;
+         font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    body { background:#0f0f11; color:#dedad4; }
+    .top, .card, .promo { background:#16161a !important; border-color:#26262c !important; }
+    .price { color:#e6e2db; }
+  }
+  .top { background:#fff; border-bottom:1px solid #ecebe7; }
+  .bar { max-width:1120px; margin:0 auto; padding:15px 22px; display:flex; align-items:center; gap:22px; }
+  .logo { font:700 17px/1 Georgia,serif; letter-spacing:.02em; }
+  nav a { color:inherit; text-decoration:none; font-size:14px; opacity:.7; margin-right:16px; }
+  .cart { margin-left:auto; font-size:14px; opacity:.75; }
+  .promo { max-width:1120px; margin:26px auto 0; padding:0 22px; }
+  .promo .inner { background:#f1efe9; border:1px solid #e6e3da; border-radius:14px; padding:26px 28px; }
+  .promo h1 { font:700 26px/1.25 Georgia,serif; margin:0 0 6px; letter-spacing:-.01em; }
+  .promo p { margin:0; opacity:.72; font-size:14.5px; }
+  .grid { max-width:1120px; margin:26px auto 0; padding:0 22px 70px;
+          display:grid; gap:18px; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); }
+  .card { background:#fff; border:1px solid #ecebe7; border-radius:13px; overflow:hidden; display:flex; flex-direction:column; }
+  .thumb { height:150px; background:linear-gradient(135deg,#e9e4da,#d8d3c8); }
+  .thumb.b { background:linear-gradient(135deg,#dfe6e3,#c9d4cf); }
+  .thumb.c { background:linear-gradient(135deg,#e6dfe9,#d2c9d8); }
+  .thumb.d { background:linear-gradient(135deg,#e8e2d6,#d6cbb6); }
+  .body { padding:13px 15px 16px; display:flex; flex-direction:column; gap:5px; flex:1; }
+  .name { font-size:14.5px; font-weight:600; }
+  .desc { font-size:13px; opacity:.6; flex:1; }
+  .row { display:flex; align-items:baseline; justify-content:space-between; margin-top:8px; }
+  .price { font:600 15px/1 inherit; }
+  .old { font-size:12.5px; opacity:.45; text-decoration:line-through; margin-left:6px; }
+  .buy { border:0; background:#1c1a17; color:#faf9f7; border-radius:8px; padding:7px 12px;
+         font:600 13px/1 inherit; cursor:pointer; }
+  @media (prefers-color-scheme: dark) { .buy { background:#dedad4; color:#16161a; } }
+  footer { max-width:1120px; margin:0 auto; padding:0 22px 50px; font-size:13px; opacity:.45; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="bar">
+    <div class="logo">Kedr Studio</div>
+    <nav><a href="#">Ceramics</a><a href="#">Textiles</a><a href="#">Paper</a><a href="#">About</a></nav>
+    <div class="cart">Cart (0)</div>
+  </div>
+</div>
+
+<div class="promo">
+  <div class="inner">
+    <h1>Small-batch objects for the desk</h1>
+    <p>Made in the workshop, shipped twice a week. Free delivery over 80 €.</p>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="thumb"></div>
+    <div class="body">
+      <div class="name">Stoneware mug</div>
+      <div class="desc">Speckled glaze, 320 ml, dishwasher safe.</div>
+      <div class="row"><span class="price">24 €</span><button class="buy">Add</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="thumb b"></div>
+    <div class="body">
+      <div class="name">Linen desk mat</div>
+      <div class="desc">Stone-washed linen, 60 × 35 cm.</div>
+      <div class="row"><span class="price">38 €</span><button class="buy">Add</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="thumb c"></div>
+    <div class="body">
+      <div class="name">Notebook, thread-bound</div>
+      <div class="desc">96 pages, 100 gsm, lies flat.</div>
+      <div class="row"><span class="price">16 €<span class="old">19 €</span></span><button class="buy">Add</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="thumb d"></div>
+    <div class="body">
+      <div class="name">Oak pen tray</div>
+      <div class="desc">Oiled oak, felt base, 22 cm.</div>
+      <div class="row"><span class="price">31 €</span><button class="buy">Add</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="thumb b"></div>
+    <div class="body">
+      <div class="name">Wool felt sleeve</div>
+      <div class="desc">For 13" laptops, vegetable-dyed.</div>
+      <div class="row"><span class="price">45 €</span><button class="buy">Add</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="thumb"></div>
+    <div class="body">
+      <div class="name">Brass ruler</div>
+      <div class="desc">20 cm, etched markings, patina finish.</div>
+      <div class="row"><span class="price">12 €</span><button class="buy">Add</button></div>
+    </div>
+  </div>
+</div>
+
+<footer>Kedr Studio · Workshop open Tue–Sat · hello@kedr.example</footer>
+</body>
+</html>

@@ -21,6 +21,16 @@
 #
 #  Пропуск порта = порт не открывается. Самый простой способ "выключить":
 #  нажать Enter на вопросе о порте либо передать --xhttp-port "" .
+#
+#  Схемы с IP:
+#    1 IP  — вход и выход через один адрес (обычная схема)
+#    2 IP  — клиенты входят на основной IP, в интернет нода выходит через
+#            дополнительный (policy routing + SNAT только для NEW-соединений,
+#            чтобы не ломать ответы на входящие)
+#
+#  Дополнительно скрипт спрашивает:
+#    * DNS-фильтрацию AdGuard (блокировка рекламы/трекеров, DoT)
+#    * автообновление ноды (systemd-таймер + откат при неудаче)
 # ============================================================================
 
 set -euo pipefail
@@ -53,6 +63,15 @@ DOMAIN="${DOMAIN:-}"
 SELFSTEAL_PORT="${SELFSTEAL_PORT:-9443}"
 TEMPLATE="${TEMPLATE:-landing}"
 
+# --- сеть -------------------------------------------------------------------
+DUAL_IP="${DUAL_IP:-no}"        # yes = вход на IP1, выход через IP2
+IP1="${IP1:-}"                  # основной IP (определяется автоматически)
+IP2="${IP2:-}"                  # дополнительный/выходной IP
+
+# --- дополнительные опции ---------------------------------------------------
+USE_DNS="${USE_DNS:-yes}"           # AdGuard DoT (блокировка рекламы)
+AUTO_UPDATE="${AUTO_UPDATE:-yes}"   # автообновление ноды через systemd-таймер
+
 ASSUME_YES=false
 RECONFIGURE=false
 SKIP_TUNING=false
@@ -77,6 +96,15 @@ while [[ $# -gt 0 ]]; do
         --selfsteal-port)  SELFSTEAL_PORT="${2:?}"; shift ;;
         --template)        TEMPLATE="${2:?}"; shift ;;
         --port)            NODE_PORT="${2:?}"; shift ;;
+        --dual-ip)         DUAL_IP="${2:?}"; shift ;;
+        --two-ip)          DUAL_IP="yes" ;;
+        --one-ip)          DUAL_IP="no" ;;
+        --ip2)             IP2="${2:?}"; DUAL_IP="yes"; shift ;;
+        --ip1)             IP1="${2:?}"; shift ;;
+        --dns)             USE_DNS="${2:?}"; shift ;;
+        --no-dns)          USE_DNS="no" ;;
+        --autoupdate)      AUTO_UPDATE="${2:?}"; shift ;;
+        --no-autoupdate)   AUTO_UPDATE="no" ;;
         -v|--version)      echo "remnawave node installer v$VERSION"; exit 0 ;;
         -h|--help)         grep '^#  ' "$0" | sed 's/^#  //'; exit 0 ;;
         *) echo "Неизвестный параметр: $1 (см. --help)" >&2; exit 1 ;;
@@ -113,6 +141,11 @@ is_ipv4() {
 }
 
 is_domain() { [[ "${1:-}" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; }
+
+detect_primary_ip() {
+    ip -4 route get 1.1.1.1 2>/dev/null \
+        | awk '{for (i=1;i<=NF;i++) if ($i=="src") {print $(i+1); exit}}' || true
+}
 
 ask() { # ask VAR "текст" "дефолт"
     local __var="$1" __prompt="$2" __def="${3:-}" __val=""
@@ -278,13 +311,18 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
 
     say ""
     say "  ${C_BLD}Доступные сайты-заглушки:${C_OFF}"
-    TEMPLATE_KEYS=(landing cloud speedtest blog 503)
+    TEMPLATE_KEYS=(landing cloud speedtest blog 503 news forum torrent shop auth)
     TEMPLATE_DESCS=(
         "Нейтральный лендинг (по умолчанию)"
         "Облачное хранилище файлов"
         "Спидтест"
         "Блог со статьёй"
         "Страница обслуживания 503"
+        "Новостной портал"
+        "Форум / обсуждения"
+        "Торрент-трекер"
+        "Интернет-магазин"
+        "Страница входа в «панель»"
     )
     for i in "${!TEMPLATE_KEYS[@]}"; do
         printf "    %d) %-10s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
@@ -308,6 +346,71 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
     ok "Сайт-заглушка: $TEMPLATE"
 fi
 
+# --- Схема с IP ------------------------------------------------------------
+say ""
+say "  ${C_BLD}Схема сети:${C_OFF}"
+say "    1) Один IP — клиенты входят и выходят через один адрес (обычный вариант)"
+say "    2) Два IP — клиенты входят на основной IP, в интернет выходят через дополнительный"
+
+if [ "$ASSUME_YES" = false ]; then
+    while true; do
+        read -r -p "$(echo -e "  ${C_BLD}Выбор [1/2]${C_OFF} [$([ "$DUAL_IP" = yes ] && echo 2 || echo 1)]: ")" net_choice || true
+        net_choice="${net_choice:-$([ "$DUAL_IP" = yes ] && echo 2 || echo 1)}"
+        case "$net_choice" in
+            1) DUAL_IP="no";  break ;;
+            2) DUAL_IP="yes"; break ;;
+            *) warn "Введите 1 или 2" ;;
+        esac
+    done
+fi
+
+if [ "$DUAL_IP" = "yes" ]; then
+    if [ -z "$IP1" ] || ! is_ipv4 "$IP1"; then
+        IP1="$(detect_primary_ip)"
+        if ! is_ipv4 "${IP1:-}"; then
+            while true; do
+                ask IP1 "Основной (входящий) IP этого сервера" "${IP1:-}"
+                is_ipv4 "$IP1" && break
+                warn "Некорректный IPv4: '$IP1'"
+                [ "$ASSUME_YES" = true ] && die "Укажите корректный --ip1"
+            done
+        fi
+    fi
+    ok "Основной IP (вход): $IP1"
+
+    if [ -z "$IP2" ] || ! is_ipv4 "$IP2"; then
+        while true; do
+            ask IP2 "Дополнительный IP (через него нода выходит в интернет)" "${IP2:-}"
+            is_ipv4 "$IP2" && break
+            warn "Некорректный IPv4: '$IP2'"
+            [ "$ASSUME_YES" = true ] && die "Укажите корректный --ip2"
+        done
+    fi
+    [ "$IP2" = "$IP1" ] && die "Дополнительный IP совпадает с основным"
+    ok "Дополнительный IP (выход): $IP2"
+    note "Домен selfsteal будет привязан к $IP1 (вход), выход пойдёт с $IP2."
+else
+    ok "Один IP: вход и выход через один адрес"
+fi
+
+# --- DNS-фильтрация --------------------------------------------------------
+say ""
+ask_yesno USE_DNS "Включить DNS-фильтрацию AdGuard (блокировка рекламы и трекеров, DNS-over-TLS)?" "yes"
+if [ "$USE_DNS" = "yes" ]; then
+    ok "DNS: AdGuard DoT"
+else
+    note "DNS: остаётся системный"
+fi
+
+# --- Автообновление --------------------------------------------------------
+say ""
+ask_yesno AUTO_UPDATE "Включить автообновление Remnawave Node (ежедневная проверка с откатом при сбое)?" "yes"
+if [ "$AUTO_UPDATE" = "yes" ]; then
+    ok "Автообновление: включено"
+else
+    note "Автообновление: выключено"
+fi
+
 # --- Сводка и подтверждение ------------------------------------------------
 say ""
 say "  ${C_BLD}Итого:${C_OFF}"
@@ -321,6 +424,13 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
 else
     say "    selfsteal ......... выключен"
 fi
+if [ "$DUAL_IP" = "yes" ]; then
+    say "    сеть .............. вход $IP1 → выход $IP2"
+else
+    say "    сеть .............. один IP"
+fi
+say "    DNS-фильтр ........ ${USE_DNS}"
+say "    автообновление .... ${AUTO_UPDATE}"
 say ""
 
 if [ "$ASSUME_YES" = false ]; then
@@ -344,6 +454,11 @@ USE_SELFSTEAL='$USE_SELFSTEAL'
 DOMAIN='$DOMAIN'
 SELFSTEAL_PORT='$SELFSTEAL_PORT'
 TEMPLATE='$TEMPLATE'
+DUAL_IP='$DUAL_IP'
+IP1='$IP1'
+IP2='$IP2'
+USE_DNS='$USE_DNS'
+AUTO_UPDATE='$AUTO_UPDATE'
 EOF
 chmod 600 "$ANSWERS_FILE"
 
@@ -456,6 +571,10 @@ net.netfilter.nf_conntrack_max = 262144
 net.netfilter.nf_conntrack_tcp_timeout_established = 600
 vm.overcommit_memory = 1
 fs.nr_open = 2097152
+vm.swappiness = 10
+vm.vfs_cache_pressure = 50
+# помогает при MTU-blackhole (частая беда мобильных сетей)
+net.ipv4.tcp_mtu_probing = 1
 EOF
     echo "nf_conntrack" > /etc/modules-load.d/conntrack.conf
     modprobe nf_conntrack 2>/dev/null || true
@@ -481,9 +600,84 @@ EOF
 fi
 
 # ============================================================================
-# 6. Firewall
+# 6. Сеть: схема с двумя IP (вход на IP1, выход через IP2)
 # ============================================================================
-hdr "6. Firewall"
+hdr "6. Сеть"
+BIND_IP="0.0.0.0"   # на какой адрес биндить публичный :80 (Caddy)
+
+if [ "$DUAL_IP" = "yes" ]; then
+    IFACE="$(ip -o -4 addr show | awk -v ip="$IP1" '$4 ~ ("^" ip "/") {print $2; exit}')"
+    [ -n "${IFACE:-}" ] || IFACE="$(ip -o route show default | awk '{print $5; exit}')"
+    GW="$(ip -o route show default | awk '{print $3; exit}')"
+    [ -n "${IFACE:-}" ] && [ -n "${GW:-}" ] || die "Не удалось определить интерфейс/шлюз для второго IP"
+    ok "Интерфейс: $IFACE, шлюз: $GW"
+    BIND_IP="$IP1"
+
+    cat > /usr/local/sbin/rw-secondary-ip.sh <<EOF
+#!/bin/bash
+# Вход на $IP1, выход через $IP2.
+# SNAT применяется ТОЛЬКО к новым исходящим соединениям (conntrack --ctstate NEW),
+# поэтому ответы на входящие соединения уходят с исходного IP и клиенты не рвутся.
+set -euo pipefail
+
+IP2='$IP2'
+IFACE='$IFACE'
+GW='$GW'
+TABLE=100
+
+# 1. Адрес на интерфейсе (идемпотентно)
+/sbin/ip addr replace "\$IP2/32" dev "\$IFACE"
+
+# 2. Policy routing: пакеты с источником IP2 уходят через шлюз этого интерфейса
+/sbin/ip rule del from "\$IP2/32" table \$TABLE 2>/dev/null || true
+/sbin/ip rule add from "\$IP2/32" table \$TABLE priority 100
+/sbin/ip route replace default via "\$GW" dev "\$IFACE" src "\$IP2" table \$TABLE
+
+# 3. SNAT только для новых исходящих соединений
+/sbin/iptables -t nat -C POSTROUTING -o "\$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "\$IP2" 2>/dev/null || \
+    /sbin/iptables -t nat -A POSTROUTING -o "\$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "\$IP2"
+EOF
+    chmod 0755 /usr/local/sbin/rw-secondary-ip.sh
+
+    cat > /etc/systemd/system/rw-secondary-ip.service <<'EOF'
+[Unit]
+Description=Remnawave secondary IP + SNAT (in on primary, out via secondary)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/rw-secondary-ip.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+    systemctl enable rw-secondary-ip.service >/dev/null 2>&1 || true
+    if systemctl start rw-secondary-ip.service; then
+        ok "Второй IP настроен и включён в автозагрузку (rw-secondary-ip.service)"
+    else
+        warn "Не удалось применить второй IP — проверьте: journalctl -u rw-secondary-ip"
+    fi
+
+    # Проверяем фактический исходящий IP
+    OUT_IP="$(curl -4 -fsS --max-time 10 --interface "$IP2" https://ifconfig.io 2>/dev/null || true)"
+    if [ "$OUT_IP" = "$IP2" ]; then
+        ok "Исходящий трафик идёт с $IP2"
+    elif [ -n "$OUT_IP" ]; then
+        warn "Исходящий IP = $OUT_IP (ожидался $IP2) — проверьте маршрут/SNAT"
+    else
+        warn "Не удалось проверить исходящий IP (нет сети или IP2 не поднят)"
+    fi
+else
+    ok "Один IP: вход и выход через один адрес"
+fi
+
+# ============================================================================
+# 7. Firewall
+# ============================================================================
+hdr "7. Firewall"
 if [ "$SKIP_FIREWALL" = true ]; then
     warn "Пропущено (--skip-firewall)"
 else
@@ -521,10 +715,10 @@ done
 [ -n "$conflict" ] && warn "Порты уже заняты:$conflict (проверьте перед стартом)"
 
 # ============================================================================
-# 7. Remnawave Node
+# 8. Remnawave Node
 # ============================================================================
-hdr "7. Remnawave Node"
-mkdir -p "$NODE_DIR"
+hdr "8. Remnawave Node"
+mkdir -p "$NODE_DIR" /var/log/remnanode
 backup "$NODE_DIR/docker-compose.yml"; backup "$NODE_DIR/.env"
 
 cat > "$NODE_DIR/.env" <<EOF
@@ -546,6 +740,8 @@ services:
       - .env
     cap_add:
       - NET_ADMIN
+    volumes:
+      - /var/log/remnanode:/var/log/remnanode
     ulimits:
       nofile:
         soft: 1048576
@@ -589,7 +785,7 @@ ok "Нода запущена, автозагрузка включена (remnan
 # 8. Caddy selfsteal
 # ============================================================================
 if [ "$USE_SELFSTEAL" = "yes" ]; then
-    hdr "8. Caddy selfsteal"
+    hdr "9. Caddy selfsteal"
     mkdir -p "$SELFSTEAL_DIR/html" "$SELFSTEAL_DIR/logs"
     backup "$SELFSTEAL_DIR/Caddyfile"; backup "$SELFSTEAL_DIR/docker-compose.yml"
 
@@ -645,7 +841,7 @@ EOF
 }
 
 http://{$SELF_STEAL_DOMAIN} {
-	bind 0.0.0.0
+	bind __BIND_IP__
 	redir https://{$SELF_STEAL_DOMAIN}{uri} permanent
 	log {
 		output file /var/log/caddy/redirect.log {
@@ -684,11 +880,15 @@ https://{$SELF_STEAL_DOMAIN} {
 }
 
 :80 {
-	bind 0.0.0.0
+	bind __BIND_IP__
 	respond 204
 	log off
 }
 EOF
+
+    # Привязываем публичный :80 к основному IP (в схеме с двумя IP — только вход)
+    sed -i "s|__BIND_IP__|$BIND_IP|g" "$SELFSTEAL_DIR/Caddyfile"
+    note "Caddy :80 слушает $BIND_IP"
 
     # --- compose ----------------------------------------------------------
     cat > "$SELFSTEAL_DIR/docker-compose.yml" <<EOF
@@ -756,14 +956,157 @@ EOF
     systemctl enable selfsteal.service >/dev/null 2>&1 || true
     ok "Selfsteal запущен, автозагрузка включена (selfsteal.service)"
 else
-    hdr "8. Caddy selfsteal"
+    hdr "9. Caddy selfsteal"
     note "Пропущено по выбору пользователя"
 fi
 
 # ============================================================================
-# 9. Проверка
+# 10. DNS-фильтрация (AdGuard DoT)
 # ============================================================================
-hdr "9. Проверка"
+hdr "10. DNS"
+if [ "$USE_DNS" = "yes" ]; then
+    backup /etc/resolv.conf
+    mkdir -p /etc/systemd/resolved.conf.d
+    cat > /etc/systemd/resolved.conf.d/99-adguard-dot.conf <<'EOF'
+[Resolve]
+DNS=94.140.14.14#dns.adguard-dns.com 94.140.15.15#dns.adguard-dns.com
+FallbackDNS=1.1.1.1#cloudflare-dns.com 8.8.8.8#dns.google
+DNSOverTLS=yes
+DNSSEC=allow-downgrade
+Cache=yes
+EOF
+    # не даём глобальным DNS из основного конфига перебивать наши
+    if [ -f /etc/systemd/resolved.conf ]; then
+        sed -i -E 's/^[[:space:]]*(DNS|FallbackDNS)=/#\1=/' /etc/systemd/resolved.conf
+    fi
+    systemctl enable systemd-resolved >/dev/null 2>&1 || true
+    systemctl restart systemd-resolved || warn "systemd-resolved не перезапустился"
+    ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+    resolvectl flush-caches >/dev/null 2>&1 || true
+    sleep 1
+    if resolvectl query example.com >/dev/null 2>&1; then
+        ok "AdGuard DoT активен, резолвинг работает"
+    else
+        warn "DNS не отвечает — проверьте: resolvectl status"
+    fi
+else
+    note "Пропущено: остаётся системный DNS"
+fi
+
+# ============================================================================
+# 11. Автообновление
+# ============================================================================
+hdr "11. Автообновление"
+if [ "$AUTO_UPDATE" = "yes" ]; then
+    cat > /usr/local/sbin/rw-node-update.sh <<'EOS'
+#!/bin/bash
+# Обновляет Remnawave Node до latest. Если новый образ не поднялся — откат
+# на предыдущий (перетегируем старый image ID обратно в :latest).
+set -uo pipefail
+DIR=/opt/remnanode
+LOG=/var/log/remnawave-update.log
+say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
+
+cd "$DIR" || exit 1
+OLD_ID="$(docker inspect --format '{{.Image}}' remnanode 2>/dev/null || true)"
+
+say "== pull =="
+if ! docker compose pull -q >>"$LOG" 2>&1; then
+    say "pull не удался — обновление пропущено"
+    exit 0
+fi
+
+say "== up =="
+docker compose up -d --remove-orphans >>"$LOG" 2>&1 || say "compose up вернул ошибку"
+
+sleep 30
+if [ "$(docker inspect -f '{{.State.Running}}' remnanode 2>/dev/null)" != "true" ]; then
+    say "контейнер не поднялся — откатываю"
+    docker compose down >>"$LOG" 2>&1 || true
+    if [ -n "$OLD_ID" ]; then
+        docker tag "$OLD_ID" remnawave/node:latest >>"$LOG" 2>&1 && say "восстановлен $OLD_ID"
+    fi
+    docker compose up -d --remove-orphans >>"$LOG" 2>&1 || true
+    exit 1
+fi
+say "== ok =="
+docker image prune -f >>"$LOG" 2>&1 || true
+EOS
+    chmod 0755 /usr/local/sbin/rw-node-update.sh
+
+    cat > /etc/systemd/system/rw-node-update.service <<'EOF'
+[Unit]
+Description=Remnawave Node auto-update
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/rw-node-update.sh
+TimeoutStartSec=900
+EOF
+
+    cat > /etc/systemd/system/rw-node-update.timer <<'EOF'
+[Unit]
+Description=Daily Remnawave Node update check
+
+[Timer]
+OnCalendar=*-*-* 04:30:00
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+    systemctl daemon-reload
+    systemctl enable --now rw-node-update.timer >/dev/null 2>&1 || warn "таймер автообновления не включился"
+    ok "Нода обновляется автоматически (~04:30, лог /var/log/remnawave-update.log)"
+else
+    note "Автообновление ноды выключено"
+fi
+
+# Обновления безопасности ОС — без автоматической перезагрузки
+export DEBIAN_FRONTEND=noninteractive
+apt-get install -y -qq unattended-upgrades >/dev/null 2>&1 || warn "unattended-upgrades не установился"
+cat > /etc/apt/apt.conf.d/99-rw-unattended <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+EOF
+ok "Обновления безопасности ОС включены (без автоперезагрузки)"
+
+# ============================================================================
+# 12. Обслуживание: логи и очистка
+# ============================================================================
+hdr "12. Обслуживание"
+mkdir -p /var/log/remnanode
+cat > /etc/logrotate.d/remnanode <<'EOF'
+/var/log/remnanode/*.log {
+    size 50M
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
+EOF
+
+cat > /etc/cron.d/remnawave-maintenance <<'EOF'
+# чистка journald
+0 4 * * * root journalctl --vacuum-size=500M >/dev/null 2>&1 || true
+# страховка по логам docker (поверх log-opts)
+30 4 * * * root find /var/lib/docker/containers -name '*-json.log' -size +100M -exec truncate -s 50M {} \; 2>/dev/null || true
+# раз в неделю — неиспользуемые образы
+0 5 * * 0 root docker image prune -f >/dev/null 2>&1 || true
+EOF
+chmod 644 /etc/cron.d/remnawave-maintenance /etc/logrotate.d/remnanode
+ok "logrotate для ноды + cron-обслуживание"
+
+# ============================================================================
+# 13. Проверка
+# ============================================================================
+hdr "13. Проверка"
 sleep 3
 
 say "  ${C_BLD}Контейнеры:${C_OFF}"
@@ -792,14 +1135,30 @@ fi
 
 say ""
 say "  ${C_BLD}systemd:${C_OFF}"
-for u in remnanode selfsteal; do
+for u in remnanode selfsteal rw-secondary-ip; do
     if systemctl cat "$u.service" >/dev/null 2>&1; then
         say "    $u.service: $(systemctl is-enabled "$u.service" 2>/dev/null || echo -), $(systemctl is-active "$u.service" 2>/dev/null || echo -)"
     fi
 done
 
+if systemctl cat rw-node-update.timer >/dev/null 2>&1; then
+    say "    rw-node-update.timer: $(systemctl is-enabled rw-node-update.timer 2>/dev/null || echo -), след. запуск: $(systemctl show -p NextElapseUSecRealtime --value rw-node-update.timer 2>/dev/null | cut -c1-19)"
+fi
+
+if [ "$DUAL_IP" = "yes" ]; then
+    say ""
+    say "  ${C_BLD}Второй IP:${C_OFF}"
+    ip -4 addr show dev "${IFACE:-$(ip -o route show default | awk '{print $5; exit}')}" 2>/dev/null | grep -E 'inet ' | sed 's/^/    /' || true
+    say "    правило SNAT: $(iptables -t nat -S POSTROUTING 2>/dev/null | grep -c "to-source $IP2") шт."
+fi
+
+if [ "$USE_DNS" = "yes" ]; then
+    say ""
+    say "  ${C_BLD}DNS:${C_OFF} $(resolvectl status 2>/dev/null | grep -m1 'DNS Servers' | sed 's/^ *//' || echo n/a)"
+fi
+
 # ============================================================================
-# 10. Что дальше
+# 14. Что дальше
 # ============================================================================
 hdr "Готово"
 say ""
@@ -816,6 +1175,15 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
     say "       • dest: 127.0.0.1:$SELFSTEAL_PORT"
     say "       • domain: $DOMAIN"
     say "     Reality/xHTTP будут отдавать этот домен при обычном обращении."
+    say ""
+fi
+if [ "$DUAL_IP" = "yes" ]; then
+    say "  ${C_BLD}Вход на $IP1 / выход через $IP2:${C_OFF}"
+    say "     На уровне ОС уже включён SNAT новых исходящих в $IP2"
+    say "     (ответы на входящие остаются с $IP1 — соединения не рвутся)."
+    say "     Чтобы закрепить это в самом Xray, в Config Profile → outbound freedom:"
+    say "       \"sendThrough\": \"$IP2\""
+    say "     Inbound'ы держите на $IP1 (или 0.0.0.0)."
     say ""
 fi
 say "  ${C_BLD}3) Откройте в браузере:${C_OFF} https://${DOMAIN:-<ваш домен>}"

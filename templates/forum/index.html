@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lattice — Community forum</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f5f6f8; color:#191c21;
+         font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    body { background:#0e1116; color:#d5d9e0; }
+    .top, .card, .thread, .cat { background:#141a21 !important; border-color:#202833 !important; }
+    .crumb a { color:#8ab4ff; }
+  }
+  .top { background:#fff; border-bottom:1px solid #e6e8ee; padding:14px 22px; display:flex; gap:18px; align-items:center; }
+  .brand { font-weight:700; letter-spacing:-.01em; }
+  .brand span { color:#2563eb; }
+  .search { flex:1; max-width:420px; }
+  .search input { width:100%; padding:9px 13px; border:1px solid #dfe3ea; border-radius:9px; font:inherit; background:transparent; color:inherit; }
+  .user { margin-left:auto; font-size:14px; opacity:.65; }
+  .wrap { max-width:1000px; margin:0 auto; padding:24px 20px 70px; }
+  .crumb { font-size:13px; opacity:.6; margin-bottom:14px; }
+  .crumb a { color:#2563eb; text-decoration:none; }
+  h1 { font-size:21px; margin:0 0 4px; }
+  .sub { font-size:13.5px; opacity:.6; margin-bottom:20px; }
+  .cat { background:#fff; border:1px solid #e6e8ee; border-radius:12px; overflow:hidden; margin-bottom:22px; }
+  .cat h2 { font-size:12px; letter-spacing:.1em; text-transform:uppercase; padding:12px 16px; margin:0;
+            background:rgba(127,127,127,.06); border-bottom:1px solid #e6e8ee; opacity:.7; }
+  .thread { display:grid; grid-template-columns: 1fr 90px 120px; gap:10px; padding:12px 16px; border-bottom:1px solid #eef0f4; align-items:center; }
+  .thread:last-child { border-bottom:0; }
+  .thread .t { font-weight:600; font-size:14.5px; }
+  .thread .t a { color:inherit; text-decoration:none; }
+  .thread .t a:hover { color:#2563eb; }
+  .thread .d { font-size:13px; opacity:.6; }
+  .thread .n { text-align:right; font-size:13px; opacity:.55; }
+  .pill { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; background:#eef2ff; color:#2545c8; margin-right:7px; }
+  .btn { display:inline-block; margin-top:6px; padding:9px 14px; border-radius:9px; background:#2563eb; color:#fff;
+         text-decoration:none; font-size:14px; font-weight:600; }
+  .stats { display:flex; gap:22px; font-size:13px; opacity:.6; margin-bottom:18px; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">Lattice<span>.forum</span></div>
+  <div class="search"><input placeholder="Search discussions…" aria-label="search"></div>
+  <div class="user">sign in · register</div>
+</div>
+
+<div class="wrap">
+  <div class="crumb"><a href="#">Home</a> › <a href="#">General</a> › All discussions</div>
+  <h1>All discussions</h1>
+  <div class="sub">Community for people who keep small systems running.</div>
+
+  <div class="stats"><span>12 480 threads</span><span>38 912 posts</span><span>1 204 members</span></div>
+
+  <section class="cat">
+    <h2>Latest</h2>
+    <div class="thread">
+      <div>
+        <div class="t"><span class="pill">pinned</span><a href="#">Read me first: posting guidelines</a></div>
+        <div class="d">by modteam · updated 2 days ago</div>
+      </div>
+      <div class="n">—</div>
+      <div class="n">14 replies</div>
+    </div>
+    <div class="thread">
+      <div>
+        <div class="t"><a href="#">Best way to rotate container logs without losing the tail?</a></div>
+        <div class="d">by ksh · 3 hours ago</div>
+      </div>
+      <div class="n">ops</div>
+      <div class="n">27 replies</div>
+    </div>
+    <div class="thread">
+      <div>
+        <div class="t"><a href="#">Nginx vs Caddy for a decoy site in 2026</a></div>
+        <div class="d">by mira · 8 hours ago</div>
+      </div>
+      <div class="n">web</div>
+      <div class="n">63 replies</div>
+    </div>
+    <div class="thread">
+      <div>
+        <div class="t"><a href="#">Conntrack table filled up — postmortem inside</a></div>
+        <div class="d">by aleks · yesterday</div>
+      </div>
+      <div class="n">net</div>
+      <div class="n">41 replies</div>
+    </div>
+    <div class="thread">
+      <div>
+        <div class="t"><a href="#">Show your homelab dashboards</a></div>
+        <div class="d">by pov · 2 days ago</div>
+      </div>
+      <div class="n">general</div>
+      <div class="n">158 replies</div>
+    </div>
+  </section>
+
+  <a class="btn" href="#">Start a new discussion</a>
+</div>
+</body>
+</html>
