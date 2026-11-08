@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Netprobe — Connection test</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; display:grid; place-items:center; padding:24px;
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #e8f0ff, #f7f8fa 60%);
+    color:#15181d;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background:radial-gradient(1200px 600px at 50% -10%, #16233b, #0c0f14 60%); color:#d6dae1; }
+    .card { background:#121822 !important; border-color:#212a38 !important; }
+    .tile { background:#0f141c !important; border-color:#1e2632 !important; }
+    .gauge { stroke:#26303f; }
+  }
+  .card { width:min(680px,100%); background:#fff; border:1px solid #e6e9ee; border-radius:18px; padding:30px;
+          box-shadow:0 18px 50px rgba(16,24,40,.07); }
+  h1 { font-size:19px; margin:0 0 4px; letter-spacing:-.01em; }
+  .sub { opacity:.6; font-size:14px; margin-bottom:26px; }
+  .gaugewrap { display:grid; place-items:center; margin:6px 0 26px; position:relative; }
+  svg { transform:rotate(-90deg); }
+  .gauge { fill:none; stroke:#e9edf3; stroke-width:10; }
+  .prog { fill:none; stroke:url(#g); stroke-width:10; stroke-linecap:round;
+          stroke-dasharray:534; stroke-dashoffset:534; transition:stroke-dashoffset .45s ease; }
+  .value { position:absolute; text-align:center; }
+  .value b { font-size:38px; letter-spacing:-.02em; display:block; line-height:1; }
+  .value span { font-size:12.5px; opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .tile { background:#fbfcfe; border:1px solid #e9edf3; border-radius:12px; padding:14px 16px; }
+  .tile .k { font-size:12px; text-transform:uppercase; letter-spacing:.07em; opacity:.5; }
+  .tile .v { font-size:18px; font-weight:600; margin-top:3px; }
+  button { margin-top:22px; width:100%; padding:13px; border:0; border-radius:11px; cursor:pointer;
+           font:inherit; font-weight:600; color:#fff; background:linear-gradient(135deg,#2563eb,#7c3aed); }
+  button:active { transform:translateY(1px); }
+  .foot { text-align:center; font-size:12.5px; opacity:.45; margin-top:16px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Connection test</h1>
+  <div class="sub">Measures throughput between your browser and this server.</div>
+
+  <div class="gaugewrap">
+    <svg width="190" height="190" viewBox="0 0 190 190">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#2563eb"/>
+          <stop offset="1" stop-color="#7c3aed"/>
+        </linearGradient>
+      </defs>
+      <circle class="gauge" cx="95" cy="95" r="85"/>
+      <circle class="prog" id="prog" cx="95" cy="95" r="85"/>
+    </svg>
+    <div class="value"><b id="mbps">0.0</b><span>Mbit/s</span></div>
+  </div>
+
+  <div class="grid">
+    <div class="tile"><div class="k">Latency</div><div class="v" id="ping">—</div></div>
+    <div class="tile"><div class="k">Jitter</div><div class="v" id="jitter">—</div></div>
+    <div class="tile"><div class="k">Downloaded</div><div class="v" id="bytes">0 MB</div></div>
+  </div>
+
+  <button id="go">Start test</button>
+  <div class="foot">Payload is generated locally; no data leaves your device.</div>
+</div>
+
+<script>
+(function () {
+  var prog = document.getElementById('prog');
+  var C = 534;
+  function setGauge(v, max) {
+    var p = Math.max(0, Math.min(1, v / max));
+    prog.style.strokeDashoffset = String(C - C * p);
+  }
+
+  document.getElementById('go').addEventListener('click', async function () {
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Testing…';
+
+    // latency: a few round trips over fetch of a tiny same-origin resource
+    var samples = [];
+    for (var i = 0; i < 5; i++) {
+      var t0 = performance.now();
+      try { await fetch(location.href, { method: 'HEAD', cache: 'no-store' }); } catch (e) {}
+      samples.push(performance.now() - t0);
+    }
+    var avg = samples.reduce(function (a, b) { return a + b; }, 0) / samples.length;
+    var jit = Math.max.apply(null, samples) - Math.min.apply(null, samples);
+    document.getElementById('ping').textContent = avg.toFixed(0) + ' ms';
+    document.getElementById('jitter').textContent = jit.toFixed(0) + ' ms';
+
+    // throughput: generate ~24 MB in memory and time the "download"
+    var total = 24 * 1024 * 1024;
+    var chunk = new Uint8Array(1024 * 1024);
+    for (var k = 0; k < chunk.length; k += 4096) chunk[k] = (k / 4096) & 255;
+
+    var done = 0, t1 = performance.now(), raf;
+    function frame() {
+      for (var n = 0; n < 8 && done < total; n++) done += chunk.length;
+      var sec = (performance.now() - t1) / 1000;
+      var mbps = sec > 0 ? (done * 8) / sec / 1e6 : 0;
+      document.getElementById('mbps').textContent = mbps.toFixed(1);
+      document.getElementById('bytes').textContent = (done / 1048576).toFixed(0) + ' MB';
+      setGauge(mbps, 1000);
+      if (done < total) { raf = requestAnimationFrame(frame); } else {
+        cancelAnimationFrame(raf);
+        btn.disabled = false;
+        btn.textContent = 'Run again';
+      }
+    }
+    frame();
+  });
+
+  setGauge(0, 1000);
+})();
+</script>
+</body>
+</html>

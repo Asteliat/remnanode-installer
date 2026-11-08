@@ -1,0 +1,833 @@
+#!/usr/bin/env bash
+# ============================================================================
+#  Remnawave Node + Caddy Selfsteal — установщик "под ключ"
+# ============================================================================
+#  Что делает:
+#    1. ставит зависимости и Docker (официальный get.docker.com)
+#    2. тюнит систему под VPN-нагрузку (swap, nofile, sysctl, BBR+FQ, NTP, DNS)
+#    3. разворачивает Remnawave Node (/opt/remnanode) с вашими NODE_PORT и ключом
+#    4. разворачивает Caddy Selfsteal (/opt/selfsteal) с выбранным сайтом-заглушкой
+#    5. настраивает firewall: порты транспортов — всем, порт ноды — только панели
+#    6. создаёт systemd-юниты автозапуска (docker compose)
+#    7. проверяет результат и печатает, что осталось сделать в панели
+#
+#  Быстрый старт:
+#    bash <(curl -Ls https://raw.githubusercontent.com/<owner>/<repo>/main/install.sh)
+#
+#  Неинтерактивный режим:
+#    ... install.sh --yes --panel-ip 1.2.3.4 --secret-key KEY \
+#                   --xhttp-port 443 --tcp-port 4443 --grpc-port 2096 \
+#                   --domain vpn.example.com --template landing
+#
+#  Пропуск порта = порт не открывается. Самый простой способ "выключить":
+#  нажать Enter на вопросе о порте либо передать --xhttp-port "" .
+# ============================================================================
+
+set -euo pipefail
+
+VERSION="1.0.0"
+
+REPO_OWNER="Asteliat"
+REPO_NAME="remnanode-installer"
+REPO_BRANCH="main"
+RAW_BASE="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}"
+TEMPLATES_BASE="${RAW_BASE}/templates"
+
+NODE_DIR="/opt/remnanode"
+SELFSTEAL_DIR="/opt/selfsteal"
+STATE_DIR="/etc/remnawave-setup"
+ANSWERS_FILE="$STATE_DIR/answers.env"
+LOG_FILE="/var/log/remnawave-setup.log"
+NODE_IMAGE="remnawave/node:latest"
+CADDY_IMAGE="caddy:2-alpine"
+
+# ------------------------------------------------------------------ defaults
+PANEL_IP="${PANEL_IP:-}"
+NODE_PORT="${NODE_PORT:-2222}"
+SECRET_KEY="${SECRET_KEY:-}"
+XHTTP_PORT="${XHTTP_PORT:-443}"
+GRPC_PORT="${GRPC_PORT:-2096}"
+TCP_PORT="${TCP_PORT:-4443}"
+USE_SELFSTEAL="${USE_SELFSTEAL:-yes}"
+DOMAIN="${DOMAIN:-}"
+SELFSTEAL_PORT="${SELFSTEAL_PORT:-9443}"
+TEMPLATE="${TEMPLATE:-landing}"
+
+ASSUME_YES=false
+RECONFIGURE=false
+SKIP_TUNING=false
+SKIP_FIREWALL=false
+
+# --------------------------------------------------------------------- args
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --yes|-y)          ASSUME_YES=true ;;
+        --reconfigure)     RECONFIGURE=true ;;
+        --skip-tuning)     SKIP_TUNING=true ;;
+        --skip-firewall)   SKIP_FIREWALL=true ;;
+        --panel-ip)        PANEL_IP="${2:?}"; shift ;;
+        --node-port)       NODE_PORT="${2:?}"; shift ;;
+        --secret-key)      SECRET_KEY="${2:?}"; shift ;;
+        --xhttp-port)      XHTTP_PORT="${2-}"; shift || true ;;
+        --grpc-port)       GRPC_PORT="${2-}"; shift || true ;;
+        --tcp-port)        TCP_PORT="${2-}"; shift || true ;;
+        --selfsteal)       USE_SELFSTEAL="${2:?}"; shift ;;
+        --no-selfsteal)    USE_SELFSTEAL="no" ;;
+        --domain)          DOMAIN="${2:?}"; shift ;;
+        --selfsteal-port)  SELFSTEAL_PORT="${2:?}"; shift ;;
+        --template)        TEMPLATE="${2:?}"; shift ;;
+        --port)            NODE_PORT="${2:?}"; shift ;;
+        -v|--version)      echo "remnawave node installer v$VERSION"; exit 0 ;;
+        -h|--help)         grep '^#  ' "$0" | sed 's/^#  //'; exit 0 ;;
+        *) echo "Неизвестный параметр: $1 (см. --help)" >&2; exit 1 ;;
+    esac
+    [ $# -gt 0 ] && shift || true
+done
+
+# ------------------------------------------------------------------ helpers
+if [ -t 1 ]; then
+    C_RED=$'\033[1;31m'; C_GRN=$'\033[1;32m'; C_YEL=$'\033[1;33m'
+    C_BLU=$'\033[1;34m'; C_DIM=$'\033[0;37m'; C_BLD=$'\033[1m'; C_OFF=$'\033[0m'
+else
+    C_RED=''; C_GRN=''; C_YEL=''; C_BLU=''; C_DIM=''; C_BLD=''; C_OFF=''
+fi
+
+log()  { echo "[$(date '+%F %T')] $*" >> "$LOG_FILE" 2>/dev/null || true; }
+say()  { echo -e "$*"; log "$(echo -e "$*" | sed 's/\x1b\[[0-9;]*m//g')"; }
+hdr()  { echo; say "${C_BLU}=== $* ===${C_OFF}"; }
+ok()   { say "  ${C_GRN}[ok]${C_OFF} $*"; }
+warn() { say "  ${C_YEL}[!!]${C_OFF} $*"; }
+err()  { say "  ${C_RED}[xx]${C_OFF} $*"; }
+note() { say "  ${C_DIM}$*${C_OFF}"; }
+die()  { err "$*"; exit 1; }
+
+is_port() { [[ "${1:-}" =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]; }
+
+is_ipv4() {
+    local ip="${1%/*}"
+    [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
+    local o
+    IFS='.' read -r -a o <<< "$ip"
+    for x in "${o[@]}"; do [ "$x" -le 255 ] || return 1; done
+    return 0
+}
+
+is_domain() { [[ "${1:-}" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; }
+
+ask() { # ask VAR "текст" "дефолт"
+    local __var="$1" __prompt="$2" __def="${3:-}" __val=""
+    if [ "$ASSUME_YES" = true ] && [ -n "${!__var:-}" ]; then return 0; fi
+    if [ -n "$__def" ]; then
+        read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} [${__def}]: ")" __val || true
+        [ -z "$__val" ] && __val="$__def"
+    else
+        read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF}: ")" __val || true
+    fi
+    printf -v "$__var" '%s' "$__val"
+}
+
+ask_yesno() { # ask_yesno VAR "текст" default(y/n)
+    local __var="$1" __prompt="$2" __def="${3:-y}" __val=""
+    if [ "$ASSUME_YES" = true ] && [ -n "${!__var:-}" ]; then return 0; fi
+    while true; do
+        read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} [${__def}]: ")" __val || true
+        __val="${__val:-$__def}"
+        case "${__val,,}" in
+            y|yes|д|да) printf -v "$__var" '%s' "yes"; return 0 ;;
+            n|no|н|нет) printf -v "$__var" '%s' "no"; return 0 ;;
+            *) warn "Ответьте y или n" ;;
+        esac
+    done
+}
+
+ask_port() { # ask_port VAR "текст" "подсказка-дефолт"
+    # В интерактивном режиме пустой ввод = порт НЕ открывается (так просил заказчик).
+    # Значение по умолчанию применяется только в неинтерактивном режиме (--yes).
+    local __var="$1" __prompt="$2" __hint="${3:-}" __val=""
+    if [ "$ASSUME_YES" = true ]; then return 0; fi
+    while true; do
+        if [ -n "$__hint" ]; then
+            read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} [${__hint} — Enter, чтобы не открывать]: ")" __val || true
+        else
+            read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} (Enter — не открывать): ")" __val || true
+        fi
+        __val="${__val//[[:space:]]/}"
+        if [ -z "$__val" ]; then printf -v "$__var" '%s' ""; return 0; fi
+        if is_port "$__val"; then printf -v "$__var" '%s' "$__val"; return 0; fi
+        warn "'$__val' — не порт (1-65535)."
+    done
+}
+
+backup() {
+    local f="$1"
+    [ -e "$f" ] || return 0
+    cp -a "$f" "${f}.bak.$(date +%Y%m%d-%H%M%S)" 2>/dev/null || true
+}
+
+fetch() { # fetch URL DEST
+    local url="$1" dest="$2"
+    curl -fsSL --retry 3 --connect-timeout 15 "$url" -o "$dest"
+}
+
+compose() { docker compose "$@"; }
+
+# ============================================================================
+# 0. Preflight
+# ============================================================================
+say ""
+say "${C_BLD}Remnawave Node + Caddy Selfsteal installer v$VERSION${C_OFF}"
+say "${C_DIM}логи: $LOG_FILE${C_OFF}"
+say ""
+
+[ "$(id -u)" -eq 0 ] || die "Запускать от root: sudo bash $0"
+log "=== start v$VERSION args: $* ==="
+
+if ! command -v apt-get >/dev/null 2>&1; then
+    die "Поддерживаются только Debian/Ubuntu (apt-get не найден)."
+fi
+
+OS_PRETTY="$(sed -n 's/^PRETTY_NAME="\(.*\)"/\1/p' /etc/os-release 2>/dev/null || echo unknown)"
+ARCH="$(uname -m)"
+case "$ARCH" in
+    x86_64|aarch64|arm64) : ;;
+    *) warn "Архитектура $ARCH не проверялась — продолжаем." ;;
+esac
+
+FREE_KB="$(df -Pk / | awk 'NR==2{print $4}')"
+[ "${FREE_KB:-0}" -ge 2097152 ] || warn "Свободно меньше 2 ГБ — может не хватить."
+
+mkdir -p "$STATE_DIR"; chmod 700 "$STATE_DIR"
+touch "$LOG_FILE" 2>/dev/null || true
+
+# ============================================================================
+# 1. Конфигурация (интерактивно или из ответов прошлого запуска)
+# ============================================================================
+if [ "$RECONFIGURE" = false ] && [ -f "$ANSWERS_FILE" ] && [ "$ASSUME_YES" = true ]; then
+    # shellcheck disable=SC1090
+    . "$ANSWERS_FILE"
+fi
+
+hdr "1. Параметры установки"
+
+# --- IP панели -------------------------------------------------------------
+if [ -z "$PANEL_IP" ] || ! is_ipv4 "$PANEL_IP"; then
+    while true; do
+        ask PANEL_IP "IP панели Remnawave (к ней будет открыт порт ноды)" "${PANEL_IP:-}"
+        is_ipv4 "$PANEL_IP" && break
+        warn "Некорректный IPv4: '$PANEL_IP'"
+        [ "$ASSUME_YES" = true ] && die "Укажите корректный --panel-ip"
+    done
+fi
+ok "Панель: $PANEL_IP"
+
+# --- Порт ноды -------------------------------------------------------------
+while ! is_port "$NODE_PORT"; do
+    ask NODE_PORT "Порт ноды (внутренний API, панель → нода)" "2222"
+done
+ok "Порт ноды: $NODE_PORT"
+
+# --- Секретный ключ --------------------------------------------------------
+if [ -z "$SECRET_KEY" ]; then
+    [ "$ASSUME_YES" = true ] && die "Не указан --secret-key (обязателен в режиме --yes)"
+    say ""
+    note "SECRET_KEY выдаётся панелью при создании ноды (Nodes → Management → +)."
+    note "Скопируйте его из формы создания ноды и вставьте сюда."
+    while [ -z "$SECRET_KEY" ]; do
+        ask SECRET_KEY "SECRET_KEY" ""
+        if [ -z "$SECRET_KEY" ]; then
+            if [ ! -t 0 ]; then die "Ввод недоступен — передайте --secret-key KEY"; fi
+            warn "Ключ обязателен."
+        fi
+    done
+fi
+[ "${#SECRET_KEY}" -ge 16 ] || warn "SECRET_KEY короче 16 символов — проверьте, что скопировали целиком."
+ok "SECRET_KEY: ${SECRET_KEY:0:6}…${SECRET_KEY: -4} (${#SECRET_KEY} символов)"
+
+# --- Порты транспортов -----------------------------------------------------
+say ""
+note "Укажите порты, которые будут открыты в firewall. Enter — порт не открывать."
+note "Сами inbound'ы настраиваются в панели; здесь важен только firewall."
+say ""
+
+ask_port XHTTP_PORT "Порт для xHTTP" "обычно 443"
+[ -n "$XHTTP_PORT" ] && ok "xHTTP: $XHTTP_PORT" || note "xHTTP: не открывается"
+ask_port GRPC_PORT  "Порт для gRPC" "обычно 2096"
+[ -n "$GRPC_PORT" ] && ok "gRPC:  $GRPC_PORT" || note "gRPC: не открывается"
+ask_port TCP_PORT   "Порт для TCP/Vision" "обычно 4443"
+[ -n "$TCP_PORT" ] && ok "TCP:   $TCP_PORT" || note "TCP: не открывается"
+
+# --- Selfsteal -------------------------------------------------------------
+say ""
+ask_yesno USE_SELFSTEAL "Развернуть Caddy selfsteal (сайт-заглушка для Reality/TLS)?" "yes"
+
+if [ "$USE_SELFSTEAL" = "yes" ]; then
+    if [ -z "$DOMAIN" ] || ! is_domain "$DOMAIN"; then
+        while true; do
+            ask DOMAIN "Домен для selfsteal (A-запись должна указывать на этот сервер)" "${DOMAIN:-}"
+            is_domain "$DOMAIN" && break
+            warn "Некорректный домен: '$DOMAIN'"
+            [ "$ASSUME_YES" = true ] && die "Укажите корректный --domain"
+        done
+    fi
+    ok "Домен: $DOMAIN"
+
+    while ! is_port "$SELFSTEAL_PORT"; do
+        ask SELFSTEAL_PORT "Внутренний HTTPS-порт Caddy (127.0.0.1)" "9443"
+    done
+    ok "Порт Caddy: 127.0.0.1:$SELFSTEAL_PORT"
+
+    say ""
+    say "  ${C_BLD}Доступные сайты-заглушки:${C_OFF}"
+    TEMPLATE_KEYS=(landing cloud speedtest blog 503)
+    TEMPLATE_DESCS=(
+        "Нейтральный лендинг (по умолчанию)"
+        "Облачное хранилище файлов"
+        "Спидтест"
+        "Блог со статьёй"
+        "Страница обслуживания 503"
+    )
+    for i in "${!TEMPLATE_KEYS[@]}"; do
+        printf "    %d) %-10s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
+    done
+
+    if [ "$ASSUME_YES" = false ]; then
+        while true; do
+            read -r -p "$(echo -e "  ${C_BLD}Выбор [1-${#TEMPLATE_KEYS[@]}]${C_OFF} [${TEMPLATE}]: ")" tsel || true
+            [ -z "$tsel" ] && break
+            if [[ "$tsel" =~ ^[0-9]+$ ]] && [ "$tsel" -ge 1 ] && [ "$tsel" -le "${#TEMPLATE_KEYS[@]}" ]; then
+                TEMPLATE="${TEMPLATE_KEYS[$((tsel-1))]}"
+                break
+            fi
+            warn "Введите число от 1 до ${#TEMPLATE_KEYS[@]}"
+        done
+    fi
+
+    valid=false
+    for k in "${TEMPLATE_KEYS[@]}"; do [ "$k" = "$TEMPLATE" ] && valid=true; done
+    [ "$valid" = true ] || die "Неизвестный шаблон '$TEMPLATE'. Допустимо: ${TEMPLATE_KEYS[*]}"
+    ok "Сайт-заглушка: $TEMPLATE"
+fi
+
+# --- Сводка и подтверждение ------------------------------------------------
+say ""
+say "  ${C_BLD}Итого:${C_OFF}"
+say "    панель ............ $PANEL_IP"
+say "    порт ноды ......... $NODE_PORT"
+say "    xHTTP ............. ${XHTTP_PORT:-<не открывать>}"
+say "    gRPC .............. ${GRPC_PORT:-<не открывать>}"
+say "    TCP ............... ${TCP_PORT:-<не открывать>}"
+if [ "$USE_SELFSTEAL" = "yes" ]; then
+    say "    selfsteal ......... ${DOMAIN}:80/443 → Caddy 127.0.0.1:${SELFSTEAL_PORT} (${TEMPLATE})"
+else
+    say "    selfsteal ......... выключен"
+fi
+say ""
+
+if [ "$ASSUME_YES" = false ]; then
+    read -r -p "$(echo -e "${C_BLD}Продолжить установку?${C_OFF} [Y/n]: ")" confirm || true
+    case "${confirm:-y}" in
+        n|N|no|no) die "Отменено пользователем." ;;
+    esac
+fi
+
+# сохраняем ответы для повторного запуска
+umask 077
+cat > "$ANSWERS_FILE" <<EOF
+# Сгенерировано remnawave node installer v$VERSION $(date '+%F %T')
+PANEL_IP='$PANEL_IP'
+NODE_PORT='$NODE_PORT'
+SECRET_KEY='$SECRET_KEY'
+XHTTP_PORT='$XHTTP_PORT'
+GRPC_PORT='$GRPC_PORT'
+TCP_PORT='$TCP_PORT'
+USE_SELFSTEAL='$USE_SELFSTEAL'
+DOMAIN='$DOMAIN'
+SELFSTEAL_PORT='$SELFSTEAL_PORT'
+TEMPLATE='$TEMPLATE'
+EOF
+chmod 600 "$ANSWERS_FILE"
+
+# ============================================================================
+# 2. Зависимости
+# ============================================================================
+hdr "2. Зависимости"
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq \
+    curl wget ca-certificates openssl jq ufw logrotate dnsutils cron \
+    gnupg lsb-release tzdata || warn "Часть пакетов не установилась"
+ok "Базовые пакеты готовы"
+
+# ============================================================================
+# 3. Время и NTP
+# ============================================================================
+hdr "3. Время и синхронизация"
+timedatectl set-timezone "${TZ_NAME:-Europe/Moscow}" 2>/dev/null || true
+if command -v systemd-timesyncd >/dev/null 2>&1 || [ -d /lib/systemd/systemd-timesyncd ]; then
+    systemctl enable --now systemd-timesyncd >/dev/null 2>&1 || true
+fi
+timedatectl set-ntp true 2>/dev/null || true
+timedatectl 2>/dev/null | sed -n '1,5p' | sed 's/^/  /' || true
+
+# ============================================================================
+# 4. Docker
+# ============================================================================
+hdr "4. Docker"
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    ok "Docker уже установлен: $(docker --version 2>/dev/null)"
+else
+    note "Устанавливаю Docker (get.docker.com)…"
+    curl -fsSL https://get.docker.com | sh || die "Не удалось установить Docker"
+    systemctl enable --now docker
+    ok "Docker установлен"
+fi
+
+if ! docker compose version >/dev/null 2>&1; then
+    note "Плагин compose отсутствует — ставлю…"
+    apt-get install -y -qq docker-compose-plugin || {
+        mkdir -p /usr/libexec/docker/cli-plugins
+        curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)" \
+            -o /usr/libexec/docker/cli-plugins/docker-compose
+        chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+    }
+    docker compose version >/dev/null 2>&1 || die "docker compose недоступен"
+fi
+ok "docker compose: $(docker compose version --short 2>/dev/null || echo ok)"
+
+DOCKER_BIN="$(command -v docker || true)"
+[ -n "$DOCKER_BIN" ] || DOCKER_BIN="/usr/bin/docker"
+note "docker: $DOCKER_BIN"
+
+# ============================================================================
+# 5. Тюнинг системы
+# ============================================================================
+if [ "$SKIP_TUNING" = true ]; then
+    hdr "5. Тюнинг системы"
+    warn "Пропущено (--skip-tuning)"
+else
+    hdr "5. Тюнинг системы"
+
+    # --- swap -------------------------------------------------------------
+    if [ -z "$(swapon --show=NAME --noheadings 2>/dev/null || true)" ]; then
+        if [ ! -f /swapfile ]; then
+            fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
+        fi
+        chmod 600 /swapfile
+        mkswap /swapfile >/dev/null
+        swapon /swapfile || warn "swapon не сработал"
+        grep -q '^/swapfile[[:space:]]' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+        ok "Swap 2G создан и закреплён в /etc/fstab"
+    else
+        ok "Swap уже активен"
+    fi
+
+    # --- nofile -----------------------------------------------------------
+    cat > /etc/security/limits.d/99-remnawave.conf <<'EOF'
+* soft nofile 1048576
+* hard nofile 1048576
+root soft nofile 1048576
+root hard nofile 1048576
+EOF
+    mkdir -p /etc/systemd/system.conf.d /etc/systemd/system/docker.service.d
+    cat > /etc/systemd/system.conf.d/99-nofile.conf <<'EOF'
+[Manager]
+DefaultLimitNOFILE=1048576
+EOF
+    cat > /etc/systemd/system/docker.service.d/99-nofile.conf <<'EOF'
+[Service]
+LimitNOFILE=infinity
+EOF
+    ok "nofile=1048576 (host + docker.service)"
+
+    # --- sysctl -----------------------------------------------------------
+    cat > /etc/sysctl.d/99-remnawave.conf <<'EOF'
+net.core.somaxconn = 65535
+net.core.netdev_max_backlog = 65535
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 65536 16777216
+net.ipv4.tcp_max_syn_backlog = 65535
+net.ipv4.ip_local_port_range = 1024 65535
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_slow_start_after_idle = 0
+net.netfilter.nf_conntrack_max = 262144
+net.netfilter.nf_conntrack_tcp_timeout_established = 600
+vm.overcommit_memory = 1
+fs.nr_open = 2097152
+EOF
+    echo "nf_conntrack" > /etc/modules-load.d/conntrack.conf
+    modprobe nf_conntrack 2>/dev/null || true
+    sysctl --system >/dev/null 2>&1 || warn "не все sysctl-ключи применились"
+    ok "sysctl применены (conntrack_max=$(sysctl -n net.netfilter.nf_conntrack_max 2>/dev/null || echo n/a))"
+
+    # --- BBR+FQ -----------------------------------------------------------
+    modprobe tcp_bbr 2>/dev/null || true
+    if grep -qw bbr /proc/sys/net/ipv4/tcp_available_congestion_control 2>/dev/null; then
+        cat > /etc/sysctl.d/99-bbr.conf <<'EOF'
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+EOF
+        sysctl --system >/dev/null 2>&1 || true
+        IFACE="$(ip -o route show default | awk '{print $5; exit}' || true)"
+        [ -n "${IFACE:-}" ] && tc qdisc replace dev "$IFACE" root fq 2>/dev/null || true
+        ok "BBR + FQ включены (${IFACE:-?})"
+    else
+        warn "BBR недоступен в ядре — оставлен текущий алгоритм"
+    fi
+
+    systemctl daemon-reload
+fi
+
+# ============================================================================
+# 6. Firewall
+# ============================================================================
+hdr "6. Firewall"
+if [ "$SKIP_FIREWALL" = true ]; then
+    warn "Пропущено (--skip-firewall)"
+else
+    SSH_PORT="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}' || true)"
+    SSH_PORT="${SSH_PORT:-22}"
+
+    ufw allow "$SSH_PORT/tcp" comment 'SSH' >/dev/null
+
+    if [ "$USE_SELFSTEAL" = "yes" ]; then
+        ufw allow 80/tcp comment 'ACME HTTP-01 + redirect' >/dev/null
+    fi
+
+    # Транспортные порты — всем (это публичные inbound'ы)
+    for p in "$XHTTP_PORT" "$GRPC_PORT" "$TCP_PORT"; do
+        [ -n "$p" ] || continue
+        ufw allow "$p/tcp" comment "xray inbound $p" >/dev/null
+    done
+
+    # Порт ноды — только панели
+    ufw allow from "$PANEL_IP" to any port "$NODE_PORT" proto tcp comment "remnanode API $NODE_PORT" >/dev/null
+
+    ufw --force enable >/dev/null
+    ok "Правила добавлены:"
+    ufw status 2>/dev/null | sed -n '2,25p' | sed 's/^/    /' || true
+fi
+
+# Проверка занятости портов до запуска контейнеров
+conflict=""
+for p in "$NODE_PORT" "$XHTTP_PORT" "$GRPC_PORT" "$TCP_PORT"; do
+    [ -n "$p" ] || continue
+    if ss -tlnH "sport = :$p" 2>/dev/null | grep -q .; then
+        conflict="$conflict $p"
+    fi
+done
+[ -n "$conflict" ] && warn "Порты уже заняты:$conflict (проверьте перед стартом)"
+
+# ============================================================================
+# 7. Remnawave Node
+# ============================================================================
+hdr "7. Remnawave Node"
+mkdir -p "$NODE_DIR"
+backup "$NODE_DIR/docker-compose.yml"; backup "$NODE_DIR/.env"
+
+cat > "$NODE_DIR/.env" <<EOF
+### NODE ###
+NODE_PORT=$NODE_PORT
+SECRET_KEY=$SECRET_KEY
+EOF
+chmod 600 "$NODE_DIR/.env"
+
+cat > "$NODE_DIR/docker-compose.yml" <<EOF
+services:
+  remnanode:
+    container_name: remnanode
+    hostname: remnanode
+    image: $NODE_IMAGE
+    restart: always
+    network_mode: host
+    env_file:
+      - .env
+    cap_add:
+      - NET_ADMIN
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+EOF
+ok "docker-compose.yml и .env созданы в $NODE_DIR"
+
+cat > /etc/systemd/system/remnanode.service <<EOF
+[Unit]
+Description=Remnawave Node (Docker Compose)
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+ConditionPathExists=$NODE_DIR/docker-compose.yml
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=$NODE_DIR
+ExecStart=$DOCKER_BIN compose up -d --remove-orphans
+ExecReload=$DOCKER_BIN compose up -d --remove-orphans
+ExecStop=$DOCKER_BIN compose down
+TimeoutStartSec=300
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+note "Запускаю ноду…"
+(cd "$NODE_DIR" && compose pull -q && compose up -d) || warn "docker compose up вернул ошибку — смотрите: docker compose -f $NODE_DIR/docker-compose.yml logs"
+systemctl daemon-reload
+systemctl enable remnanode.service >/dev/null 2>&1 || true
+ok "Нода запущена, автозагрузка включена (remnanode.service)"
+
+# ============================================================================
+# 8. Caddy selfsteal
+# ============================================================================
+if [ "$USE_SELFSTEAL" = "yes" ]; then
+    hdr "8. Caddy selfsteal"
+    mkdir -p "$SELFSTEAL_DIR/html" "$SELFSTEAL_DIR/logs"
+    backup "$SELFSTEAL_DIR/Caddyfile"; backup "$SELFSTEAL_DIR/docker-compose.yml"
+
+    # --- сайт-заглушка ----------------------------------------------------
+    TEMPLATE_SRC=""
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
+    if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/templates/$TEMPLATE/index.html" ]; then
+        TEMPLATE_SRC="$SCRIPT_DIR/templates/$TEMPLATE/index.html"
+        note "Шаблон взят локально: $TEMPLATE_SRC"
+    fi
+
+    if [ -n "$TEMPLATE_SRC" ]; then
+        cp "$TEMPLATE_SRC" "$SELFSTEAL_DIR/html/index.html"
+    else
+        note "Скачиваю шаблон '$TEMPLATE' из репозитория…"
+        if ! fetch "$TEMPLATES_BASE/$TEMPLATE/index.html" "$SELFSTEAL_DIR/html/index.html"; then
+            warn "Не удалось скачать шаблон — ставлю минимальную страницу"
+            cat > "$SELFSTEAL_DIR/html/index.html" <<EOF
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>$DOMAIN</title><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{font:16px/1.6 system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#0f1115;color:#e8e8ea}main{max-width:36rem;padding:2rem;text-align:center}</style>
+</head><body><main><h1>$DOMAIN</h1><p>Service is running.</p></main></body></html>
+EOF
+        fi
+    fi
+    ok "Сайт-заглушка: $TEMPLATE → $SELFSTEAL_DIR/html/index.html"
+
+    # --- .env -------------------------------------------------------------
+    cat > "$SELFSTEAL_DIR/.env" <<EOF
+SELF_STEAL_DOMAIN=$DOMAIN
+SELF_STEAL_PORT=$SELFSTEAL_PORT
+EOF
+
+    # --- Caddyfile --------------------------------------------------------
+    cat > "$SELFSTEAL_DIR/Caddyfile" <<'EOF'
+{
+	https_port {$SELF_STEAL_PORT}
+	default_bind 127.0.0.1
+	auto_https disable_redirects
+	admin off
+	servers {
+		protocols h1 h2
+	}
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		level ERROR
+		format json
+	}
+}
+
+http://{$SELF_STEAL_DOMAIN} {
+	bind 0.0.0.0
+	redir https://{$SELF_STEAL_DOMAIN}{uri} permanent
+	log {
+		output file /var/log/caddy/redirect.log {
+			roll_size 5MB
+			roll_keep 3
+		}
+	}
+}
+
+https://{$SELF_STEAL_DOMAIN} {
+	encode gzip
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+	root * /var/www/html
+	try_files {path} /index.html
+	file_server
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		level ERROR
+	}
+}
+
+:{$SELF_STEAL_PORT} {
+	tls internal
+	respond 204
+	log off
+}
+
+:80 {
+	bind 0.0.0.0
+	respond 204
+	log off
+}
+EOF
+
+    # --- compose ----------------------------------------------------------
+    cat > "$SELFSTEAL_DIR/docker-compose.yml" <<EOF
+services:
+  caddy:
+    image: $CADDY_IMAGE
+    container_name: selfsteal
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./html:/var/www/html:ro
+      - ./logs:/var/log/caddy
+      - selfsteal_data:/data
+      - selfsteal_config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  selfsteal_data:
+  selfsteal_config:
+EOF
+
+    # --- DNS-проверка (не блокирующая) ------------------------------------
+    if command -v dig >/dev/null 2>&1; then
+        SERVER_IP="$(curl -fsS4 --max-time 10 https://ifconfig.io 2>/dev/null || true)"
+        A_IP="$(dig +short A "$DOMAIN" 2>/dev/null | grep -E '^[0-9.]+$' | head -1 || true)"
+        if [ -n "$A_IP" ] && [ -n "$SERVER_IP" ] && [ "$A_IP" != "$SERVER_IP" ]; then
+            warn "DNS: $DOMAIN → $A_IP, а сервер $SERVER_IP. ACME-сертификат не выпустится, пока A-запись не исправлена."
+            warn "Caddy продолжит работать, но HTTPS-сертификат будет внутренним."
+        elif [ -n "$A_IP" ]; then
+            ok "DNS: $DOMAIN → $A_IP"
+        else
+            warn "DNS: A-запись для $DOMAIN не найдена — сертификат Let's Encrypt не выпустится."
+        fi
+    fi
+
+    note "Запускаю Caddy…"
+    (cd "$SELFSTEAL_DIR" && compose pull -q && compose up -d) || warn "Caddy не стартовал — смотрите: docker compose -f $SELFSTEAL_DIR/docker-compose.yml logs"
+
+    cat > /etc/systemd/system/selfsteal.service <<EOF
+[Unit]
+Description=Caddy selfsteal (Remnawave decoy site)
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+ConditionPathExists=$SELFSTEAL_DIR/docker-compose.yml
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=$SELFSTEAL_DIR
+ExecStart=$DOCKER_BIN compose up -d --remove-orphans
+ExecReload=$DOCKER_BIN compose up -d --remove-orphans
+ExecStop=$DOCKER_BIN compose down
+TimeoutStartSec=180
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+    systemctl enable selfsteal.service >/dev/null 2>&1 || true
+    ok "Selfsteal запущен, автозагрузка включена (selfsteal.service)"
+else
+    hdr "8. Caddy selfsteal"
+    note "Пропущено по выбору пользователя"
+fi
+
+# ============================================================================
+# 9. Проверка
+# ============================================================================
+hdr "9. Проверка"
+sleep 3
+
+say "  ${C_BLD}Контейнеры:${C_OFF}"
+docker ps --format '    {{.Names}}  {{.Status}}  {{.Image}}' 2>/dev/null || warn "docker ps недоступен"
+
+say ""
+say "  ${C_BLD}Слушающие порты:${C_OFF}"
+for p in "$NODE_PORT" "$XHTTP_PORT" "$GRPC_PORT" "$TCP_PORT" 80 443; do
+    [ -n "$p" ] || continue
+    if ss -tlnH "sport = :$p" 2>/dev/null | grep -q .; then
+        say "    :$p — слушается"
+    else
+        note "    :$p — свободен"
+    fi
+done
+
+if [ "$USE_SELFSTEAL" = "yes" ]; then
+    say ""
+    say "  ${C_BLD}Локальная проверка selfsteal:${C_OFF}"
+    if curl -fsSk --max-time 5 -H "Host: $DOMAIN" "https://127.0.0.1:$SELFSTEAL_PORT/" -o /dev/null; then
+        ok "Caddy отвечает по https://127.0.0.1:$SELFSTEAL_PORT"
+    else
+        warn "Caddy пока не отвечает (первый запуск + выпуск сертификата может занять до минуты)"
+    fi
+fi
+
+say ""
+say "  ${C_BLD}systemd:${C_OFF}"
+for u in remnanode selfsteal; do
+    if systemctl cat "$u.service" >/dev/null 2>&1; then
+        say "    $u.service: $(systemctl is-enabled "$u.service" 2>/dev/null || echo -), $(systemctl is-active "$u.service" 2>/dev/null || echo -)"
+    fi
+done
+
+# ============================================================================
+# 10. Что дальше
+# ============================================================================
+hdr "Готово"
+say ""
+say "  ${C_BLD}1) В панели Remnawave:${C_OFF}"
+say "     Nodes → Management → добавьте этот сервер"
+say "       • Address: IP этого сервера"
+say "       • Port: $NODE_PORT"
+say "       • SECRET_KEY: тот, что вы вставили при установке"
+say "     Затем «Next» → выберите Config Profile → Create."
+say ""
+if [ "$USE_SELFSTEAL" = "yes" ]; then
+    say "  ${C_BLD}2) Для selfsteal в панели:${C_OFF}"
+    say "     В inbound'ах xHTTP/gRPC включите Self-steal и укажите:"
+    say "       • dest: 127.0.0.1:$SELFSTEAL_PORT"
+    say "       • domain: $DOMAIN"
+    say "     Reality/xHTTP будут отдавать этот домен при обычном обращении."
+    say ""
+fi
+say "  ${C_BLD}3) Откройте в браузере:${C_OFF} https://${DOMAIN:-<ваш домен>}"
+say ""
+say "  ${C_BLD}Управление:${C_OFF}"
+say "     systemctl status remnanode selfsteal"
+say "     docker logs -f remnanode"
+say "     docker logs -f selfsteal"
+say "     cd $NODE_DIR && docker compose pull && docker compose up -d   # обновление ноды"
+say ""
+say "  ${C_BLD}Конфиг:${C_OFF} $ANSWERS_FILE (повторный запуск с этими ответами: --yes)"
+say "  ${C_BLD}Лог:${C_OFF}    $LOG_FILE"
+say ""
+warn "Перезагрузка применит лимиты nofile полностью: reboot"
+say ""

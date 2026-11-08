@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northwind Labs — Engineering notes</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #fbfbfc;
+    color: #1b1d21;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0e1116; color: #d7dae0; }
+    .card { background: #151a21 !important; border-color: #232a33 !important; }
+    header { border-color: #232a33 !important; }
+    a { color: #8ab4ff; }
+  }
+  header {
+    max-width: 880px; margin: 0 auto; padding: 28px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #e8e9ec;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: .2px; }
+  .mark {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  }
+  nav a { margin-left: 22px; color: inherit; text-decoration: none; opacity: .75; font-size: 15px; }
+  nav a:hover { opacity: 1; }
+  main { max-width: 880px; margin: 0 auto; padding: 64px 24px 80px; }
+  h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.15; margin: 0 0 18px; letter-spacing: -.02em; }
+  .lead { font-size: 18px; opacity: .8; max-width: 60ch; margin: 0 0 40px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card {
+    background: #fff; border: 1px solid #e8e9ec; border-radius: 14px; padding: 22px;
+  }
+  .card h3 { margin: 0 0 8px; font-size: 16px; }
+  .card p { margin: 0; font-size: 15px; opacity: .75; }
+  footer { max-width: 880px; margin: 0 auto; padding: 28px 24px 56px; font-size: 14px; opacity: .55; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="mark"></span> Northwind Labs</div>
+  <nav>
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<main>
+  <h1>We build small, dependable tools.</h1>
+  <p class="lead">
+    Northwind Labs is a small engineering studio. We maintain a set of internal
+    services, write about infrastructure, and occasionally publish things that
+    turned out to be useful.
+  </p>
+
+  <section id="work" class="grid">
+    <div class="card">
+      <h3>Edge routing</h3>
+      <p>Lightweight proxies with predictable latency and a very small footprint.</p>
+    </div>
+    <div class="card">
+      <h3>Observability</h3>
+      <p>Dashboards that answer one question quickly, instead of twelve slowly.</p>
+    </div>
+    <div class="card">
+      <h3>Release tooling</h3>
+      <p>Boring, repeatable deployments. The kind you stop thinking about.</p>
+    </div>
+  </section>
+
+  <section id="about" style="margin-top:56px">
+    <h3 style="margin:0 0 10px">About</h3>
+    <p style="max-width:65ch;opacity:.8;margin:0">
+      The team is small on purpose. We work with a handful of long-term partners,
+      keep our stack simple, and prefer a quiet service over a clever one.
+    </p>
+  </section>
+</main>
+
+<footer id="contact">
+  © <span id="y"></span> Northwind Labs · hello@northwindlabs.example
+</footer>
+<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+</body>
+</html>
