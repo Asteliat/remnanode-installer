@@ -54,8 +54,9 @@ bash install.sh --yes \
 `--tcp-port`, `--selfsteal yes|no`, `--no-selfsteal`, `--domain`,
 `--selfsteal-port`, `--template`, `--one-ip` / `--two-ip` / `--dual-ip`,
 `--ip1`, `--ip2`, `--dns yes|no` / `--no-dns`, `--autoupdate yes|no` /
-`--no-autoupdate`, `--yes`, `--reconfigure`, `--skip-tuning`, `--skip-firewall`,
-`--help`.
+`--no-autoupdate`, `--alerts yes|no` / `--no-alerts`, `--tg-token`, `--tg-chat`,
+`--swap-size auto|off|1024M`, `--yes`, `--reconfigure`, `--skip-tuning`,
+`--skip-firewall`, `--help`.
 
 Повторный запуск с `--yes` без флагов читает сохранённые ответы из
 `/etc/remnawave-setup/answers.env`. Переопределить: `--reconfigure`.
@@ -68,11 +69,13 @@ bash install.sh --yes \
 3. **Время и NTP** — критично для ACME/TLS.
 4. **Docker** — официальный `get.docker.com` + compose v2.
 5. **Тюнинг**:
-   - swap 2 ГБ + запись в `/etc/fstab`, `swappiness=10`;
+   - **swap подбирается под сервер**: по RAM и свободному диску (см. ниже),
+     с записью в `/etc/fstab`, `swappiness=10`;
    - `nofile = 1048576` (хост + drop-in для `docker.service`);
-   - sysctl: backlog, буферы, conntrack, `vm.overcommit_memory=1`,
+   - sysctl: backlog, буферы, conntrack (+ `hashsize`), `vm.overcommit_memory=1`,
      `fs.nr_open`, `tcp_mtu_probing` (MTU-blackhole в мобильных сетях);
-   - BBR + FQ с проверкой поддержки ядра.
+   - BBR + FQ с проверкой поддержки ядра;
+   - journald ограничен 500 МБ.
 6. **Сеть**: схема с одним IP или «вход IP1 / выход IP2»:
    - адрес IP2 + policy routing (`ip rule`/`ip route table 100`);
    - SNAT **только для новых исходящих соединений**
@@ -144,8 +147,36 @@ curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer/main/t
   -o /opt/selfsteal/html/index.html && docker restart selfsteal
 ```
 
-## Схема с двумя IP
+## Авто-подбор swap
 
+Размер swap считается по характеристикам сервера, а не фиксирован:
+
+| RAM | Swap | Почему |
+|---|---|---|
+| ≤ 512 МБ | 1024 МБ | маленькому VPS нужен запас |
+| 1–8 ГБ | 2048 МБ | страховка от OOM, не более |
+| > 8 ГБ | 1024 МБ | только аварийный запас |
+
+Дополнительно:
+
+- не больше **20% свободного диска** (округляется вниз до 256 МБ);
+- не меньше 512 МБ;
+- если свободно **меньше 1 ГБ** — swap не создаётся, скрипт предупреждает;
+- если swap уже активен — не трогаем;
+- если `/swapfile` есть, но другого размера — пересоздаётся.
+
+При установке показываются реальные цифры и предлагается выбор:
+
+```
+RAM: 2048 МБ, свободно на диске: 40000 МБ
+рекомендуется swap: 2048 МБ (RAM 2048 МБ, диск 40000 МБ)
+Размер swap (auto / off / например 1024M) [auto]:
+```
+
+Неинтерактивно: `--swap-size auto`, `--swap-size off`, `--swap-size 2G`.
+Фактический выбор сохраняется в `answers.env`, чтобы повторный запуск не переспрашивал.
+
+## Схема с двумя IP
 Вход остаётся на основном IP (там же домен и selfsteal), а исходящий трафик
 ноды уходит с дополнительного:
 

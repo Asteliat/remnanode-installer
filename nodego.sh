@@ -221,6 +221,12 @@ show_status() {
     outbound_check
 
     say ""
+    say "  ${C_BLD}Ресурсы:${C_OFF}"
+    say "    RAM:  $(free -h | awk '/^Mem:/{print $2" всего, "$7" доступно"}')"
+    say "    swap: $(free -h | awk '/^Swap:/{print $2" всего, "$3" занято"}')"
+    say "    диск: $(df -h / | awk 'NR==2{print $5" занято, "$4" свободно"}')"
+
+    say ""
     say "  ${C_BLD}Порты:${C_OFF}"
     say "    панель: ${PANEL_IP:-—}   порт ноды: ${NODE_PORT:-—}"
     if [ "$USE_SELFSTEAL" = "yes" ]; then

@@ -50,6 +50,7 @@ ANSWERS_FILE="$STATE_DIR/answers.env"
 LOG_FILE="/var/log/remnawave-setup.log"
 NODE_IMAGE="remnawave/node:latest"
 CADDY_IMAGE="caddy:2-alpine"
+SWAP_SIZE="${SWAP_SIZE:-auto}"      # auto | off | 512M | 2G
 
 # ------------------------------------------------------------------ defaults
 PANEL_IP="${PANEL_IP:-}"
@@ -98,6 +99,7 @@ while [[ $# -gt 0 ]]; do
         --yes|-y)          ASSUME_YES=true ;;
         --reconfigure)     : ;;   # учтён на этапе пред-сканирования аргументов
         --skip-tuning)     SKIP_TUNING=true ;;
+        --swap-size)       SWAP_SIZE="${2:?}"; shift ;;
         --skip-firewall)   SKIP_FIREWALL=true ;;
         --panel-ip)        PANEL_IP="${2:?}"; shift ;;
         --node-port)       NODE_PORT="${2:?}"; shift ;;
@@ -172,6 +174,45 @@ is_domain() { [[ "${1:-}" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a
 detect_primary_ip() {
     ip -4 route get 1.1.1.1 2>/dev/null \
         | awk '{for (i=1;i<=NF;i++) if ($i=="src") {print $(i+1); exit}}' || true
+}
+
+# "2G" / "512M" / "1024" → мегабайты; "auto"/"off" → пустая строка
+to_mb() {
+    local v="${1:-}"
+    case "${v,,}" in
+        ''|auto|off|no|none|0) echo "" ;;
+        *g) echo $(( ${v%[Gg]} * 1024 )) ;;
+        *m) echo "${v%[Mm]}" ;;
+        *[!0-9]*) echo "" ;;
+        *) echo "$v" ;;
+    esac
+}
+
+# Подбор размера swap: RAM + свободный диск.
+#   <=512 МБ RAM  → 1 ГБ (маленькому VPS нужен запас)
+#   <=8 ГБ RAM    → 2 ГБ (типовой VPS: страховка от OOM, не более)
+#   >8 ГБ RAM     → 1 ГБ (только аварийный запас)
+# Дополнительно: не больше 20% свободного диска, не меньше 512 МБ,
+# и совсем не создаём, если свободно меньше 1 ГБ.
+detect_swap_mb() {
+    local ram="${1:-1024}" free="${2:-0}" mb max_disk
+    if [ "$ram" -le 512 ]; then
+        mb=1024
+    elif [ "$ram" -le 8192 ]; then
+        mb=2048
+    else
+        mb=1024
+    fi
+    max_disk=$(( free / 5 ))
+    max_disk=$(( max_disk / 256 * 256 ))   # округляем вниз до 256 МБ
+    if [ "$mb" -gt "$max_disk" ]; then mb="$max_disk"; fi
+    if [ "$mb" -gt 4096 ]; then mb=4096; fi
+    if [ "$free" -lt 1024 ]; then
+        mb=0
+    elif [ "$mb" -lt 512 ]; then
+        mb=512
+    fi
+    echo "$mb"
 }
 
 ask() { # ask VAR "текст" "дефолт"
@@ -547,6 +588,7 @@ IP1='$IP1'
 IP2='$IP2'
 USE_DNS='$USE_DNS'
 AUTO_UPDATE='$AUTO_UPDATE'
+SWAP_SIZE='$SWAP_SIZE'
 ALERTS='$ALERTS'
 TG_TOKEN='$TG_TOKEN'
 TG_CHAT='$TG_CHAT'
@@ -651,17 +693,77 @@ else
     hdr "5. Тюнинг системы"
 
     # --- swap -------------------------------------------------------------
-    if [ -z "$(swapon --show=NAME --noheadings 2>/dev/null || true)" ]; then
-        if [ ! -f /swapfile ]; then
-            fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
+    RAM_MB="$(free -m | awk '/^Mem:/{print $2}')"
+    FREE_MB="$(df -Pm / | awk 'NR==2{print $4}')"
+    RAM_MB="${RAM_MB:-1024}"
+    FREE_MB="${FREE_MB:-0}"
+    REC_SWAP="$(detect_swap_mb "$RAM_MB" "$FREE_MB")"
+
+    SWAP_MB=""
+    case "${SWAP_SIZE,,}" in
+        auto|'')
+            SWAP_MB="$REC_SWAP"
+            if [ "$ASSUME_YES" = false ]; then
+                say "  RAM: ${RAM_MB} МБ, свободно на диске: ${FREE_MB} МБ"
+                if [ "$REC_SWAP" -gt 0 ]; then
+                    say "  рекомендуется swap: ${REC_SWAP} МБ (RAM ${RAM_MB} МБ, диск ${FREE_MB} МБ)"
+                else
+                    warn "свободного места мало — swap предлагается не создавать"
+                fi
+                swap_choice=""
+                ask swap_choice "Размер swap (auto / off / например 1024M)" "auto"
+                case "${swap_choice,,}" in
+                    off|no|none|0) SWAP_MB=0 ;;
+                    auto|'')       SWAP_MB="$REC_SWAP" ;;
+                    *)
+                        SWAP_MB="$(to_mb "$swap_choice")"
+                        if ! [[ "$SWAP_MB" =~ ^[0-9]+$ ]] || [ "${SWAP_MB:-0}" -lt 128 ]; then
+                            warn "не понял «$swap_choice» — беру рекомендуемый размер"
+                            SWAP_MB="$REC_SWAP"
+                        fi
+                        ;;
+                esac
+            fi
+            ;;
+        off|no|none|0)
+            SWAP_MB=0
+            ;;
+        *)
+            SWAP_MB="$(to_mb "$SWAP_SIZE")"
+            if ! [[ "$SWAP_MB" =~ ^[0-9]+$ ]] || [ "${SWAP_MB:-0}" -lt 128 ]; then
+                warn "некорректный --swap-size «$SWAP_SIZE» — использую авто"
+                SWAP_MB="$REC_SWAP"
+            fi
+            ;;
+    esac
+
+    if [ -n "$(swapon --show=NAME --noheadings 2>/dev/null || true)" ]; then
+        ok "Swap уже активен: $(swapon --show=NAME,SIZE --noheadings 2>/dev/null | head -1 | awk '{print $2}')"
+    elif [ "${SWAP_MB:-0}" -eq 0 ]; then
+        warn "Swap не создаётся (мало места или выключен вручную)"
+    else
+        SWAP_NEED=true
+        if [ -f /swapfile ]; then
+            CUR_MB=$(( $(stat -c %s /swapfile 2>/dev/null || echo 0) / 1024 / 1024 ))
+            [ "$CUR_MB" -eq "$SWAP_MB" ] && SWAP_NEED=false
+        fi
+        if [ "$SWAP_NEED" = true ]; then
+            rm -f /swapfile 2>/dev/null || true
+            fallocate -l "${SWAP_MB}M" /swapfile 2>/dev/null || \
+                dd if=/dev/zero of=/swapfile bs=1M count="$SWAP_MB" status=none
         fi
         chmod 600 /swapfile
         mkswap /swapfile >/dev/null
         swapon /swapfile || warn "swapon не сработал"
         grep -q '^/swapfile[[:space:]]' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
-        ok "Swap 2G создан и закреплён в /etc/fstab"
-    else
-        ok "Swap уже активен"
+        ok "Swap ${SWAP_MB} МБ создан и закреплён в /etc/fstab (RAM ${RAM_MB} МБ, диск ${FREE_MB} МБ)"
+    fi
+
+    # запоминаем фактический выбор, чтобы повторный запуск его не переспрашивал
+    if [ -f "$ANSWERS_FILE" ]; then
+        if [ "${SWAP_MB:-0}" -eq 0 ]; then SWAP_REC="off"; else SWAP_REC="${SWAP_MB}M"; fi
+        sed -i '/^SWAP_SIZE=/d' "$ANSWERS_FILE"
+        printf "SWAP_SIZE='%s'\n" "$SWAP_REC" >> "$ANSWERS_FILE"
     fi
 
     # --- nofile -----------------------------------------------------------
