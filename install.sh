@@ -12,7 +12,7 @@
 #    7. проверяет результат и печатает, что осталось сделать в панели
 #
 #  Быстрый старт:
-#    bash <(curl -Ls https://raw.githubusercontent.com/<owner>/<repo>/main/install.sh)
+#    bash <(curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer/main/install.sh)
 #
 #  Неинтерактивный режим:
 #    ... install.sh --yes --panel-ip 1.2.3.4 --secret-key KEY \
