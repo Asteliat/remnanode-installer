@@ -31,6 +31,11 @@
 #  Дополнительно скрипт спрашивает:
 #    * DNS-фильтрацию AdGuard (блокировка рекламы/трекеров, DoT)
 #    * автообновление ноды (systemd-таймер + откат при неудаче)
+#    * алерты в Telegram (healthcheck)
+#
+#  Перед установкой проверяется сеть: внешний IP, A-запись домена,
+#  доступность ACME (Let's Encrypt / ZeroSSL), GitHub raw и Docker Hub.
+#  Отключить: --skip-netcheck
 # ============================================================================
 
 set -euo pipefail
@@ -79,6 +84,7 @@ TG_CHAT="${TG_CHAT:-}"
 ASSUME_YES=false
 SKIP_TUNING=false
 SKIP_FIREWALL=false
+SKIP_NETCHECK=false
 
 # Ответы прошлого запуска читаем ДО разбора флагов — чтобы флаги имели приоритет.
 for _arg in "$@"; do
@@ -94,6 +100,46 @@ fi
 unset _arg _PRE_YES _PRE_RECONF 2>/dev/null || true
 
 # --------------------------------------------------------------------- args
+usage() {
+    cat <<'USAGE'
+Remnawave Node + Caddy selfsteal — установщик
+
+Запуск:
+  bash install.sh                 интерактивно
+  bash install.sh --yes ...       неинтерактивно (флаги ниже)
+
+Основные флаги:
+  --panel-ip IP          IP панели Remnawave (порт ноды откроется только ему)
+  --node-port PORT       порт ноды (по умолчанию 2222)
+  --secret-key KEY       SECRET_KEY из панели
+  --xhttp-port PORT      порт xHTTP        (пусто = не открывать)
+  --grpc-port PORT       порт gRPC         (пусто = не открывать)
+  --tcp-port PORT        порт TCP/Vision   (пусто = не открывать)
+  --selfsteal yes|no     разворачивать сайт-заглушку
+  --domain DOMAIN        домен для selfsteal
+  --selfsteal-port PORT  внутренний порт Caddy (9443)
+  --template NAME        шаблон сайта (см. templates/manifest.tsv: landing, docs, news, ...)
+  --one-ip | --two-ip    схема сети; для двух IP: --ip1 IP --ip2 IP
+  --dns yes|no           DNS-фильтр AdGuard (по умолчанию yes)
+  --autoupdate yes|no    автообновление ноды (по умолчанию yes)
+  --alerts yes|no        алерты в Telegram (плюс --tg-token и --tg-chat)
+  --swap-size auto|off|1024M|2G   размер swap (auto — подбор под сервер)
+  --skip-tuning          не трогать sysctl/swap/лимиты
+  --skip-firewall        не настраивать ufw
+  --skip-netcheck        не проверять сеть и DNS перед установкой
+  --reconfigure          игнорировать сохранённые ответы
+  --yes                  без вопросов (нужны флаги)
+  -h, --help             эта справка
+  -v, --version          версия
+
+Примеры:
+  bash install.sh
+  bash install.sh --yes --panel-ip 1.2.3.4 --secret-key KEY \
+      --xhttp-port 443 --grpc-port '' --tcp-port '' \
+      --domain vpn.example.com --template landing --two-ip --ip2 5.6.7.8
+USAGE
+}
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --yes|-y)          ASSUME_YES=true ;;
@@ -101,6 +147,7 @@ while [[ $# -gt 0 ]]; do
         --skip-tuning)     SKIP_TUNING=true ;;
         --swap-size)       SWAP_SIZE="${2:?}"; shift ;;
         --skip-firewall)   SKIP_FIREWALL=true ;;
+        --skip-netcheck)   SKIP_NETCHECK=true ;;
         --panel-ip)        PANEL_IP="${2:?}"; shift ;;
         --node-port)       NODE_PORT="${2:?}"; shift ;;
         --secret-key)      SECRET_KEY="${2:?}"; shift ;;
@@ -127,7 +174,7 @@ while [[ $# -gt 0 ]]; do
         --tg-token)        TG_TOKEN="${2:?}"; ALERTS="yes"; shift ;;
         --tg-chat)         TG_CHAT="${2:?}"; ALERTS="yes"; shift ;;
         -v|--version)      echo "remnawave node installer v$VERSION"; exit 0 ;;
-        -h|--help)         grep '^#  ' "$0" | sed 's/^#  //'; exit 0 ;;
+        -h|--help)         usage; exit 0 ;;
         *) echo "Неизвестный параметр: $1 (см. --help)" >&2; exit 1 ;;
     esac
     if [ $# -gt 0 ]; then shift; fi
@@ -274,6 +321,86 @@ fetch() { # fetch URL DEST
 compose() { docker compose "$@"; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
+
+# ============================================================================
+#  Проверка сети и DNS (до установки)
+# ============================================================================
+net_check() {
+    local pub_ip="" le_code="" zs_code="" gh_code="" dh_code="" a_ip="" warned=0
+
+    hdr "Проверка сети и DNS"
+
+    pub_ip="$(curl -4 -fsS --max-time 8 https://ifconfig.io 2>/dev/null || true)"
+    if [ -n "$pub_ip" ]; then
+        ok "внешний IP: $pub_ip"
+    else
+        warn "не удалось определить внешний IP — проверьте выход в интернет"
+        warned=$((warned + 1))
+    fi
+
+    if [ "$USE_SELFSTEAL" = "yes" ] && [ -n "${DOMAIN:-}" ]; then
+        a_ip="$(getent ahostsv4 "$DOMAIN" 2>/dev/null | awk 'NR==1{print $1}')"
+        if [ -z "$a_ip" ]; then
+            warn "домен $DOMAIN не резолвится — сертификат не выпустится"
+            warned=$((warned + 1))
+        elif [ -n "$pub_ip" ] && [ "$a_ip" != "$pub_ip" ]; then
+            warn "A-запись $DOMAIN → $a_ip, а сервер — $pub_ip"
+            note "для HTTP-01 нужна A-запись на этот сервер"
+            warned=$((warned + 1))
+        else
+            ok "DNS: $DOMAIN → ${a_ip:-?}"
+        fi
+    fi
+
+    le_code="$(curl -4 -s -o /dev/null -w '%{http_code}' --max-time 8 \
+        https://acme-v02.api.letsencrypt.org/directory 2>/dev/null || true)"
+    if [ "$le_code" = "200" ]; then
+        ok "ACME: Let's Encrypt доступен"
+    else
+        zs_code="$(curl -4 -s -o /dev/null -w '%{http_code}' --max-time 8 \
+            https://acme.zerossl.com/v2/DV90 2>/dev/null || true)"
+        warned=$((warned + 1))
+        if [ "$zs_code" = "200" ]; then
+            warn "Let's Encrypt недоступен (${le_code:-нет ответа}) — похоже, блокировка у хостера"
+            note "ZeroSSL доступен: сертификат можно выпустить через DNS-01 (acme.sh)"
+        else
+            warn "ACME-API недоступны: LE=${le_code:-?}, ZeroSSL=${zs_code:-?}"
+            note "автоматический сертификат не выпустится — нужен ручной или DNS-01"
+        fi
+    fi
+
+    gh_code="$(curl -4 -s -o /dev/null -w '%{http_code}' --max-time 10 \
+        "https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/templates/manifest.tsv" \
+        2>/dev/null || true)"
+    if [ "$gh_code" = "200" ]; then
+        ok "GitHub raw доступен"
+    else
+        warn "GitHub raw недоступен (${gh_code:-timeout}) — шаблоны и nodego не скачаются"
+        warned=$((warned + 1))
+    fi
+
+    dh_code="$(curl -4 -s -o /dev/null -w '%{http_code}' --max-time 10 \
+        https://registry-1.docker.io/v2/ 2>/dev/null || true)"
+    case "$dh_code" in
+        200|401|403) ok "Docker Hub доступен" ;;
+        *)
+            warn "Docker Hub недоступен (${dh_code:-timeout}) — образы не скачаются"
+            warned=$((warned + 1))
+            ;;
+    esac
+
+    if timeout 4 bash -c "echo > /dev/tcp/${PANEL_IP}/3000" 2>/dev/null; then
+        ok "панель ${PANEL_IP}:3000 отвечает"
+    else
+        note "панель ${PANEL_IP}:3000 не отвечает (другой порт или файрвол) — не критично"
+    fi
+
+    if [ "$warned" -gt 0 ]; then
+        say ""
+        warn "предупреждений: $warned — установка продолжится, но проверьте их"
+    fi
+    say ""
+}
 
 # ============================================================================
 # 0. Preflight
@@ -605,6 +732,17 @@ TG_TOKEN='$TG_TOKEN'
 TG_CHAT='$TG_CHAT'
 EOF
 chmod 600 "$ANSWERS_FILE"
+umask 022   # дальше создаём каталоги/файлы с обычными правами
+
+# ============================================================================
+# Проверка сети и DNS
+# ============================================================================
+if [ "$SKIP_NETCHECK" = true ]; then
+    hdr "Проверка сети и DNS"
+    warn "Пропущено (--skip-netcheck)"
+else
+    net_check
+fi
 
 # ============================================================================
 # 2. Зависимости
@@ -1205,6 +1343,18 @@ EOF
     sed -i "s|__BIND_IP__|$BIND_IP|g" "$SELFSTEAL_DIR/Caddyfile"
     note "Caddy :80 слушает $BIND_IP"
 
+    # Если сертификат уже лежит в ./ssl (выпущен вручную или через acme.sh),
+    # используем его и не полагаемся на ACME — иначе повторная установка
+    # сломала бы работающий HTTPS.
+    HAS_CERT=false
+    if [ -f "$SELFSTEAL_DIR/ssl/fullchain.crt" ] && [ -f "$SELFSTEAL_DIR/ssl/private.key" ]; then
+        HAS_CERT=true
+        # shellcheck disable=SC2016  # здесь нужны литеральные {$SELF_STEAL_DOMAIN}
+        sed -i 's|^https://{\$SELF_STEAL_DOMAIN} {|https://{$SELF_STEAL_DOMAIN} {\n\ttls /etc/caddy/ssl/fullchain.crt /etc/caddy/ssl/private.key|' \
+            "$SELFSTEAL_DIR/Caddyfile"
+        ok "найден готовый сертификат в $SELFSTEAL_DIR/ssl — ACME для домена не используется"
+    fi
+
     # --- compose ----------------------------------------------------------
     # export:selfsteal-compose
     cat > "$SELFSTEAL_DIR/docker-compose.yml" <<EOF
@@ -1225,6 +1375,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./html:/var/www/html:ro
+      - ./ssl:/etc/caddy/ssl:ro
       - ./logs:/var/log/caddy
       - selfsteal_data:/data
       - selfsteal_config:/config
@@ -1784,11 +1935,33 @@ done
 
 if [ "$USE_SELFSTEAL" = "yes" ]; then
     say ""
-    say "  ${C_BLD}Локальная проверка selfsteal:${C_OFF}"
-    if curl -fsSk --max-time 5 -H "Host: $DOMAIN" "https://127.0.0.1:$SELFSTEAL_PORT/" -o /dev/null; then
-        ok "Caddy отвечает по https://127.0.0.1:$SELFSTEAL_PORT"
+    say "  ${C_BLD}Проверка selfsteal:${C_OFF}"
+    CERT_OK=false
+    _tries=12
+    [ "$HAS_CERT" = true ] && _tries=3
+    for _i in $(seq 1 "$_tries"); do
+        if curl -fsS --max-time 5 --resolve "$DOMAIN:$SELFSTEAL_PORT:127.0.0.1" \
+                "https://$DOMAIN:$SELFSTEAL_PORT/" -o /dev/null 2>/dev/null; then
+            CERT_OK=true
+            break
+        fi
+        sleep 5
+    done
+    unset _i _tries 2>/dev/null || true
+
+    if [ "$CERT_OK" = true ]; then
+        ok "HTTPS работает, сертификат доверенный"
     else
-        warn "Caddy пока не отвечает (первый запуск + выпуск сертификата может занять до минуты)"
+        warn "HTTPS не поднялся — сертификат не выпущен или не подхвачен"
+        note "частые причины:"
+        note "  • порт 80 закрыт снаружи (cloud firewall / security group)"
+        note "  • A-запись домена указывает не на этот сервер"
+        note "  • ACME-API недоступен у хостера (проверьте вывод «Проверка сети») "
+        note "  • домен за прокси, и валидация не доходит до сервера"
+        note "лог Caddy:"
+        docker exec selfsteal sh -c 'tail -n 5 /var/log/caddy/access.log 2>/dev/null' 2>/dev/null \
+            | sed 's/^/      /' || true
+        note "дальше: docker logs --tail 40 selfsteal"
     fi
 fi
 
