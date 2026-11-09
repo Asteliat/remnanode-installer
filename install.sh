@@ -24,9 +24,12 @@
 #
 #  Схемы с IP:
 #    1 IP  — вход и выход через один адрес (обычная схема)
-#    2 IP  — клиенты входят на основной IP, в интернет нода выходит через
-#            дополнительный (policy routing + SNAT только для NEW-соединений,
+#    2 IP  — клиенты входят на IP1, в интернет нода выходит через IP2
+#            (policy routing + SNAT только для NEW-соединений,
 #            чтобы не ломать ответы на входящие)
+#            IP1 можно указать вручную (--ip1) — например, докупленный адрес,
+#            тогда он задаётся вопросом и при необходимости назначается на
+#            интерфейс; автоопределённый IP сервера показывается как подсказка.
 #
 #  Дополнительно скрипт спрашивает:
 #    * DNS-фильтрацию AdGuard (блокировка рекламы/трекеров, DoT)
@@ -119,7 +122,10 @@ Remnawave Node + Caddy selfsteal — установщик
   --domain DOMAIN        домен для selfsteal
   --selfsteal-port PORT  внутренний порт Caddy (9443)
   --template NAME        шаблон сайта (см. templates/manifest.tsv: landing, docs, news, ...)
-  --one-ip | --two-ip    схема сети; для двух IP: --ip1 IP --ip2 IP
+  --one-ip | --two-ip    схема сети (2 IP: клиенты входят на --ip1, нода выходит с --ip2)
+  --ip1 IP               IP для входа (по умолчанию — автоопределённый IP сервера;
+                         можно указать докупленный адрес)
+  --ip2 IP               IP для выхода в интернет (для схемы с двумя IP)
   --dns yes|no           DNS-фильтр AdGuard (по умолчанию yes)
   --autoupdate yes|no    автообновление ноды (по умолчанию yes)
   --alerts yes|no        алерты в Telegram (плюс --tg-token и --tg-chat)
@@ -596,30 +602,60 @@ if [ "$ASSUME_YES" = false ]; then
 fi
 
 if [ "$DUAL_IP" = "yes" ]; then
+    DETECTED_IP1="$(detect_primary_ip)"
+
+    # Входящий (основной) IP: по умолчанию — автоопределённый, но его всегда
+    # можно заменить на докупленный адрес: клиенты будут входить на него,
+    # а выходить нода будет через IP2.
     if [ -z "$IP1" ] || ! is_ipv4 "$IP1"; then
-        IP1="$(detect_primary_ip)"
-        if ! is_ipv4 "${IP1:-}"; then
-            while true; do
-                ask IP1 "Основной (входящий) IP этого сервера" "${IP1:-}"
-                is_ipv4 "$IP1" && break
-                warn "Некорректный IPv4: '$IP1'"
-                [ "$ASSUME_YES" = true ] && die "Укажите корректный --ip1"
-            done
-        fi
+        IP1="$DETECTED_IP1"
+    fi
+
+    if [ "$ASSUME_YES" = false ]; then
+        while true; do
+            ask IP1 "IP для входа (на него подключаются клиенты)" "${IP1:-$DETECTED_IP1}"
+            is_ipv4 "$IP1" && break
+            warn "Некорректный IPv4: '$IP1'"
+        done
+    fi
+
+    if ! is_ipv4 "$IP1"; then
+        die "Укажите корректный --ip1"
     fi
     ok "Основной IP (вход): $IP1"
+    [ -n "$DETECTED_IP1" ] && [ "$IP1" != "$DETECTED_IP1" ] \
+        && note "автоопределённый IP сервера: $DETECTED_IP1 (вход переназначен на $IP1)"
+
+    # IP входа должен быть настроен на машине, иначе нода не сможет его слушать
+    if ip -o -4 addr show 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -qx "$IP1"; then
+        ok "IP $IP1 найден на интерфейсе сервера"
+    else
+        warn "IP $IP1 НЕ найден на интерфейсах этого сервера"
+        note "вход на него не заработает, пока адрес не назначен:"
+        note "  ip addr add $IP1/32 dev <интерфейс>   # или настройка у провайдера/в облаке"
+        if [ "$ASSUME_YES" = true ]; then
+            die "Адрес $IP1 не настроен на сервере. Назначьте его и повторите запуск."
+        fi
+        while true; do
+            read -r -p "$(echo -e "  ${C_BLD}Продолжить всё равно? [д/н]${C_OFF}: ")" _cont || true
+            case "$(norm_yn "${_cont:-}")" in
+                yes) break ;;
+                no)  die "Остановлено: назначьте $IP1 и запустите снова." ;;
+            esac
+        done
+    fi
 
     if [ -z "$IP2" ] || ! is_ipv4 "$IP2"; then
         while true; do
-            ask IP2 "Дополнительный IP (через него нода выходит в интернет)" "${IP2:-}"
+            ask IP2 "IP для выхода (через него нода ходит в интернет)" "${IP2:-$DETECTED_IP1}"
             is_ipv4 "$IP2" && break
             warn "Некорректный IPv4: '$IP2'"
             [ "$ASSUME_YES" = true ] && die "Укажите корректный --ip2"
         done
     fi
-    [ "$IP2" = "$IP1" ] && die "Дополнительный IP совпадает с основным"
+    [ "$IP2" = "$IP1" ] && die "IP входа и выхода совпадают"
     ok "Дополнительный IP (выход): $IP2"
-    note "Домен selfsteal будет привязан к $IP1 (вход), выход пойдёт с $IP2."
+    note "домен selfsteal будет привязан к $IP1 (вход), трафик в интернет пойдёт с $IP2."
 else
     ok "Один IP: вход и выход через один адрес"
 fi
@@ -1017,6 +1053,21 @@ if [ "$DUAL_IP" = "yes" ]; then
     fi
     BIND_IP="$IP1"
     ok "Вход: $IP1 → выход: $IP2 (интерфейс $IFACE, шлюз $GW)"
+
+    # Входной IP может быть докупленным адресом, ещё не назначенным на интерфейс.
+    # Снимаем маску, чтобы не испортить существующий адрес, и добавляем только
+    # если такого адреса на интерфейсе нет. На будущее это же делает и
+    # rw-secondary-ip.service при загрузке.
+    if ip -o -4 addr show dev "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -qx "$IP1"; then
+        ok "IP входа $IP1 уже настроен на $IFACE"
+    else
+        if ip addr add "$IP1/32" dev "$IFACE" 2>/dev/null; then
+            ok "IP входа $IP1 добавлен на $IFACE"
+            ip route replace "$IP1" dev "$IFACE" scope link 2>/dev/null || true
+        else
+            warn "Не удалось добавить $IP1 на $IFACE — добавьте вручную"
+        fi
+    fi
 else
     ok "Один IP: вход и выход через один адрес"
 fi
@@ -1073,7 +1124,10 @@ if [ -z "${IP2:-}" ] || [ -z "${IFACE:-}" ] || [ -z "${GW:-}" ]; then
     exit 1
 fi
 
-ip addr replace "$IP2/32" dev "$IFACE"
+ip -o -4 addr show dev "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -qx "${IP1:-}" \
+    || ip addr add "$IP1/32" dev "$IFACE" 2>/dev/null || true
+ip -o -4 addr show dev "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -qx "$IP2" \
+    || ip addr add "$IP2/32" dev "$IFACE" 2>/dev/null || true
 ip rule add from "$IP2/32" table "$TABLE"
 ip route replace default via "$GW" dev "$IFACE" src "$IP2" table "$TABLE"
 iptables -t nat -A POSTROUTING -o "$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "$IP2"
