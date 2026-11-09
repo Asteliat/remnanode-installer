@@ -332,27 +332,43 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo
 #  Проверка сети и DNS (до установки)
 # ============================================================================
 net_check() {
-    local pub_ip="" le_code="" zs_code="" gh_code="" dh_code="" a_ip="" warned=0
+    local pub_ip="" le_code="" zs_code="" gh_code="" dh_code="" a_ip="" warned=0 expect_ip="" local_ips=""
 
     hdr "Проверка сети и DNS"
 
     pub_ip="$(curl -4 -fsS --max-time 8 https://ifconfig.io 2>/dev/null || true)"
     if [ -n "$pub_ip" ]; then
-        ok "внешний IP: $pub_ip"
+        ok "внешний IP (выход): $pub_ip"
     else
         warn "не удалось определить внешний IP — проверьте выход в интернет"
         warned=$((warned + 1))
     fi
+
+    # A-запись домена должна указывать на тот адрес, на который подключаются
+    # клиенты: в схеме с двумя IP это IP входа (--ip1), а не адрес выхода.
+    expect_ip="$pub_ip"
+    if [ "$DUAL_IP" = "yes" ] && [ -n "${IP1:-}" ]; then
+        expect_ip="$IP1"
+        [ "$IP1" != "$pub_ip" ] && note "IP входа: $IP1 (выход — $pub_ip)"
+    fi
+
+    # Адреса, реально назначенные на этом сервере (NAT/докупленные IP,
+    # когда автоопределение показывает не то)
+    local_ips="$(ip -o -4 addr show 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -v '^127\.' || true)"
 
     if [ "$USE_SELFSTEAL" = "yes" ] && [ -n "${DOMAIN:-}" ]; then
         a_ip="$(getent ahostsv4 "$DOMAIN" 2>/dev/null | awk 'NR==1{print $1}')"
         if [ -z "$a_ip" ]; then
             warn "домен $DOMAIN не резолвится — сертификат не выпустится"
             warned=$((warned + 1))
-        elif [ -n "$pub_ip" ] && [ "$a_ip" != "$pub_ip" ]; then
-            warn "A-запись $DOMAIN → $a_ip, а сервер — $pub_ip"
-            note "для HTTP-01 нужна A-запись на этот сервер"
-            warned=$((warned + 1))
+        elif [ -n "$expect_ip" ] && [ "$a_ip" != "$expect_ip" ]; then
+            if printf '%s\n' "$local_ips" | grep -qx "$a_ip"; then
+                ok "DNS: $DOMAIN → $a_ip (адрес назначен на сервере)"
+            else
+                warn "A-запись $DOMAIN → $a_ip, а IP входа — $expect_ip"
+                note "для HTTP-01 A-запись должна указывать на IP входа"
+                warned=$((warned + 1))
+            fi
         else
             ok "DNS: $DOMAIN → ${a_ip:-?}"
         fi
