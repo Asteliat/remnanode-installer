@@ -32,6 +32,7 @@
 #            интерфейс; автоопределённый IP сервера показывается как подсказка.
 #
 #  Дополнительно скрипт спрашивает:
+#    * порт панели — по нему проверяется, что нода видит панель
 #    * DNS-фильтрацию AdGuard (блокировка рекламы/трекеров, DoT)
 #    * автообновление ноды (systemd-таймер + откат при неудаче)
 #    * алерты в Telegram (healthcheck)
@@ -43,7 +44,7 @@
 
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 
 REPO_OWNER="Asteliat"
 REPO_NAME="remnanode-installer"
@@ -62,6 +63,7 @@ SWAP_SIZE="${SWAP_SIZE:-auto}"      # auto | off | 512M | 2G
 
 # ------------------------------------------------------------------ defaults
 PANEL_IP="${PANEL_IP:-}"
+PANEL_PORT="${PANEL_PORT:-3000}"    # порт веб-панели (нужен для проверки «нода видит панель»)
 NODE_PORT="${NODE_PORT:-2222}"
 SECRET_KEY="${SECRET_KEY:-}"
 XHTTP_PORT="${XHTTP_PORT:-443}"
@@ -113,6 +115,8 @@ Remnawave Node + Caddy selfsteal — установщик
 
 Основные флаги:
   --panel-ip IP          IP панели Remnawave (порт ноды откроется только ему)
+  --panel-port PORT      порт панели для проверки доступности (по умолчанию 3000;
+                         пустая строка — не проверять)
   --node-port PORT       порт ноды (по умолчанию 2222)
   --secret-key KEY       SECRET_KEY из панели
   --xhttp-port PORT      порт xHTTP        (пусто = не открывать)
@@ -155,6 +159,7 @@ while [[ $# -gt 0 ]]; do
         --skip-firewall)   SKIP_FIREWALL=true ;;
         --skip-netcheck)   SKIP_NETCHECK=true ;;
         --panel-ip)        PANEL_IP="${2:?}"; shift ;;
+        --panel-port)      PANEL_PORT="${2-}"; shift || true ;;
         --node-port)       NODE_PORT="${2:?}"; shift ;;
         --secret-key)      SECRET_KEY="${2:?}"; shift ;;
         --xhttp-port)      XHTTP_PORT="${2-}"; shift || true ;;
@@ -332,7 +337,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo
 #  Проверка сети и DNS (до установки)
 # ============================================================================
 net_check() {
-    local pub_ip="" le_code="" zs_code="" gh_code="" dh_code="" a_ip="" warned=0 expect_ip="" local_ips=""
+    local pub_ip="" le_code="" zs_code="" gh_code="" dh_code="" a_ip="" warned=0 local_ips="" expect_ips=""
 
     hdr "Проверка сети и DNS"
 
@@ -346,31 +351,36 @@ net_check() {
 
     # A-запись домена должна указывать на тот адрес, на который подключаются
     # клиенты: в схеме с двумя IP это IP входа (--ip1), а не адрес выхода.
-    expect_ip="$pub_ip"
-    if [ "$DUAL_IP" = "yes" ] && [ -n "${IP1:-}" ]; then
-        expect_ip="$IP1"
-        [ "$IP1" != "$pub_ip" ] && note "IP входа: $IP1 (выход — $pub_ip)"
+    if [ "$DUAL_IP" = "yes" ] && [ -n "${IP1:-}" ] && [ "$IP1" != "$pub_ip" ]; then
+        note "IP входа: $IP1 (выход — $pub_ip)"
     fi
 
     # Адреса, реально назначенные на этом сервере (NAT/докупленные IP,
     # когда автоопределение показывает не то)
     local_ips="$(ip -o -4 addr show 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -v '^127\.' || true)"
 
+    # A-запись сверяем со всеми «своими» адресами (интерфейсы + IP входа +
+    # внешний), а не с одним автоопределённым: при NAT и дополнительных
+    # адресах ifconfig.io показывает адрес выхода и даёт ложную тревогу
+    # на полностью рабочем домене.
+    expect_ips="$local_ips"
+    if [ -n "${IP1:-}" ] && ! printf '%s\n' "$expect_ips" | grep -qx "$IP1"; then
+        expect_ips="$expect_ips"$'\n'"$IP1"
+    fi
+    if [ -n "$pub_ip" ] && ! printf '%s\n' "$expect_ips" | grep -qx "$pub_ip"; then
+        expect_ips="$expect_ips"$'\n'"$pub_ip"
+    fi
+
     if [ "$USE_SELFSTEAL" = "yes" ] && [ -n "${DOMAIN:-}" ]; then
         a_ip="$(getent ahostsv4 "$DOMAIN" 2>/dev/null | awk 'NR==1{print $1}')"
         if [ -z "$a_ip" ]; then
             warn "домен $DOMAIN не резолвится — сертификат не выпустится"
             warned=$((warned + 1))
-        elif [ -n "$expect_ip" ] && [ "$a_ip" != "$expect_ip" ]; then
-            if printf '%s\n' "$local_ips" | grep -qx "$a_ip"; then
-                ok "DNS: $DOMAIN → $a_ip (адрес назначен на сервере)"
-            else
-                warn "A-запись $DOMAIN → $a_ip, а IP входа — $expect_ip"
-                note "для HTTP-01 A-запись должна указывать на IP входа"
-                warned=$((warned + 1))
-            fi
+        elif printf '%s\n' "$expect_ips" | grep -qx "$a_ip"; then
+            ok "DNS: $DOMAIN → $a_ip"
         else
-            ok "DNS: $DOMAIN → ${a_ip:-?}"
+            note "A-запись $DOMAIN → $a_ip; адреса этого сервера: $(printf '%s' "$local_ips" | tr '\n' ' ')"
+            note "если DNS меняли только что — подождите TTL (5–10 мин); HTTP-01 сверяет A-запись в момент выпуска"
         fi
     fi
 
@@ -411,10 +421,13 @@ net_check() {
             ;;
     esac
 
-    if timeout 4 bash -c "echo > /dev/tcp/${PANEL_IP}/3000" 2>/dev/null; then
-        ok "панель ${PANEL_IP}:3000 отвечает"
+    if [ -z "${PANEL_PORT:-}" ]; then
+        note "проверка доступности панели отключена (--panel-port '')"
+    elif timeout 4 bash -c "echo > /dev/tcp/${PANEL_IP}/${PANEL_PORT}" 2>/dev/null; then
+        ok "панель ${PANEL_IP}:${PANEL_PORT} отвечает"
     else
-        note "панель ${PANEL_IP}:3000 не отвечает (другой порт или файрвол) — не критично"
+        note "панель ${PANEL_IP}:${PANEL_PORT} не отвечает (другой порт или файрвол панели) — не критично"
+        note "порт панели задаётся ключом --panel-port"
     fi
 
     if [ "$warned" -gt 0 ]; then
@@ -466,6 +479,22 @@ if [ -z "$PANEL_IP" ] || ! is_ipv4 "$PANEL_IP"; then
     done
 fi
 ok "Панель: $PANEL_IP"
+
+# --- Порт панели -----------------------------------------------------------
+# Нужен только для проверки «нода видит панель»: панель может слушать не 3000
+# (свой reverse-proxy, порт из docker-compose). Спрашиваем до порта ноды и
+# ключа, чтобы проверка шла по тому порту, который реально открыт.
+if [ -z "$PANEL_PORT" ]; then
+    note "Порт панели: проверка доступности отключена"
+else
+    while ! is_port "$PANEL_PORT"; do
+        if [ "$ASSUME_YES" = true ]; then
+            die "Некорректный --panel-port: '$PANEL_PORT' (ожидается 1-65535 или пусто)"
+        fi
+        ask PANEL_PORT "Порт панели Remnawave (на нём открыт веб-интерфейс/API)" "3000"
+    done
+    ok "Порт панели: $PANEL_PORT"
+fi
 
 # --- Порт ноды -------------------------------------------------------------
 while ! is_port "$NODE_PORT"; do
@@ -730,7 +759,7 @@ fi
 # --- Сводка и подтверждение ------------------------------------------------
 say ""
 say "  ${C_BLD}Итого:${C_OFF}"
-say "    панель ............ $PANEL_IP"
+say "    панель ............ ${PANEL_IP}${PANEL_PORT:+:$PANEL_PORT}"
 say "    порт ноды ......... $NODE_PORT"
 say "    xHTTP ............. ${XHTTP_PORT:-<не открывать>}"
 say "    gRPC .............. ${GRPC_PORT:-<не открывать>}"
@@ -764,6 +793,7 @@ umask 077
 cat > "$ANSWERS_FILE" <<EOF
 # Сгенерировано remnawave node installer v$VERSION $(date '+%F %T')
 PANEL_IP='$PANEL_IP'
+PANEL_PORT='$PANEL_PORT'
 NODE_PORT='$NODE_PORT'
 SECRET_KEY='$SECRET_KEY'
 XHTTP_PORT='$XHTTP_PORT'
@@ -1462,17 +1492,40 @@ EOF
     # export:end
 
     # --- DNS-проверка (не блокирующая) ------------------------------------
-    if command -v dig >/dev/null 2>&1; then
-        SERVER_IP="$(curl -fsS4 --max-time 10 https://ifconfig.io 2>/dev/null || true)"
-        A_IP="$(dig +short A "$DOMAIN" 2>/dev/null | grep -E '^[0-9.]+$' | head -1 || true)"
-        if [ -n "$A_IP" ] && [ -n "$SERVER_IP" ] && [ "$A_IP" != "$SERVER_IP" ]; then
-            warn "DNS: $DOMAIN → $A_IP, а сервер $SERVER_IP. ACME-сертификат не выпустится, пока A-запись не исправлена."
-            warn "Caddy продолжит работать, но HTTPS-сертификат будет внутренним."
-        elif [ -n "$A_IP" ]; then
-            ok "DNS: $DOMAIN → $A_IP"
+    # Сверяем A-запись с адресами, реально назначенными на этом сервере, а не с
+    # «внешним IP» из ifconfig.io: при NAT/дополнительных адресах автоопределение
+    # показывает адрес выхода, и раньше это давало ложное «сертификат не
+    # выпустится» на полностью рабочем домене.
+    if [ "$HAS_CERT" = true ]; then
+        note "DNS не проверяю: для $DOMAIN используется готовый сертификат"
+    elif command -v dig >/dev/null 2>&1 || command -v getent >/dev/null 2>&1; then
+        self_a_ips="$( { dig +short A "$DOMAIN" 2>/dev/null || true
+                         getent ahostsv4 "$DOMAIN" 2>/dev/null | awk '{print $1}' || true; } \
+                     | grep -E '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' | sort -u | tr '\n' ' ' | sed 's/ *$//' || true)"
+        self_srv_ips="$(ip -o -4 addr show 2>/dev/null | awk '{print $4}' | cut -d/ -f1 \
+                        | grep -v '^127\.' || true)"
+        for _x in "${BIND_IP:-}" "${IP1:-}"; do
+            [ -n "$_x" ] || continue
+            printf '%s\n' "$self_srv_ips" | grep -qx "$_x" || self_srv_ips="$self_srv_ips"$'\n'"$_x"
+        done
+        self_srv_ips="$(printf '%s\n' "$self_srv_ips" | sort -u | tr '\n' ' ' | sed 's/ *$//')"
+        self_a_match=""
+        # shellcheck disable=SC2086  # разбор списка адресов по словам
+        for _x in $self_a_ips; do
+            case " $self_srv_ips " in
+                *" $_x "*) self_a_match="$_x"; break ;;
+            esac
+        done
+        if [ -z "$self_a_ips" ]; then
+            warn "DNS: A-запись для $DOMAIN не найдена — Let's Encrypt не выпустится, пока домен не настроен."
+        elif [ -n "$self_a_match" ]; then
+            ok "DNS: $DOMAIN → $self_a_match"
         else
-            warn "DNS: A-запись для $DOMAIN не найдена — сертификат Let's Encrypt не выпустится."
+            note "DNS: $DOMAIN → $self_a_ips; адреса этого сервера: $self_srv_ips"
+            note "если домен уже открывается и отдаёт заглушку — всё в порядке (кэш DNS/TTL)"
+            note "ACME сработает, когда A-запись указывает на этот сервер: HTTP-01 проверяет её в момент выпуска"
         fi
+        unset _x self_a_ips self_srv_ips self_a_match 2>/dev/null || true
     fi
 
     note "Запускаю Caddy…"
