@@ -432,6 +432,11 @@ shellcheck -S style install.sh nodego.sh
 bash -n install.sh
 ```
 
+Переводы строк в репозитории — только **LF** (`.gitattributes`: `* text=auto eol=lf`).
+`install.sh` и `nodego.sh` скачиваются на серверы по `raw.githubusercontent.com` и
+запускаются как есть: с CRLF bash получает `\r` в конце команд и падает. Правки
+делайте в редакторе с LF; атрибут нормализует файлы при коммите сам.
+
 ## Лицензия
 
 MIT
