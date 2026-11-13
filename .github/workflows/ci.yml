@@ -15,15 +15,31 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Bash syntax (bash -n)
-        run: bash -n install.sh
+        run: |
+          set -euo pipefail
+          for f in install.sh nodego.sh; do
+            bash -n "$f"
+            echo "$f: syntax ok"
+          done
+
+      # Раньше здесь был сторонний экшен ludeeus/action-shellcheck — он перестал
+      # работать на обновившемся раннере и падал без полезного вывода. Ставим
+      # shellcheck официальной сборкой фиксированной версии: одинаковое поведение
+      # в CI и локально, и ошибки видно прямо в логе.
+      - name: Install shellcheck
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/sc.tar.xz \
+            https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz
+          tar -xJf /tmp/sc.tar.xz -C /tmp
+          sudo install -m 0755 /tmp/shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck
+          shellcheck --version | sed -n '1,2p'
 
       - name: ShellCheck
-        uses: ludeeus/action-shellcheck@2.0.0
-        with:
-          scandir: "."
-          additional_files: install.sh
-        env:
-          SHELLCHECK_OPTS: -S style
+        run: |
+          set -euo pipefail
+          shellcheck -S style install.sh nodego.sh
+          echo "shellcheck clean"
 
   templates:
     name: templates consistency
