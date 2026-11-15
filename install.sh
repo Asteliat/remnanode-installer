@@ -71,7 +71,8 @@ SWAP_SIZE="${SWAP_SIZE:-auto}"      # auto | off | 512M | 2G
 
 # ------------------------------------------------------------------ defaults
 PANEL_IP="${PANEL_IP:-}"
-PANEL_PORT="${PANEL_PORT:-3000}"    # порт веб-панели (нужен для проверки «нода видит панель»)
+PANEL_PORT="${PANEL_PORT:-3000}"
+PANEL_PORT_FLAG=""                # --panel-port задан явно: повторно не спрашиваем    # порт веб-панели (нужен для проверки «нода видит панель»)
 NODE_PORT="${NODE_PORT:-2222}"
 SECRET_KEY="${SECRET_KEY:-}"
 CONNECT_PORT="${CONNECT_PORT:-}"    # один порт для xHTTP/gRPC/TCP (и UDP для Hysteria2)
@@ -173,7 +174,7 @@ while [[ $# -gt 0 ]]; do
         --skip-firewall)   SKIP_FIREWALL=true ;;
         --skip-netcheck)   SKIP_NETCHECK=true ;;
         --panel-ip)        PANEL_IP="${2:?}"; shift ;;
-        --panel-port)      PANEL_PORT="${2-}"; shift || true ;;
+        --panel-port)      PANEL_PORT="${2-}"; PANEL_PORT_FLAG=yes; shift || true ;;
         --node-port)       NODE_PORT="${2:?}"; shift ;;
         --secret-key)      SECRET_KEY="${2:?}"; shift ;;
         --connect-port)    CONNECT_PORT="${2:?}"; shift ;;
@@ -316,6 +317,10 @@ ask() { # ask VAR "текст" "дефолт"
 ask_yesno() { # ask_yesno VAR "текст" default(y/n)
     local __var="$1" __prompt="$2" __def="${3:-y}" __val="" __hint
     if [ "$ASSUME_YES" = true ] && [ -n "${!__var:-}" ]; then return 0; fi
+    case "${__def,,}" in
+        y|yes|да|д|1|true|on) __def=y ;;
+        *) __def=n ;;
+    esac
     if [ "$__def" = "y" ]; then __hint="Д/н"; else __hint="д/Н"; fi
     while true; do
         read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} [${__hint}]: ")" __val || true
@@ -491,12 +496,22 @@ ok "Порт ноды: $NODE_PORT"
 
 # --- IP панели -------------------------------------------------------------
 if [ -z "$PANEL_IP" ] || ! is_ipv4 "$PANEL_IP"; then
+    _panel_def=""
+    is_ipv4 "${PANEL_IP:-}" && _panel_def="$PANEL_IP"
+    say ""
+    note "IP панели — адрес сервера, где работает Remnawave (это не порт)."
+    note "Порт ноды $NODE_PORT откроется в firewall только для этого адреса."
     while true; do
-        ask PANEL_IP "IP панели Remnawave (этому адресу откроем порт $NODE_PORT)" "${PANEL_IP:-}"
+        ask PANEL_IP "IPv4 панели Remnawave (пример: 203.0.113.10)" "$_panel_def"
         is_ipv4 "$PANEL_IP" && break
-        warn "Некорректный IPv4: '$PANEL_IP'"
+        case "$PANEL_IP" in
+            ''|*[!0-9]*) warn "Это не IPv4: '$PANEL_IP'. Нужен адрес вида 203.0.113.10." ;;
+            *)           warn "'$PANEL_IP' — похоже на порт. Нужен IP панели (пример: 203.0.113.10)." ;;
+        esac
         [ "$ASSUME_YES" = true ] && die "Укажите корректный --panel-ip"
+        _panel_def=""
     done
+    unset _panel_def
 fi
 ok "Панель: $PANEL_IP (порт $NODE_PORT будет открыт только ей)"
 
@@ -504,6 +519,12 @@ ok "Панель: $PANEL_IP (порт $NODE_PORT будет открыт тол�
 # Нужен только для проверки «нода видит панель»: панель может слушать не 3000
 # (свой reverse-proxy, порт из docker-compose). Спрашиваем до ключа, чтобы
 # проверка шла по тому порту, который реально открыт.
+if [ "$ASSUME_YES" != true ] && [ "$PANEL_PORT_FLAG" != yes ]; then
+    say ""
+    note "Порт панели — на нём слушает сама панель Remnawave (обычно 3000)."
+    note "Нода стучится туда, чтобы проверить «нода видит панель»; это не порт"
+    note "ноды ($NODE_PORT) и не порт подключения клиентов."
+fi
 if [ -z "$PANEL_PORT" ]; then
     note "Порт панели: проверка доступности отключена"
 else
@@ -511,8 +532,11 @@ else
         if [ "$ASSUME_YES" = true ]; then
             die "Некорректный --panel-port: '$PANEL_PORT' (ожидается 1-65535 или пусто)"
         fi
-        ask PANEL_PORT "Порт панели Remnawave (на нём открыт веб-интерфейс/API)" "3000"
+        ask PANEL_PORT "Порт панели Remnawave (обычно 3000)" "3000"
     done
+    if [ "$ASSUME_YES" != true ] && [ "$PANEL_PORT_FLAG" != yes ]; then
+        ask PANEL_PORT "Порт панели Remnawave (обычно 3000, Enter — оставить)" "$PANEL_PORT"
+    fi
     ok "Порт панели: $PANEL_PORT"
 fi
 
@@ -651,19 +675,20 @@ fi
 # ядро ноды (remnawave/node + свежий Xray) умеет hysteria-инбаунд само.
 # Нужны только сертификат домена и открытый UDP на порту подключения.
 say ""
-note "Hysteria2 — тот же порт, но по UDP: работает там, где оператор режет TCP-TLS."
+note "Hysteria2 — тот же порт подключения, но по UDP (QUIC): выручает там, где"
+note "оператор режет TCP-TLS. Сертификат берётся от selfsteal, ставить нечего."
 if [ "$USE_SELFSTEAL" != "yes" ]; then
     note "Hysteria2 требует домен и сертификат (selfsteal) — пропускаю."
     HYSTERIA="no"
 else
-    ask_yesno HYSTERIA "Включить Hysteria2 (UDP/$CONNECT_PORT, сертификат от selfsteal)?" "yes"
+    ask_yesno HYSTERIA "Установить Hysteria2 (UDP/$CONNECT_PORT)?" "yes"
     if [ "$HYSTERIA" = "yes" ]; then
         ok "Hysteria2: UDP/$CONNECT_PORT, сертификат $DOMAIN"
         if [ "$CONNECT_PORT" = "443" ]; then
             note "Caddy уже без HTTP/3 (h1/h2), так что UDP/443 остаётся Hysteria2."
         fi
     else
-        note "Hysteria2: выключен (включить позже: nodego → Hysteria2)"
+        note "Hysteria2: не установлен (включить позже: nodego → Hysteria2)"
     fi
 fi
 
