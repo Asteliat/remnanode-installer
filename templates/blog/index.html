@@ -3,80 +3,1883 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Field notes — Why small services age well</title>
+<title>Field Notes — A journal of rooms, objects and the people who make them</title>
+<meta name="description" content="Field Notes is an independent London journal of architecture, craft, interiors and travel — essays, interviews and field notes on the people who make our rooms and objects.">
+<meta name="theme-color" content="#fcfbf8">
+<meta name="color-scheme" content="light">
+<meta property="og:title" content="Field Notes — A journal of rooms, objects and the people who make them">
+<meta property="og:description" content="Essays, interviews and field notes on architecture, craft, interiors and travel. Independent, London, since 2019. Issue 07 · Winter 2026.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Field Notes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20fill='%23fcfbf8'/%3E%3Cpath%20d='M14%2050V14h36'%20fill='none'%20stroke='%2316150f'%20stroke-width='3'/%3E%3Cpath%20d='M28%2050V30h22'%20fill='none'%20stroke='%232f6b4f'%20stroke-width='3'/%3E%3C/svg%3E">
 <style>
-  :root { color-scheme: light dark; }
-  * { box-sizing: border-box; }
-  body {
-    margin:0; background:#fdfcfa; color:#1c1a17;
-    font:18px/1.75 Georgia, "Iowan Old Style", "Times New Roman", serif;
+:root{
+  --paper:#fcfbf8;
+  --ink:#16150f;
+  --muted:#6b675c;
+  --line:#e6e2d6;
+  --accent:#2f6b4f;
+  --tint:#eef2ec;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --dur:200ms;
+  --ease:cubic-bezier(.2,.7,.3,1);
+  --pad:clamp(20px,4vw,56px);
+  --max:1240px;
+  --measure:68ch;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light;scrollbar-gutter:stable}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:clamp(16.5px,1.05vw,18px);
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  font-kerning:normal;
+  text-rendering:optimizeLegibility;
+}
+[hidden]{display:none!important}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+p,ul,ol,h1,h2,h3,h4,figure,blockquote,dl,dd,dt{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{font-family:var(--serif);font-weight:400;overflow-wrap:break-word}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+::selection{background:var(--accent);color:var(--paper)}
+.container{width:min(calc(100% - var(--pad)*2),var(--max));margin-inline:auto}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip-link{
+  position:fixed;left:16px;top:12px;z-index:200;
+  transform:translateY(-160%);
+  background:var(--ink);color:var(--paper);
+  font-family:var(--sans);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  padding:12px 18px;transition:transform 160ms var(--ease);
+}
+.skip-link:focus{transform:none}
+.eyebrow{
+  font-family:var(--sans);font-size:10.5px;line-height:1.5;
+  letter-spacing:.17em;text-transform:uppercase;color:var(--accent);
+}
+.link-underline{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.link-underline:hover{color:var(--accent);text-decoration-color:var(--accent)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:46px;padding:0 20px;
+  border:1px solid var(--ink);background:transparent;color:var(--ink);
+  font-family:var(--sans);font-size:11px;line-height:1;letter-spacing:.13em;text-transform:uppercase;
+  transition:background var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease);
+}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn svg{flex:none}
+.btn-solid{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.btn-solid:hover{background:#255540;border-color:#255540;color:var(--paper)}
+.btn[disabled]{opacity:.55;cursor:default}
+.avatar{
+  display:inline-grid;place-items:center;flex:none;
+  width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--line);background:var(--tint);color:var(--accent);
+  font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.04em;line-height:1;
+}
+.avatar--sm{width:22px;height:22px;font-size:8.5px}
+.avatar--lg{width:64px;height:64px;font-size:15px;border-color:#dbe2d8}
+
+/* ---------- header ---------- */
+.site-header{position:relative;z-index:20;background:var(--paper)}
+.microbar{border-bottom:1px solid var(--line)}
+.microbar-inner{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:9px 0;
+  font-family:var(--sans);font-size:10.5px;line-height:1.5;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+}
+.microbar-inner p{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.u-sep{color:#b8b2a2}
+.u-mid{color:var(--muted);opacity:.82}
+.masthead{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:32px;
+  padding:clamp(24px,3.6vw,36px) 0 clamp(20px,2.6vw,26px);
+}
+.brand-block{min-width:0}
+.wordmark{
+  display:inline-block;
+  font-family:var(--serif);font-size:clamp(34px,4.3vw,50px);line-height:.94;
+  letter-spacing:-.032em;color:var(--ink);
+  transition:color var(--dur) var(--ease);
+}
+.wordmark:hover{color:var(--accent)}
+.tagline{
+  margin-top:11px;max-width:47ch;
+  font-family:var(--serif);font-style:italic;font-size:clamp(14px,1.25vw,16.5px);
+  line-height:1.45;color:var(--muted);
+}
+.issue-block{
+  flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+  padding-left:22px;border-left:1px solid var(--line);
+  font-family:var(--sans);font-size:10.5px;line-height:1.6;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.issue-no{font-family:var(--serif);font-size:21px;line-height:1;letter-spacing:-.01em;text-transform:none;color:var(--ink)}
+.issue-season{margin-top:1px}
+.issue-price{margin-top:7px;font-family:var(--mono);font-size:10px;letter-spacing:.06em}
+.menu-toggle{
+  display:none;align-items:center;gap:10px;
+  min-height:44px;min-width:44px;padding:0 12px;
+  border:1px solid var(--line);background:transparent;color:var(--ink);
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease);
+}
+.menu-toggle:hover{background:var(--tint);border-color:#d8d4c7}
+.menu-icon{position:relative;width:17px;height:11px;flex:none}
+.menu-icon span{position:absolute;left:0;width:100%;height:1.5px;background:currentColor;transition:transform 180ms var(--ease),top 180ms var(--ease)}
+.menu-icon span:first-child{top:1px}
+.menu-icon span:last-child{top:9px}
+.menu-toggle[aria-expanded="true"] .menu-icon span:first-child{top:5px;transform:rotate(45deg)}
+.menu-toggle[aria-expanded="true"] .menu-icon span:last-child{top:5px;transform:rotate(-45deg)}
+.site-nav{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.nav-list{display:flex;align-items:center;gap:clamp(6px,2vw,30px);flex-wrap:wrap}
+.nav-link{
+  display:inline-flex;align-items:center;min-height:46px;
+  font-family:var(--sans);font-size:11.5px;line-height:1;letter-spacing:.145em;text-transform:uppercase;
+  color:var(--ink);border-bottom:2px solid transparent;
+  transition:color 160ms var(--ease),border-color 160ms var(--ease);
+}
+.nav-link:hover{color:var(--accent)}
+.nav-link[aria-current="page"]{color:var(--accent);border-color:var(--accent)}
+.nav-note{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--muted);
+  white-space:nowrap;
+}
+
+/* ---------- reading progress ---------- */
+.reading-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:120;background:transparent;pointer-events:none}
+.reading-progress span{display:block;width:100%;height:100%;background:var(--accent);transform:scaleX(0);transform-origin:0 50%}
+
+/* ---------- shared page furniture ---------- */
+.screen{padding-bottom:clamp(52px,7vw,90px)}
+.page-head{padding:clamp(38px,5.4vw,60px) 0 clamp(24px,3.4vw,34px)}
+.page-head .kicker{margin-bottom:18px}
+.kicker{
+  display:flex;flex-wrap:wrap;align-items:center;gap:9px;
+  font-family:var(--sans);font-size:10.5px;line-height:1.6;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+}
+.kicker .kicker-tag{color:var(--accent);font-weight:600}
+.kicker .dot{width:3px;height:3px;background:var(--muted);border-radius:50%;opacity:.55}
+.kicker .kicker-issue{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--muted)}
+.page-title{
+  font-size:clamp(44px,6.4vw,76px);line-height:1.01;letter-spacing:-.03em;
+}
+.page-title:focus{outline:none}
+.page-deck{
+  margin-top:18px;max-width:58ch;
+  font-size:clamp(17px,1.5vw,20px);line-height:1.55;color:var(--muted);
+}
+.page-title + .page-deck{}
+.page-head-rule{border-bottom:1px solid var(--line)}
+
+/* ---------- featured ---------- */
+.feature{padding:clamp(34px,5vw,52px) 0 clamp(44px,6vw,68px);border-bottom:1px solid var(--line)}
+.feature-grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);gap:clamp(32px,5vw,64px);align-items:center}
+.feature-copy{min-width:0}
+.feature-copy .kicker{margin-bottom:20px}
+.feature-title{font-size:clamp(42px,5.7vw,76px);line-height:1.01;letter-spacing:-.028em;margin-bottom:20px}
+.feature-title a{transition:color var(--dur) var(--ease)}
+.feature-title a:hover{color:var(--accent)}
+.feature-title:focus{outline:none}
+.feature-standfirst{max-width:44ch;font-size:clamp(17px,1.55vw,20.5px);line-height:1.56}
+.byline{
+  display:flex;flex-wrap:wrap;align-items:center;gap:9px 12px;
+  margin-top:26px;font-family:var(--sans);font-size:12px;line-height:1.6;color:var(--muted);
+}
+.byline .byline-author{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.byline .byline-author:hover{color:var(--accent);text-decoration-color:var(--accent)}
+.byline time,.byline .read-time{white-space:nowrap}
+.byline .sep{color:#b8b2a2}
+.cta{
+  display:inline-flex;align-items:center;gap:11px;min-height:44px;margin-top:26px;
+  font-family:var(--sans);font-size:11.5px;line-height:1;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);
+}
+.cta svg{transition:transform var(--dur) var(--ease)}
+.cta:hover svg{transform:translateX(4px)}
+.cta:hover{text-decoration:underline;text-underline-offset:5px}
+.feature-art{margin:0;min-width:0}
+.art-frame{position:relative;overflow:hidden;border:1px solid var(--line);background:var(--tint)}
+.art-frame svg{width:100%;height:100%;display:block;transition:transform 400ms var(--ease)}
+.feature-art .art-frame{aspect-ratio:5/4}
+.figure-caption{
+  margin-top:10px;max-width:52ch;
+  font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.5;color:var(--muted);
+}
+
+/* ---------- listing / filters / cards ---------- */
+.listing{padding-top:clamp(20px,3vw,30px)}
+.section-head{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+  padding-top:14px;border-top:1px solid var(--line);margin-bottom:22px;
+}
+.section-head .eyebrow{margin-bottom:7px}
+.section-title{font-size:clamp(26px,3.1vw,36px);line-height:1.08;letter-spacing:-.018em}
+.section-aside{
+  max-width:34ch;text-align:right;
+  font-family:var(--sans);font-size:11px;line-height:1.6;letter-spacing:.03em;color:var(--muted);
+}
+.filter-bar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  padding:16px 0 0;border-top:1px solid var(--line);
+}
+.filter-label{
+  margin-right:7px;
+  font-family:var(--sans);font-size:10px;line-height:1.5;letter-spacing:.17em;text-transform:uppercase;color:var(--muted);
+}
+.chip{
+  display:inline-flex;align-items:center;gap:8px;
+  min-height:44px;padding:0 15px;
+  border:1px solid var(--line);background:transparent;color:var(--ink);
+  font-family:var(--sans);font-size:11px;line-height:1;letter-spacing:.09em;text-transform:uppercase;
+  transition:background var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease);
+}
+.chip:hover{background:var(--tint);border-color:#d7d2c3}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chip-count{font-family:var(--mono);font-size:9.5px;letter-spacing:0;opacity:.6}
+.chip[aria-pressed="true"] .chip-count{opacity:.8}
+.results-line{
+  display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  margin:14px 0 clamp(24px,3.2vw,34px);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--muted);
+}
+.results-line .results-note{font-family:var(--sans);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.post-grid{
+  display:grid;grid-template-columns:1fr;gap:clamp(30px,4vw,40px) clamp(18px,2.2vw,28px);
+  margin:0;padding:0;list-style:none;
+}
+.card{min-width:0;transition:transform 220ms var(--ease)}
+.card-link{display:flex;flex-direction:column;height:100%;min-width:0}
+.card .art-frame{aspect-ratio:4/3;margin-bottom:15px}
+.card-tag{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--sans);font-size:10px;line-height:1.5;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+}
+.card-tag .tag-mark{width:6px;height:6px;background:var(--accent);flex:none}
+.card-title{
+  margin:9px 0 12px;
+  font-size:clamp(20px,1.7vw,23px);line-height:1.22;letter-spacing:-.015em;
+  transition:color var(--dur) var(--ease);
+}
+.card-meta{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;
+  margin-top:auto;font-family:var(--sans);font-size:11px;line-height:1.7;color:var(--muted);
+}
+.card-meta .sep{color:#b8b2a2}
+.card:focus-within,.card:hover{transform:translateY(-4px)}
+.card:focus-within .card-title,.card:hover .card-title{color:var(--accent)}
+.card:focus-within .art-frame svg,.card:hover .art-frame svg{transform:scale(1.024)}
+.card:focus-within .art-frame{border-color:#d4cec0}
+.card-link:focus-visible{outline-offset:5px}
+@media (hover:none){
+  .card:hover{transform:none}
+  .card:hover .card-title{color:var(--ink)}
+  .card:hover .art-frame svg{transform:none}
+}
+.empty{
+  display:flex;flex-direction:column;align-items:flex-start;gap:12px;
+  margin-top:4px;padding:clamp(28px,4.5vw,44px);
+  border:1px dashed #d6d0c1;
+  background:linear-gradient(180deg,var(--tint),var(--paper));
+}
+.empty svg{color:var(--accent);margin-bottom:2px}
+.empty h3{font-size:clamp(23px,2.6vw,30px);line-height:1.15;letter-spacing:-.01em}
+.empty p{max-width:46ch;font-size:15.5px;line-height:1.6;color:var(--muted)}
+.empty .btn{margin-top:8px}
+.grid-wrap[hidden]{display:none!important}
+
+/* ---------- archive ---------- */
+.archive-head{padding-bottom:clamp(20px,3vw,28px)}
+.archive-summary{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 22px;
+  margin-top:24px;padding-top:16px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.04em;
+}
+.archive-summary span{display:inline-flex;align-items:center;gap:8px}
+.archive-summary .dot{width:3px;height:3px;background:#b8b2a2;border-radius:50%}
+.year-block{padding-top:clamp(34px,5vw,56px)}
+.year-block:first-of-type{padding-top:clamp(18px,2.4vw,24px)}
+.year-head{
+  display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+  padding-top:14px;border-top:1px solid var(--line);margin-bottom:6px;
+}
+.year-title{font-size:clamp(46px,6.2vw,76px);line-height:1;letter-spacing:-.03em}
+.year-count{
+  font-family:var(--mono);font-size:10px;line-height:1.6;letter-spacing:.07em;color:var(--muted);
+  text-transform:uppercase;
+}
+.archive-list{margin:0;padding:0;list-style:none}
+.archive-item{border-top:1px solid var(--line)}
+.archive-item:first-child{border-top:1px solid var(--line)}
+.archive-row{
+  display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:baseline;gap:16px;
+  padding:17px 0;text-decoration:none;
+}
+.archive-num{font-family:var(--mono);font-size:10px;line-height:1.8;color:var(--muted);letter-spacing:.04em}
+.archive-body{min-width:0}
+.archive-title{font-size:clamp(18px,1.7vw,22px);line-height:1.28;letter-spacing:-.012em;transition:color 160ms var(--ease)}
+.archive-row:hover .archive-title{color:var(--accent)}
+.archive-meta{
+  display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;
+  margin-top:5px;font-family:var(--sans);font-size:10.5px;line-height:1.6;color:var(--muted);
+}
+.archive-meta .sep{color:#b8b2a2}
+.archive-read{font-family:var(--mono);font-size:10px;line-height:1.8;color:var(--muted);white-space:nowrap}
+.archive-row:hover .archive-num{color:var(--accent)}
+.archive-row:hover .archive-read{color:var(--ink)}
+.archive-row:focus-visible{outline-offset:2px}
+
+/* ---------- about ---------- */
+.about-intro{border-bottom:1px solid var(--line)}
+.about-grid{
+  display:grid;grid-template-columns:minmax(0,1.6fr) minmax(240px,.8fr);gap:clamp(32px,5vw,72px);
+  padding:clamp(30px,4.4vw,46px) 0 clamp(40px,5.4vw,60px);
+  border-bottom:1px solid var(--line);
+}
+.about-copy p{font-size:clamp(17px,1.35vw,19px);line-height:1.72;max-width:60ch}
+.about-copy p + p{margin-top:1.35em}
+.about-copy p.about-lede{font-size:clamp(19px,1.6vw,22px);line-height:1.64;letter-spacing:-.005em}
+.about-facts{border-top:1px solid var(--line);align-self:start}
+.about-facts dl{margin:0}
+.about-facts div{display:grid;grid-template-columns:1fr;gap:2px;padding:12px 0;border-bottom:1px solid var(--line)}
+.about-facts dt{font-family:var(--sans);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.about-facts dd{font-family:var(--serif);font-size:15.5px;line-height:1.45}
+.editors{padding-top:clamp(36px,5vw,54px)}
+.editor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(22px,2.6vw,32px);margin-top:10px}
+.editor-card{border-top:1px solid var(--line);padding-top:18px;min-width:0}
+.editor-card .avatar--lg{margin-bottom:16px}
+.editor-name{font-size:clamp(20px,1.8vw,24px);line-height:1.2;letter-spacing:-.012em}
+.editor-role{
+  margin-top:6px;font-family:var(--sans);font-size:10px;line-height:1.6;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);
+}
+.editor-bio{margin-top:10px;font-size:13.5px;line-height:1.6;color:var(--muted)}
+
+/* ---------- post ---------- */
+.post{padding-bottom:clamp(48px,7vw,84px)}
+.back-row{padding-top:clamp(20px,3vw,30px)}
+.back-link{
+  display:inline-flex;align-items:center;gap:8px;min-height:44px;
+  font-family:var(--sans);font-size:10.5px;line-height:1.5;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+  transition:color 160ms var(--ease);
+}
+.back-link svg{transition:transform var(--dur) var(--ease)}
+.back-link:hover{color:var(--accent)}
+.back-link:hover svg{transform:translateX(-3px)}
+.post-head{width:min(calc(100% - var(--pad)*2),calc(var(--measure) + 8ch));margin-inline:auto;padding:clamp(16px,2.6vw,26px) 0 0}
+.post-head .kicker{margin-bottom:20px}
+.post-title{font-size:clamp(34px,5vw,60px);line-height:1.05;letter-spacing:-.025em}
+.post-title:focus{outline:none}
+.post-standfirst{
+  margin-top:20px;max-width:56ch;
+  font-size:clamp(18px,1.6vw,21.5px);line-height:1.55;color:var(--muted);
+}
+.post-meta{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;
+  margin-top:24px;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  font-family:var(--sans);font-size:11.5px;line-height:1.6;color:var(--muted);
+}
+.post-meta .byline-author{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.post-meta .byline-author:hover{color:var(--accent);text-decoration-color:var(--accent)}
+.post-meta .sep{color:#b8b2a2}
+.post-meta .meta-issue{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.post-hero{width:min(calc(100% - var(--pad)*2),var(--max));margin:clamp(26px,4vw,42px) auto 0}
+.post-hero .art-frame{aspect-ratio:2.15/1}
+.post-hero figcaption{max-width:calc(var(--measure));}
+.post-body{width:min(calc(100% - var(--pad)*2),var(--measure));margin-inline:auto;padding-top:clamp(26px,3.6vw,40px)}
+.post-body p{font-size:clamp(17px,1.15vw,18.5px);line-height:1.72}
+.post-body p + p{margin-top:1.32em}
+.post-body p.lead{font-size:clamp(19px,1.4vw,21px);line-height:1.64;letter-spacing:-.004em}
+.post-body p.lead::first-letter{
+  float:left;font-size:3.85em;line-height:.82;font-weight:400;
+  padding:.045em .09em 0 0;color:var(--accent);
+}
+.post-body h2{
+  margin:2.7rem 0 1.05rem;padding-top:1.5rem;border-top:1px solid var(--line);
+  font-size:clamp(24px,2.5vw,30px);line-height:1.2;letter-spacing:-.018em;
+}
+.post-body h2 + p{margin-top:0}
+.pullquote{margin:2.7rem 0;padding:4px 0 4px 24px;border-left:2px solid var(--accent)}
+.pullquote p{
+  font-size:clamp(23px,2.7vw,31px);line-height:1.26;letter-spacing:-.015em;font-style:italic;
+}
+.pullquote footer{
+  margin-top:14px;font-family:var(--sans);font-size:10px;line-height:1.6;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);font-style:normal;
+}
+.post-list{margin:1.9rem 0 2.2rem;padding:0;list-style:none}
+.post-list li{
+  position:relative;padding:12px 0 12px 44px;border-top:1px solid var(--line);
+  font-size:clamp(16.5px,1.1vw,18px);line-height:1.62;
+}
+.post-list li:last-child{border-bottom:1px solid var(--line)}
+.post-list li::before{
+  content:attr(data-index);position:absolute;left:0;top:15px;
+  font-family:var(--mono);font-size:10px;line-height:1.6;letter-spacing:.05em;color:var(--accent);
+}
+.post-figure{margin:2.6rem 0}
+.post-figure .art-frame{aspect-ratio:3/2}
+.post-figure figcaption{font-size:13px;max-width:56ch}
+.fn-ref{
+  padding:0 1px;border:0;background:none;
+  font-family:var(--sans);font-size:9.5px;font-weight:600;color:var(--accent);
+  vertical-align:super;line-height:0;text-decoration:underline;text-underline-offset:2px;cursor:pointer;
+}
+.fn-ref:hover{color:var(--ink)}
+.notes{margin-top:3rem;padding-top:16px;border-top:1px solid var(--line)}
+.notes-title{font-family:var(--sans);font-size:10px;line-height:1.6;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.notes ol{list-style:none;counter-reset:note}
+.notes li{
+  position:relative;padding-left:24px;margin-top:8px;
+  font-size:13.5px;line-height:1.6;color:var(--muted);
+}
+.notes li::before{counter-increment:note;content:counter(note) ".";position:absolute;left:0;top:0;font-family:var(--mono);font-size:10px;color:var(--accent)}
+.notes li:focus{outline:2px solid var(--accent);outline-offset:3px}
+.fn-back{
+  margin-left:7px;padding:2px 0;background:none;border:0;
+  font-family:var(--sans);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--accent);text-decoration:underline;text-underline-offset:2px;
+}
+.fn-back:hover{color:var(--ink)}
+.post-actions{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  margin:2.6rem 0 2rem;padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+.action-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  min-height:44px;padding:0 14px;border:1px solid var(--line);background:transparent;color:var(--ink);
+  font-family:var(--sans);font-size:10.5px;line-height:1;letter-spacing:.11em;text-transform:uppercase;
+  transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease);
+}
+.action-btn:hover{background:var(--tint);border-color:#d5d0c1}
+.action-btn svg{color:var(--accent)}
+.action-note{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--muted)}
+.author-box{
+  display:grid;grid-template-columns:56px minmax(0,1fr);gap:17px;align-items:start;
+  padding:clamp(20px,3vw,26px);border:1px solid var(--line);background:var(--tint);
+}
+.author-box .avatar{width:56px;height:56px;font-size:13px;background:var(--paper)}
+.author-role{font-family:var(--sans);font-size:9.5px;line-height:1.6;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-top:4px}
+.author-bio{margin-top:9px;font-size:14px;line-height:1.65;color:var(--muted)}
+.author-name{font-size:21px;line-height:1.2;letter-spacing:-.01em}
+.related{margin-top:3.2rem}
+.related-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding-top:14px;border-top:1px solid var(--line);margin-bottom:20px}
+.related-title{font-size:clamp(23px,2.4vw,28px);line-height:1.1;letter-spacing:-.015em}
+.related-note{font-family:var(--mono);font-size:9.5px;color:var(--muted);letter-spacing:.04em}
+.related-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,2vw,22px)}
+.related-card{min-width:0}
+.related-card a{display:block;text-decoration:none}
+.related-card .art-frame{aspect-ratio:16/10;margin-bottom:10px}
+.related-card h3{font-size:16px;line-height:1.28;letter-spacing:-.008em;transition:color var(--dur) var(--ease)}
+.related-card a:hover h3{color:var(--accent)}
+.related-card .related-meta{margin-top:7px;font-family:var(--sans);font-size:9.5px;line-height:1.6;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+.post-back{margin-top:2.6rem;padding-top:18px;border-top:1px solid var(--line)}
+
+/* ---------- newsletter ---------- */
+.newsletter{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--tint)}
+.newsletter-inner{
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  gap:clamp(28px,5vw,70px);align-items:center;
+  padding:clamp(38px,5.4vw,58px) 0;
+}
+.newsletter-copy .eyebrow{margin-bottom:12px}
+.newsletter-title{font-size:clamp(28px,3.7vw,42px);line-height:1.08;letter-spacing:-.022em;max-width:19ch}
+.newsletter-deck{margin-top:14px;max-width:47ch;font-size:15px;line-height:1.65;color:var(--muted)}
+.field-row{display:flex;align-items:stretch;gap:9px}
+.input{
+  flex:1;min-width:0;min-height:48px;padding:0 15px;
+  border:1px solid #d8d3c4;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.4;
+  border-radius:0;
+  transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
+}
+.input::placeholder{color:#9b9688}
+.input:hover{border-color:#c8c2b2}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.input[aria-invalid="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.form-note{margin-top:10px;font-family:var(--sans);font-size:11.5px;line-height:1.6;color:var(--muted)}
+.form-error{
+  margin-top:10px;padding-left:10px;border-left:2px solid var(--ink);
+  font-family:var(--sans);font-size:12.5px;line-height:1.5;font-weight:600;color:var(--ink);
+}
+.form-success{display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border:1px solid #d8e2d9;background:var(--paper)}
+.form-success svg{flex:none;color:var(--accent);margin-top:2px}
+.success-title{font-family:var(--serif);font-size:20px;line-height:1.25;letter-spacing:-.01em}
+.success-note{margin-top:5px;font-family:var(--sans);font-size:12px;line-height:1.6;color:var(--muted)}
+.link-button{
+  margin-top:9px;padding:4px 0;min-height:32px;
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent);text-decoration:underline;text-underline-offset:3px;
+}
+.link-button:hover{color:var(--ink)}
+
+/* ---------- footer ---------- */
+.site-footer{background:var(--paper)}
+.footer-main{
+  display:grid;grid-template-columns:1.35fr .8fr .8fr 1fr;
+  gap:clamp(26px,4vw,54px);
+  padding:clamp(40px,5.4vw,60px) 0 clamp(36px,5vw,52px);
+}
+.footer-wordmark{font-size:30px}
+.footer-brand p{margin-top:12px;max-width:33ch;font-size:13.5px;line-height:1.65;color:var(--muted)}
+.footer-brand .footer-issue{margin-top:14px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--muted)}
+.footer-col h3{
+  font-family:var(--sans);font-size:9.5px;line-height:1.5;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;
+}
+.footer-col ul{display:flex;flex-direction:column;align-items:flex-start}
+.footer-link{
+  display:inline-flex;align-items:center;min-height:44px;
+  font-size:14px;line-height:1.4;color:var(--ink);text-decoration:none;
+  transition:color 160ms var(--ease);
+}
+.footer-link:hover{color:var(--accent)}
+.footer-small{font-family:var(--sans);font-size:12px;line-height:1.65;color:var(--muted);max-width:30ch}
+.footer-mono{margin-top:12px;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em}
+.footer-base{border-top:1px solid var(--line)}
+.footer-base-inner{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 22px;
+  padding:7px 0;
+  font-family:var(--sans);font-size:10px;line-height:1.6;letter-spacing:.06em;color:var(--muted);
+}
+.made-in{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em}
+.made-in svg{color:var(--accent)}
+.footer-top{
+  display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 0 0 4px;
+  font-family:var(--sans);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  transition:color 160ms var(--ease);
+}
+.footer-top:hover{color:var(--accent)}
+.footer-top svg{transition:transform var(--dur) var(--ease)}
+.footer-top:hover svg{transform:translateY(-2px)}
+
+/* ---------- toast ---------- */
+.toast-region{
+  position:fixed;left:50%;bottom:22px;z-index:150;
+  transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  width:max-content;max-width:calc(100vw - 32px);pointer-events:none;
+}
+.toast{
+  display:flex;align-items:center;gap:10px;
+  min-height:46px;padding:11px 17px;
+  background:var(--ink);color:var(--paper);
+  font-family:var(--sans);font-size:12.5px;line-height:1.4;
+  box-shadow:0 14px 34px -12px rgba(22,21,15,.4);
+  opacity:0;transform:translateY(8px);
+  transition:opacity 180ms var(--ease),transform 180ms var(--ease);
+  pointer-events:auto;
+}
+.toast svg{flex:none;color:#a8c9b4}
+.toast.is-visible{opacity:1;transform:none}
+.toast.is-leaving{opacity:0;transform:translateY(6px)}
+
+/* ---------- reveal ---------- */
+.js-reveal .reveal{opacity:0;transform:translateY(12px)}
+.js-reveal .reveal.is-in{
+  opacity:1;transform:none;
+  transition:opacity 220ms var(--ease),transform 220ms var(--ease);
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:1ms!important;animation-iteration-count:1!important;
+    transition-duration:1ms!important;scroll-behavior:auto!important;
   }
-  @media (prefers-color-scheme: dark) {
-    body { background:#11100f; color:#ded9d2; }
-    .rule, header { border-color:#2a2723 !important; }
-    code { background:#1c1a18 !important; }
-    blockquote { border-color:#3a352f !important; color:#c9c2b8 !important; }
+  .js-reveal .reveal{opacity:1;transform:none}
+  .card:hover,.card:focus-within{transform:none}
+  .card:hover .art-frame svg,.card:focus-within .art-frame svg{transform:none}
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:1199px){
+  .post-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .editor-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 32px}
+}
+@media (max-width:1099px){
+  .u-mid{display:none}
+  .feature-grid{gap:40px}
+}
+@media (max-width:899px){
+  .masthead{flex-wrap:wrap;align-items:flex-start;gap:14px 18px;padding-top:22px}
+  .brand-block{flex:1 1 0;min-width:0;order:1}
+  .menu-toggle{display:inline-flex;order:2;align-self:flex-start;margin-top:3px}
+  .issue-block{display:none}
+  .site-nav{display:none}
+  .site-header.nav-open .site-nav{display:block;animation:nav-in 180ms var(--ease) both}
+  .nav-inner{display:block;padding:4px 0 10px}
+  .nav-list{display:flex;flex-direction:column;align-items:stretch;gap:0}
+  .nav-list li{border-bottom:1px solid var(--line)}
+  .nav-list li:last-child{border-bottom:0}
+  .nav-link{
+    display:flex;width:100%;min-height:58px;padding:0;
+    border-bottom:0;font-family:var(--serif);font-size:25px;letter-spacing:-.015em;
+    text-transform:none;line-height:1.15;
   }
-  header { border-bottom:1px solid #eae6df; padding:20px 24px; }
-  .wrap { max-width:680px; margin:0 auto; }
-  header .wrap { display:flex; justify-content:space-between; align-items:center; }
-  .brand { font:600 15px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; letter-spacing:.14em; text-transform:uppercase; }
-  header a { font:14px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:inherit; opacity:.6; text-decoration:none; }
-  article { padding:58px 24px 90px; }
-  .kicker { font:600 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-            letter-spacing:.16em; text-transform:uppercase; opacity:.45; margin-bottom:16px; }
-  h1 { font-size:clamp(28px,4.6vw,40px); line-height:1.2; margin:0 0 18px; letter-spacing:-.015em; }
-  .byline { font:14px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; opacity:.5; margin-bottom:38px; }
-  p { margin:0 0 24px; }
-  h2 { font-size:22px; margin:44px 0 16px; }
-  blockquote { margin:32px 0; padding:2px 0 2px 22px; border-left:3px solid #ddd7cd; color:#5c554b; font-style:italic; }
-  code { font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; background:#f2efe9; padding:2px 6px; border-radius:5px; }
-  .rule { border:0; border-top:1px solid #eae6df; margin:52px 0; }
-  footer { font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; opacity:.5; }
+  .nav-link[aria-current="page"]{border-bottom:0;color:var(--accent)}
+  .nav-link[aria-current="page"]::after{content:"";width:6px;height:6px;background:var(--accent);margin-left:12px;border-radius:50%}
+  .nav-note{display:none}
+  .feature-grid{grid-template-columns:1fr;align-items:start;gap:28px}
+  .feature-title{font-size:clamp(40px,7vw,62px)}
+  .feature-art{order:2}
+  .feature-copy{order:1}
+  .newsletter-inner{grid-template-columns:1fr;gap:26px}
+  .post-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .about-grid{grid-template-columns:1fr}
+  .footer-main{grid-template-columns:1fr 1fr;gap:30px 34px}
+  .footer-brand{grid-column:1 / -1}
+  .footer-brand p{max-width:48ch}
+  .related-grid{grid-template-columns:1fr 1fr}
+  .related-card:last-child{grid-column:1 / -1;max-width:calc(50% - 8px)}
+  .post-hero .art-frame{aspect-ratio:1.8/1}
+  .post-meta .meta-issue{margin-left:0;flex-basis:100%}
+  .section-aside{display:none}
+}
+@media (max-width:639px){
+  .microbar-inner{font-size:9.5px;letter-spacing:.1em}
+  .microbar-inner p{gap:6px}
+  .u-place,.u-first-sep{display:none}
+  .wordmark{font-size:36px}
+  .tagline{font-size:13.5px;max-width:34ch}
+  .filter-bar{gap:7px;padding-top:14px}
+  .filter-label{flex-basis:100%;margin:0 0 2px}
+  .chip{padding:0 12px;font-size:10px}
+  .post-grid{grid-template-columns:1fr;gap:34px}
+  .card .art-frame{aspect-ratio:16/10}
+  .page-title{font-size:clamp(40px,11vw,54px)}
+  .post-title{font-size:clamp(32px,8.6vw,44px)}
+  .post-standfirst{font-size:17.5px}
+  .field-row{flex-direction:column}
+  .field-row .btn{width:100%}
+  .newsletter-title{max-width:24ch}
+  .footer-main{grid-template-columns:1fr 1fr;gap:26px 24px}
+  .footer-brand{grid-column:1 / -1}
+  .footer-col:last-child{grid-column:1 / -1}
+  .footer-base-inner{flex-direction:column;align-items:flex-start;gap:0;padding:10px 0 14px}
+  .footer-top{min-height:40px}
+  .archive-row{grid-template-columns:32px minmax(0,1fr);gap:10px;padding:15px 0}
+  .archive-read{display:none}
+  .related-grid{grid-template-columns:1fr;gap:22px}
+  .related-card:last-child{grid-column:auto;max-width:none}
+  .related-card .art-frame{aspect-ratio:2.4/1}
+  .post-actions .action-note{flex-basis:100%;margin:2px 0 0}
+  .author-box{grid-template-columns:44px minmax(0,1fr);gap:14px;padding:18px}
+  .author-box .avatar{width:44px;height:44px;font-size:11px}
+  .editor-grid{grid-template-columns:1fr}
+  .year-count{font-size:9px;text-align:right}
+  .post-hero .art-frame{aspect-ratio:1.5/1}
+  .pullquote{padding-left:18px}
+  .toast-region{bottom:14px;width:calc(100vw - 28px);align-items:stretch}
+  .toast{width:100%;justify-content:flex-start}
+}
+@media (max-width:389px){
+  .wordmark{font-size:32px}
+  .chip{padding:0 10px;font-size:9.5px}
+  .post-grid{gap:30px}
+}
+@keyframes nav-in{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:none}
+}
 </style>
 </head>
 <body>
-<header><div class="wrap"><div class="brand">Field notes</div><a href="#">Archive</a></div></header>
+<a class="skip-link" href="#main">Skip to content</a>
 
-<article class="wrap">
-  <div class="kicker">Infrastructure · 8 min read</div>
-  <h1>Why small services age well</h1>
-  <div class="byline">November 2026</div>
+<header class="site-header" id="top">
+  <div class="microbar">
+    <div class="container microbar-inner">
+      <p>
+        <span class="u-place">London</span>
+        <span class="u-first-sep" aria-hidden="true">·</span>
+        <time datetime="2026-11-15">15 November 2026</time>
+      </p>
+      <p class="u-mid">Independent journal · Est. 2019</p>
+      <p>Issue 07 · Winter 2026</p>
+    </div>
+  </div>
+  <div class="container masthead">
+    <div class="brand-block">
+      <a class="wordmark" href="#/">Field Notes</a>
+      <p class="tagline">A journal of rooms, objects and the people who make them</p>
+    </div>
+    <div class="issue-block" aria-label="Current issue">
+      <span class="issue-no">Issue 07</span>
+      <span class="issue-season">Winter 2026</span>
+      <span class="issue-price">£12 / €14</span>
+    </div>
+    <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
+      <span class="menu-label">Menu</span>
+      <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
+    </button>
+  </div>
+  <nav class="site-nav" id="primary-nav" aria-label="Primary">
+    <div class="container nav-inner">
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#/essays" data-nav="essays">Essays</a></li>
+        <li><a class="nav-link" href="#/interviews" data-nav="interviews">Interviews</a></li>
+        <li><a class="nav-link" href="#/architecture" data-nav="architecture">Architecture</a></li>
+        <li><a class="nav-link" href="#/archive" data-nav="archive">Archive</a></li>
+        <li><a class="nav-link" href="#/about" data-nav="about">About</a></li>
+      </ul>
+      <p class="nav-note" aria-hidden="true">Vol. VII · No. 7</p>
+    </div>
+  </nav>
+</header>
 
-  <p>
-    Every service we run starts as a solution to one problem. Somewhere around the
-    second year, most of them have quietly become solutions to six problems, three
-    of which no longer exist.
-  </p>
-  <p>
-    The interesting property of a small service isn't that it does less. It's that
-    its failure modes stay legible. When something breaks, you can still draw the
-    whole thing on a napkin and find the seam.
-  </p>
+<div class="reading-progress" id="reading-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span></span></div>
 
-  <h2>The cost of a convenience</h2>
-  <p>
-    It is almost never one big decision that makes a service hard to operate. It's
-    forty small ones — each individually defensible — that together turn a weekend
-    project into something nobody wants to touch.
-  </p>
-  <blockquote>
-    Prefer the boring option. Boring is a property that survives staff turnover.
-  </blockquote>
+<main id="main" tabindex="-1">
+  <div id="view" class="view"></div>
+</main>
 
-  <h2>What we keep</h2>
-  <p>
-    A single configuration file, a process supervisor that doesn't surprise us, and
-    logs we can read without a query language. That's most of it. Everything else
-    is an optimisation we can add later if a real number demands it.
-  </p>
-  <p>
-    The heuristics are unglamorous: one binary, one config, one volume for state,
-    and a health check that a human can run from a laptop with <code>curl</code>.
-  </p>
+<footer class="site-footer">
+  <section class="newsletter" id="newsletter" aria-labelledby="newsletter-title">
+    <div class="container newsletter-inner">
+      <div class="newsletter-copy">
+        <p class="eyebrow">The Notebook</p>
+        <h2 class="newsletter-title" id="newsletter-title">A letter from the editors, once a month.</h2>
+        <p class="newsletter-deck">New essays, workshop visits and the occasional correction, sent before they appear in print. No noise, no tracking, one click to leave.</p>
+      </div>
+      <form class="newsletter-form" id="newsletter-form" novalidate>
+        <div class="field-row" id="newsletter-fields">
+          <label class="sr-only" for="newsletter-email">Email address</label>
+          <input class="input" id="newsletter-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" aria-describedby="newsletter-note" required>
+          <button class="btn btn-solid" type="submit" id="newsletter-submit">Subscribe</button>
+        </div>
+        <p class="form-note" id="newsletter-note">One letter a month. Unsubscribe in a click. We never pass addresses on.</p>
+        <p class="form-error" id="newsletter-error" role="alert" hidden></p>
+        <div class="form-success" id="newsletter-success" role="status" hidden>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+          <div>
+            <p class="success-title">Check your inbox.</p>
+            <p class="success-note">A confirmation note is on its way. The next letter goes out with Issue 08.</p>
+            <button class="link-button" id="newsletter-reset" type="button">Use a different address</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
 
-  <hr class="rule">
-  <footer>Field notes is a personal log about running small systems. No trackers, no popups.</footer>
-</article>
+  <div class="container footer-main">
+    <div class="footer-brand">
+      <a class="wordmark footer-wordmark" href="#/">Field Notes</a>
+      <p>A journal of rooms, objects and the people who make them. Independent, London, since 2019.</p>
+      <p class="footer-issue">Issue 07 · Winter 2026</p>
+    </div>
+    <nav class="footer-col" aria-labelledby="footer-sections">
+      <h3 id="footer-sections">Sections</h3>
+      <ul>
+        <li><a class="footer-link" href="#/essays">Essays</a></li>
+        <li><a class="footer-link" href="#/interviews">Interviews</a></li>
+        <li><a class="footer-link" href="#/architecture">Architecture</a></li>
+      </ul>
+    </nav>
+    <nav class="footer-col" aria-labelledby="footer-journal">
+      <h3 id="footer-journal">The journal</h3>
+      <ul>
+        <li><a class="footer-link" href="#/">Current issue</a></li>
+        <li><a class="footer-link" href="#/archive">Archive</a></li>
+        <li><a class="footer-link" href="#/about">About the editors</a></li>
+        <li><a class="footer-link" href="#newsletter">Subscribe</a></li>
+      </ul>
+    </nav>
+    <div class="footer-col">
+      <h3 id="footer-edition">The edition</h3>
+      <p class="footer-small">Published twice a year in London. Issue 07 is on the press now.</p>
+      <p class="footer-small footer-mono">ISSN 2753-4882</p>
+    </div>
+  </div>
+
+  <div class="footer-base">
+    <div class="container footer-base-inner">
+      <p>© 2026 Field Notes. All rights reserved.</p>
+      <p class="made-in">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h16M6 20V9l6-4 6 4v11M10 20v-5h4v5"/></svg>
+        Made in London
+      </p>
+      <a class="footer-top" href="#top">Back to top
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+
+<noscript>
+  <div class="container" style="padding:28px 0 36px;font-family:var(--sans);font-size:13px;color:var(--muted)">
+    Field Notes is typeset in your browser. Enable JavaScript to read Issue 07 and the archive.
+  </div>
+</noscript>
+
+<script>
+(function () {
+'use strict';
+
+/* ------------------------------------------------------------------
+   Field Notes — a journal of rooms, objects and the people who make them
+   One file. No external resources. Hash routing. Everything below is
+   editorial copy and the machinery that sets it.
+   ------------------------------------------------------------------ */
+
+var AUTHORS = {
+  mara: {
+    name: 'Mara Ellison',
+    initials: 'ME',
+    role: 'Architecture editor',
+    bio: 'Mara Ellison is the architecture editor of Field Notes. She writes about housing, repair and the afterlife of public buildings, and teaches a seminar on the London terrace. Her first book, The Repaired City, is out in 2027.'
+  },
+  tomas: {
+    name: 'Tomas Renn',
+    initials: 'TR',
+    role: 'Craft and materials',
+    bio: 'Tomas Renn trained as a cabinetmaker in Sheffield before turning to writing. He reports on workshops, tools and the people keeping old trades alive, and is currently learning to sharpen a saw properly.'
+  },
+  ines: {
+    name: 'Ines Halloran',
+    initials: 'IH',
+    role: 'Interiors',
+    bio: 'Ines Halloran writes about rooms, thresholds and the small decisions that make a home. She lives in London, in a flat with too many doors, and is working on a book about the hallway.'
+  },
+  yusuf: {
+    name: 'Yusuf Adeyemi',
+    initials: 'YA',
+    role: 'Travel and landscape',
+    bio: 'Yusuf Adeyemi writes about landscapes and the buildings that interrupt them. He lives in Bristol, walks whenever possible, and keeps a notebook of bridge heights and bus timetables.'
+  }
+};
+
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+var POSTS = [
+  {
+    slug: 'the-long-house-on-caledonian-road',
+    title: 'The Long House on Caledonian Road',
+    section: 'Essay',
+    tag: 'Architecture',
+    deck: 'Four metres wide, twenty-seven metres deep, and organised around a courtyard the size of a dining table. Ada Fenwick’s infill house for a bookbinder and a piano tuner asks what a narrow London plot can still hold.',
+    author: 'mara',
+    date: '2026-11-12',
+    issue: 'Issue 07 · Winter 2026',
+    art: 'house',
+    seed: 7,
+    artAlt: 'Section drawing of a long, low brick house wrapped around a courtyard, with a tree in the middle and a north light over the workshop.',
+    body: [
+      { type: 'p', text: 'The door is set back six hundred millimetres from the pavement, in a brick wall that gives almost nothing away. There is no knocker, no nameplate, no number you could read from the bus stop. If you did not know that a house existed behind the wall, you would walk past it. That, its architect says, was rather the point.' },
+      { type: 'p', text: 'The plot sits between two Victorian terraces on Caledonian Road, in Islington, and for most of the twentieth century it was a side passage and a coal store, then a place where a builder kept ladders and a wheelbarrow. It is 4.2 metres wide and twenty-seven metres deep — a proportion that turns every domestic decision into an argument about light. In 2021 it was bought by Ruth Alder, a bookbinder, and Sam Okonjo, a piano tuner, who had spent two years looking for a workshop with a roof they could afford. They interviewed three architects. They chose Ada Fenwick, of the small London practice Fenwick and Lowe, because she arrived with a section drawing rather than a mood board.' },
+      { type: 'p', text: 'The house they built, finished in the spring of 2025, is ninety-six square metres on one level. It contains a binding workshop, a tuning room, a kitchen, a living room, a bedroom, a bathroom, a courtyard the size of a dining table, and more storage than either client expected. It also contains a single structural idea, repeated until it becomes a way of living: the long house is a sequence of rooms in a line, each one borrowing light from the next.' },
+      { type: 'h2', text: 'A street that asks for quiet' },
+      { type: 'p', text: 'The site is inside a conservation area, and the planners were clear about what they did not want. The street is a run of three-storey terraces, shops with flats above, a church, a pub that has changed hands four times. A new house that announced itself would have been refused. Fenwick’s response was a frontage of London stock brick with one tall, deep-set window and a door painted the colour of wet slate. The elevation is 2.6 metres high at the street, and the roof behind it rises almost imperceptibly. From across the road it reads as a gap between buildings — which, in a sense, it is.' },
+      { type: 'p', text: 'The threshold is a single slab of Portland stone, reused from a demolished council building in Hackney. There is no step. Ruth Alder wanted to wheel a trolley of paper in from the street without asking for help. The door itself is solid oak, 60 millimetres thick, hung on three brass butt hinges; it takes two hands and rewards a firm push. “You should feel the building take your weight,” Fenwick said. It is the only theatrical gesture in the house.' },
+      { type: 'h2', text: 'The plan as a sequence' },
+      { type: 'p', text: 'Inside, the first room is the binding room: 4.2 metres wide and 6.8 long, with a window to the street, a guillotine, two nipping presses, a wall of paper drawers and a board for drying. The window is triple-glazed because Caledonian Road is a bus route and bookbinding is a quiet trade. At the back of the workshop, a compressed lobby holds a bench, a coat rail and a door that closes with a brass latch. Then comes the courtyard: 2.4 metres square, open to the sky, with a birch in a raised bed of reclaimed brick and a drain designed to be cleared by hand.' },
+      { type: 'p', text: 'After the courtyard the house relaxes. The kitchen sits under the highest part of the roof; the living room is really a wide passage with a table in it; the bedroom at the back looks onto a garden the width of the site. The bathroom and the plant room are pushed into the middle of the plan, where no one was ever going to get a window. “You stop thinking of it as a corridor,” Alder told me. “You walk through a series of rooms that happen to be in a line.”' },
+      { type: 'p', text: 'This is not a new idea. The long house is one of London’s oldest domestic types, a narrow street frontage with a deep rear extension, common in the former artisan quarters of Islington, Southwark and Bethnal Green. What Fenwick adds is a section that rises and falls: 2.5 metres at the door, 3.1 over the courtyard passage, 4.1 over the kitchen table, then down again to 2.7 at the bedroom. The ceiling planes are Douglas fir, left bare and finished with soap. The floor is brick in the workshop and in the courtyard, Douglas fir everywhere else. Nothing is painted that could have been left alone.' },
+      { type: 'h2', text: 'What holds it up' },
+      { type: 'p', text: 'The two party walls belong to the neighbours, and the new house does not load them. It stands on its own pad foundations and a timber frame, with a galvanised steel beam carrying the roof across the courtyard. The engineer was Priya Sood, who has a small practice in Bermondsey and a reputation for details that can be built by a contractor with cold hands. The structure is deliberately legible: in the kitchen you can see the beam, the joists, the bolts. The house does not hide how it is made.' },
+      { type: 'p', text: 'The materials were chosen for how they age rather than how they photograph. The brick is second-hand London stock, cleaned and laid in lime mortar; the mortar is a little softer than the brick, as it should be, so that any movement cracks the joint rather than the wall. The Douglas fir came from a sawmill in Perthshire. The windows are European oak, double-glazed with a slim cavity, and the external sills are galvanised steel, because oak sills rot and steel sills do not. Cork, harvested in the Alentejo, lines the tuning room and the bathroom — for sound in the first case, for warmth in the second.' },
+      { type: 'p', text: 'The tuning room is a room within a room. Sam Okonjo tunes six or seven pianos a week, most of them in other people’s houses, but one or two come to him. The room has no parallel walls, a floating floor and 100 millimetres of cork on the ceiling. The piano, a 1930s Blüthner grand, sits under a roof light with a linen blind. The neighbours cannot hear it. Sam can hear everything.' },
+      { type: 'quote', text: 'A narrow site does not ask you to do less. It asks you to decide earlier.', cite: 'Ada Fenwick, architect' },
+      { type: 'h2', text: 'The courtyard' },
+      { type: 'p', text: 'The courtyard is the heart of the argument. In a house 4.2 metres wide, a courtyard is expensive: it gives up floor area, it needs drainage, it needs a tree that will tolerate being in a pot. But it is also the only way to get light and air into the middle of a twenty-seven-metre plan. Fenwick spent a disproportionate part of the budget here — the birch, the brick paving, the steel drain cover, the bench that is also a step.' },
+      { type: 'p', text: 'On the day I visited it was raining. Water ran off the roof into a galvanised chain and down into a bed of gravel. The birch moved. From the kitchen you could see the rain and not hear it; from the workshop you could hear it and not see it. Alder said she had come to think of the courtyard as the house’s second front door. “People arrive at the street door,” she said, “and then they arrive again at the courtyard.”' },
+      { type: 'h2', text: 'The cost of narrowness' },
+      { type: 'p', text: 'The house cost £388,000, excluding fees and the clients’ own labour. That is about £4,040 per square metre, high for a new build and low for a London house with a courtyard. The budget was protected by a decision made early: no basement. A basement would have bought another forty square metres, but it would also have bought a party-wall agreement, a pump, a second bathroom and a year of uncertainty. “We spent the money above ground,” Fenwick said.', note: 1 },
+      { type: 'p', text: 'The compromises are real. The middle of the plan is dark on a winter afternoon. The birch needs water in August. The kitchen has no window that opens to the street, so the house is ventilated mechanically, with a heat-recovery unit in the plant room and boost switches beside the bathroom mirror and the hob. The living room is a passage, and a passage is not a place to put a sofa unless you have measured the sofa first. This is not a machine for efficiency. It is a series of decisions made early, when there was still time to change them.' },
+      { type: 'h2', text: 'The neighbours' },
+      { type: 'p', text: 'Building a house in a gap between two occupied terraces is a social project before it is a technical one. The contractor, a five-person firm from Waltham Forest, worked in six-month phases so that the neighbours could plan around the noise. The party walls were surveyed before work started and again at completion; two hairline cracks were recorded and one was repaired at the client’s expense before anyone asked. The site had no room for a skip, so spoil went out in bags through the front door. The street lost four parking spaces for eleven months. Alder delivered a letter to every flat on both sides explaining what was happening and why, with her mobile number at the bottom. Nobody complained to the council.' },
+      { type: 'p', text: 'The result is a house that is almost invisible from the street and completely legible from inside. The clients have a routine: coffee in the courtyard when it is warm enough, work in the front two rooms, lunch in the kitchen, the piano in the afternoon. On Sundays the couple open the courtyard door to the neighbours for an hour and call it “the yard”. It is a small piece of city that has been made to behave like a room.' },
+      { type: 'h2', text: 'The last room' },
+      { type: 'p', text: 'The bedroom is at the back, under a lower roof, with a window that frames a fig tree in the neighbours’ garden. At dusk the brick in the courtyard goes the colour of weak tea; the kitchen light comes on; the birch becomes a silhouette. From the street you would still miss it. That is the peculiar achievement of the house: it takes a forgotten gap in a busy road and turns it into somewhere a person can hear themselves think.' },
+      { type: 'p', text: 'Sam Okonjo told me that tuning a piano is mostly about listening for what a room does to a note. The long house, he said, is the first room he has lived in that he can hear clearly. “It tells you where you are,” he said. “Not many buildings bother.”' },
+      { type: 'list', items: [
+        'One room deep at the front, so the workshop gets the street light and the road noise stays where the work is.',
+        'A courtyard in the middle, doing the work that a window does in a wider house.',
+        'A roof that lifts only over the rooms where people sit: 2.5 metres at the door, 4.1 metres at the kitchen table.',
+        'A bathroom and a plant room in the dark centre, where a window was never possible.',
+        'One material repeated — brick outside, brick underfoot, brick in the courtyard — so that the joins become the detail.'
+      ] },
+      { type: 'figure', art: 'room', seed: 8, caption: 'The binding room, looking back towards the street: a north window, a press, and a wall of reclaimed brick. Illustration: Field Notes.', alt: 'Line drawing of a narrow binding room with a workbench, a tall window and shelves of paper.' },
+      { type: 'note', text: 'Narrow plots of this kind survive across Islington, Southwark and Bethnal Green as a legacy of earlier street patterns. The “long house” is less a formal type than a response to a plot: one room wide, several rooms deep, with light taken from both ends and, if you are lucky, from the middle.' }
+    ]
+  },
+  {
+    slug: 'a-chair-is-a-small-building',
+    title: 'A Chair Is a Small Building',
+    section: 'Interview',
+    tag: 'Craft',
+    deck: 'Esther Nwosu makes ladderback chairs in a former print works in Walthamstow. We talked about green oak, bent wood and the unreasonable pleasure of a joint that can be taken apart.',
+    author: 'tomas',
+    date: '2026-11-06',
+    issue: 'Issue 07 · Winter 2026',
+    art: 'workshop',
+    seed: 21,
+    artAlt: 'Line drawing of a chairmaking workshop with a shave horse, a bench and a ladderback chair beneath a tall window.',
+    body: [
+      { type: 'p', text: 'The workshop is on the first floor of a former print works on Blackhorse Lane, in Walthamstow, and it smells of oak shavings and coffee. There are three windows, all north, and a strip of masking tape on the floor that marks the limit of the dust. Esther Nwosu is forty-two and has been making chairs here since 2018. Before that she was a set builder for a theatre company in Clerkenwell, which is where she learned that a thing can be temporary and still be built properly.' },
+      { type: 'p', text: 'We sat on two of her chairs, which is the only sensible way to interview a chairmaker. The chairs were low, with woven seats and backs of ash spindles so thin they looked drawn rather than cut. They were comfortable in the way a good coat is comfortable: without asking for credit.' },
+      { type: 'h2', text: 'On beginning' },
+      { type: 'p', text: 'Nwosu trained at the Building Crafts College in Stratford, then spent two years in a chairmaking workshop in Devon, where she was paid £7.50 an hour and learned to sharpen a tool before she was allowed to use it. “The first year was mostly sharpening,” she said. “You think you are being punished. Then you realise it is the whole job.” She came back to London with a bench, a drawknife and a conviction that chairs should be repairable by the person who owns them.' },
+      { type: 'p', text: 'Her chairs are ladderbacks, a form with a long history in England and an even longer one in America, where Shaker communities made them by the thousand. Nwosu’s are not reproductions. The back posts are slightly tapered, the seat is woven from paper rush rather than hickory, and the joints are cut so that the chair can be knocked down with a mallet and rebuilt. “A chair is a building,” she said. “It carries a person instead of a roof, but the grammar is the same: legs, frame, brace.”' },
+      { type: 'h2', text: 'On green wood' },
+      { type: 'p', text: 'Most of her oak comes from a woodland in Suffolk managed by a carpenter who fells in winter and delivers in the back of a van. She works it green, which means wet, which means the wood will move as it dries. “You cut it fat and let it shrink around the joint,” she said. “The chair tightens itself. That is not a trick; that is just physics being kind.” The spindles are ash, riven rather than sawn so the grain runs the length of the piece. The seats are woven from paper rush, which is cheap, strong and replaceable.' },
+      { type: 'quote', text: 'You can tell a good chair by what happens when it breaks. It should fail in a way you can fix with a wedge and an hour.', cite: 'Esther Nwosu, chairmaker' },
+      { type: 'p', text: 'The tools are ordinary and old: a drawknife, a travisher, a spokeshave, three chisels, a mallet, a shave horse she made herself from a scaffold board. There is a lathe in the corner for the legs, but she prefers to shape them with a spokeshave when the wood allows. “A machine gives you a leg,” she said. “A hand gives you a chair.”' },
+      { type: 'h2', text: 'On the work' },
+      { type: 'p', text: 'A stool takes a day and costs £420. A chair takes a week and costs £1,850. She makes about forty pieces a year and has a waiting list of six months. Most of her customers are people who have inherited a chair and want another to match, or who have bought a flat and want one object that is not from a catalogue. She does not advertise. “Chairs find their people,” she said. “Usually through other chairs.”' },
+      { type: 'list', items: [
+        'A stable triangle, so that the chair does not rock on an uneven floor.',
+        'A seat that gives a little, because the body is not a bag of sand.',
+        'Joinery that can be taken apart with a mallet, a wedge and a little patience.',
+        'A maker who will answer the phone in ten years when the seat needs re-weaving.'
+      ] },
+      { type: 'figure', art: 'workshop', seed: 22, caption: 'The north bench at Blackhorse Lane: a shave horse, a drawknife and three chairs in various stages of undress. Illustration: Field Notes.', alt: 'Line drawing of a workshop bench with a shave horse, hand tools and a half-built chair by a window.' },
+      { type: 'p', text: 'The theatre work still pays for the workshop, a little, in the form of scenery for two companies that keep coming back. Nwosu does not mind. “Set builders and chairmakers are the same animal,” she said. “We both know the thing has to stand up while somebody is on it.”' },
+      { type: 'p', text: 'Before I left she showed me a chair that had come back for a new seat. It was eleven years old, the oak gone the colour of dark honey. The joints were still tight. “That is the whole review,” she said. “Eleven years, one seat. Write that down.”' },
+      { type: 'note', text: 'The ladderback chair takes its name from the horizontal slats, or ladders, between the back posts. The form arrived in Britain from the Low Countries in the seventeenth century and was made in enormous numbers in Buckinghamshire, where the local beech was coppiced for the purpose.' }
+    ]
+  },
+  {
+    slug: 'rooms-that-keep-the-rain-out',
+    title: 'Rooms That Keep the Rain Out',
+    section: 'Essay',
+    tag: 'Interiors',
+    deck: 'In a 1936 apartment in Lisbon, Estúdio Corvo spent two years undoing a renovation that had sealed every surface. The result is a room that behaves less like a box and more like a lung.',
+    author: 'ines',
+    date: '2026-10-28',
+    issue: 'Issue 07 · Winter 2026',
+    art: 'room',
+    seed: 33,
+    artAlt: 'Line drawing of a Lisbon apartment room with tall shutters, a window seat, a table and a tiled floor, rain falling outside.',
+    body: [
+      { type: 'p', text: 'The apartment is on the third floor of a building in Campo de Ourique, in Lisbon, completed in 1936 for a family who made their money in cork. It has high ceilings, a long balcony, and the kind of ceramic floor tiles that were laid by men who believed a border should be seen from a doorway. When the current owners bought it in 2021, the flat was dry, warm and profoundly unhappy. A 1990s renovation had lowered the ceilings, rendered the walls in cement, replaced the timber shutters with aluminium sliding windows and installed air conditioning in every room. Nothing was wet. Nothing could breathe.' },
+      { type: 'p', text: 'The owners, a translator and a doctor, wanted a flat that could be opened and closed. They asked Estúdio Corvo, a small Lisbon practice run by Marta Corvo and João Belo, for “a house that knows what season it is”. Corvo spent the first three months of the project measuring humidity and watching where the light landed. The renovation took two years. It removed more than it added.' },
+      { type: 'h2', text: 'The sealed room' },
+      { type: 'p', text: 'The problem was not the rain. Lisbon gets a great deal of rain in winter, and the building’s original construction had been designed for it: lime plaster inside, render outside, timber windows that could be opened for cross-ventilation, and a small internal courtyard that brought air into the middle of the plan. The 1990s work had replaced the permeable layers with impermeable ones. Moisture that entered the wall could not get out, so it gathered behind the plasterboard, under the laminate floor and around the air-conditioning units. The flat smelled of a swimming pool changing room.' },
+      { type: 'p', text: 'The first job was demolition. The false ceilings came down, revealing the original timber beams and a decorative frieze that had been forgotten for thirty years. The cement render came off the internal walls, which had to be repaired in patches with lime. The aluminium windows were removed and the original shutter boxes opened up again. In one bedroom the team found the original built-in wardrobe, painted shut, with a rail still holding three wire hangers.' },
+      { type: 'h2', text: 'A room with weather' },
+      { type: 'p', text: 'What went back was mostly lime, cork and wood. The walls were re-plastered in a three-coat lime putty, finished with a lime wash in a pale pink that Corvo matched to the underside of the original tiles. The floors were lifted and re-laid, the pine boards repaired with salvaged timber from a demolition in Beato. The window shutters, which had survived in a storage room, were stripped and rehung. The bathroom got a slab of Estremoz marble with a drain cut into the middle of it, and a shower with no door, because the room drains towards the centre and the floor is warm enough without heating.' },
+      { type: 'p', text: 'The kitchen is new and deliberately quiet: a single run of pale pine, a sink under the window, a shelf instead of cupboards. The cooktop is induction, the oven is small, and there is no extractor hood, only a window that opens — a decision that the owners were warned about and have not regretted. In summer, the shutters close in the middle of the day and the flat stays cool. In winter, they open and the sun does the rest. There is no air conditioning. There is a small fan in the bedroom cupboard, in case.' },
+      { type: 'quote', text: 'Comfort is not the absence of weather. It is a building that knows what to do with it.', cite: 'Marta Corvo, Estúdio Corvo' },
+      { type: 'h2', text: 'The rain test' },
+      { type: 'p', text: 'The first winter after completion was the wettest in Lisbon for a decade. I asked Corvo what happened. “Nothing,” she said, and then, seeing my face: “That is the point. The wall got wet. Then it dried. The paint changed colour for a week and went back. A house is allowed to do that.” They kept a data logger in the living room for a year. The relative humidity stayed between forty and sixty-five per cent without mechanical help. The lime plaster does the work, absorbing vapour when the room is wet and releasing it when the room is dry.' },
+      { type: 'p', text: 'The changes are not visible in photographs. The flat looks as if it has always been this way, which is the highest compliment you can pay a restoration. The 1990s left a mark only in the things that were saved: a light switch, a door handle, a rectangle of newer plaster under the window where the air-conditioning unit used to be. The owners have left that rectangle unpainted. “It is our one modern ruin,” the translator said.' },
+      { type: 'list', items: [
+        'Removed: false ceilings, cement render, plastic paint, aluminium windows, four air-conditioning units.',
+        'Restored: lime plaster, timber shutters, pine floors, the original shutter boxes and the courtyard air path.',
+        'Added: cork insulation, a marble shower tray, a single new kitchen, and a great deal of patience.',
+        'Kept: the tiles, the frieze, the wardrobe with three wire hangers, and one unpainted rectangle.'
+      ] },
+      { type: 'figure', art: 'library', seed: 34, caption: 'The west window seat, rebuilt in pine and finished with lime paint. The tiles are original, including the three that were replaced with copies made in Sintra. Illustration: Field Notes.', alt: 'Line drawing of a window seat and a wall of bookshelves in a warm, pale room.' },
+      { type: 'p', text: 'On the last afternoon we opened the shutters in the living room and watched the rain come across the roofs. It was the kind of rain that finds a window frame and sits there. The room stayed quiet, dry and cool, and the tiles reflected a grey rectangle of sky. The doctor said that in the old flat, rain made her anxious. In this one, she said, it is simply weather.' },
+      { type: 'note', text: 'Lime plaster and lime wash are vapour-permeable: they allow moisture to pass through the wall and evaporate, rather than trapping it behind an impermeable layer. Cement render on a traditionally built masonry wall is one of the most common causes of damp in southern Europe.' }
+    ]
+  },
+  {
+    slug: 'three-days-in-the-basque-hills',
+    title: 'Three Days in the Basque Hills',
+    section: 'Essay',
+    tag: 'Travel',
+    deck: 'Late October in the Aralar range, where shepherds still spend the summer above the trees and the huts they leave behind are being repaired by people who walk in with tools.',
+    author: 'yusuf',
+    date: '2026-11-03',
+    issue: 'Issue 07 · Winter 2026',
+    art: 'hills',
+    seed: 44,
+    artAlt: 'Line drawing of layered Basque hills with a small stone hut, a winding path and a low sun.',
+    body: [
+      { type: 'p', text: 'The bus from Bilbao to Beasain takes an hour and twenty minutes and costs less than a sandwich in the old town. From Beasain a taxi climbs for twenty minutes through beech woods to the pass at Lizarrusti, where the road stops pretending to be a road and the Aralar begins. It was the last week of October. The trees were still holding their leaves, the grass was wet, and the mountains were doing that Basque thing of being much larger than they look on a map.' },
+      { type: 'p', text: 'I had come to walk to a shepherd’s hut that had been repaired by an architect from Donostia. The hut is one of a scattered group in the range, built of limestone and timber, used in summer by people who take their animals up above the trees and come down again when the weather turns. Most are empty for eight months of the year. Some are falling down. A few are being brought back, not as museums but as shelters for anyone walking the high paths.' },
+      { type: 'h2', text: 'The path up' },
+      { type: 'p', text: 'The route starts at the pass and climbs through beech and then through bracken and then through nothing much at all. The path is marked with red and white flashes, the long-distance GR-20, and for the first hour it is broad enough for a Land Rover. Then it narrows, and the stones underfoot become the path. I passed a farmer moving eight horses down towards the road, all of them shaggy and unimpressed. He raised two fingers from the steering wheel of his quad bike, which I took to be a greeting.' },
+      { type: 'p', text: 'The fog came in at about six hundred metres and stayed for an hour. In fog the Basque hills lose their scale; a boulder becomes a building, a bush becomes a person. I ate a sandwich on a limestone outcrop and listened to bells that were probably sheep and possibly not. By the time the fog lifted, the hut was visible below me: a long low building with a stone roof and a chimney, tucked into the slope as if it had grown there.' },
+      { type: 'h2', text: 'A hut with a new roof' },
+      { type: 'p', text: 'The architect is Garazi Etxeberria, who works from a small office in Donostia and spends her weekends in the hills. The project began in 2022, when the local herding association asked if the roof could be repaired before another winter. Etxeberria walked in with a notebook, a camera and a friend who is a stonemason. “We counted what was there,” she said. “Then we counted what was missing. The list was short: a roof, two beams, a hearth, a door.” The walls, three feet thick in places, were sound.' },
+      { type: 'p', text: 'The new roof is chestnut, split by hand, laid over a structure of oak and insulated with sheep’s wool from a farm two valleys away. The stone slates were reused where they could be, and the missing ones replaced with limestone from a quarry near Ataun. The floor is compacted earth with a lime finish, because a concrete floor would be cold and a timber floor would be a fire risk. The hearth is the original, relined. There is a bench, a shelf for boots, a window the size of a book, and a hook for a lantern. It sleeps four, if they are friendly.' },
+      { type: 'h2', text: 'The shepherd’s answer' },
+      { type: 'p', text: 'I met Ander on the second morning, moving a flock of Latxa sheep along the ridge. He is sixty-eight and has been summering in the Aralar since he was a boy. He remembered the hut before it was repaired, when the roof leaked and the door had gone. “We used it anyway,” he said. “A shepherd does not need a palace. He needs a dry place to eat.” He approved of the new roof. He was less sure about the window. “Too much glass,” he said. “The wind will find it.”' },
+      { type: 'quote', text: 'We do not come up here to be comfortable. We come up here because the sheep are here, and the grass is here, and the summer is short.', cite: 'Ander, shepherd, Ataun' },
+      { type: 'p', text: 'The wind did find the window on the second night, but only a little. I slept in the hut on a wooden platform, under a blanket I had carried up, and woke at five to the sound of rain on chestnut shingles. It is a very specific sound, and it is one of the reasons the roof was rebuilt the way it was. The other reason is that a stone roof is heavy enough to hold the building down. The old builders knew what they were doing. The new builders were careful enough to agree.' },
+      { type: 'h2', text: 'Down by the bridge' },
+      { type: 'p', text: 'On the third day I walked down by a different path, through beech woods the colour of rust, to a village where a woman sells cheese from a table outside her house. The cheese was Idiazabal, smoked, and it was the best thing I ate all year. I bought a piece and a bottle of txakoli and sat by the old bridge below the village, a single arch of stone built long before anyone thought of photographing it. The river was low and clear. A dipper worked the stones.' },
+      { type: 'p', text: 'The bus back to Bilbao was full of people coming home from work. I had mud on my boots and cheese in my bag and the particular tiredness that comes from walking downhill for three hours. The hut was already somewhere behind me, at the top of a path I would not take again for years. Etxeberria had told me that the best buildings are the ones that do not ask to be visited. This one, at least, does not have much choice. It is eight kilometres from the nearest road.' },
+      { type: 'list', items: [
+        'Day one: Lizarrusti pass to the hut, 9.4 kilometres, 640 metres of climbing, about three hours with a pack.',
+        'Day two: the ridge path towards the San Miguel sanctuary, fog permitting, and back for the evening light.',
+        'Day three: the descent through the beech woods to the valley, where the bridge is older than the village.',
+        'Carry: water, a head torch, a sleeping bag, and cash for cheese.'
+      ] },
+      { type: 'figure', art: 'bridge', seed: 45, caption: 'The humpback bridge below Ataun, a single stone arch with no parapet to speak of. It carried carts, then cattle, and now mostly walkers. Illustration: Field Notes.', alt: 'Line drawing of an old stone humpback bridge over a shallow river with hills behind.' },
+      { type: 'p', text: 'The Aralar is not a wilderness. It is a working landscape with a long memory and a complicated present, and in late October it is quiet enough to hear a river half a kilometre away. The hut is not a hotel. There is no booking system, no keys, no breakfast. There is a door that latches, a roof that does not leak, and a view that has not changed in a hundred years. In the Basque hills, that counts as hospitality.' },
+      { type: 'note', text: 'The GR-20, the Senda del Pastoreo, is a long-distance route through the Basque Country that follows shepherds’ paths across the sierra. It is waymarked with red and white flashes, some of them painted on stones that have been there longer than the route itself.' }
+    ]
+  },
+  {
+    slug: 'the-quiet-monument',
+    title: 'The Quiet Monument',
+    section: 'Essay',
+    tag: 'Architecture',
+    deck: 'Halvor Sørensen’s chapel outside Aarhus was finished in 1968 and nearly ruined by a 1990s refurbishment. A patient restoration has given it back its silence — and its draughts.',
+    author: 'mara',
+    date: '2026-08-18',
+    issue: 'Issue 06 · Summer 2026',
+    art: 'chapel',
+    seed: 55,
+    artAlt: 'Line drawing of a low brick chapel elevation with a slender cross, a tall narrow window and steps.',
+    body: [
+      { type: 'p', text: 'The chapel at Værk stands at the end of a gravel drive, on a low ridge outside Aarhus, and from a distance it looks like a barn that has been taught to behave itself. It is built of yellow brick, laid in a bond so regular that the wall appears to have been combed. The roof is low-pitched and covered in dark slate. There is a cross above the west door, but it is small, and the building’s principal gesture is not towards the sky at all. It is towards the field.' },
+      { type: 'p', text: 'Halvor Sørensen designed the chapel in 1964 and saw it completed four years later. He was forty-one, part of a generation of Danish architects who believed that a public building should be plain enough to be understood by a person walking past it. The chapel seats a hundred and twenty. It has no tower, no organ loft, no crypt. It has one room, a north light, and a floor of hand-made clay tiles that were fired in a kiln in Jutland.' },
+      { type: 'h2', text: 'The room' },
+      { type: 'p', text: 'The plan is a rectangle, eleven metres by seven. The walls are in-situ concrete, faced with brick inside and out, and they are thick enough to hold a window seat. The ceiling is a shallow barrel vault in whitewashed plaster, rising from a concrete ring beam. Along the north side, a clerestory of clear glass runs the length of the room, so that the light arrives from above the heads of the congregation rather than through their faces. On a grey afternoon the room is lit like a workshop. On a clear morning it is lit like a swimming pool.' },
+      { type: 'p', text: 'Sørensen was not a famous architect, and the chapel is not a famous building. It is included in the local authority’s register of protected buildings, which is how it survived the first attempt to modernise it. In 1994 a well-meaning parish council removed the clay floor, laid carpet over a layer of chipboard, hung an acoustic ceiling below the vault and installed electric heating behind decorative grilles. The room became warmer and quieter and much less interesting. The carpet held the damp. The acoustic ceiling hid the vault. The heating dried the air so effectively that the oak door split within two winters.' },
+      { type: 'h2', text: 'The restoration' },
+      { type: 'p', text: 'The current restoration began in 2023, after the parish noticed that the north wall was taking water and that the carpet smelled of a cellar. They appointed Studio Hald, a small practice in Aarhus with a specialism in twentieth-century buildings. Ingrid Hald, the founder, spent the first month removing things. She took out the acoustic ceiling, the carpet, the chipboard and the heating grilles. Under the chipboard she found the original clay tiles, most of them intact, some cracked. Under the tiles she found a concrete slab with no damp-proof membrane, which is exactly what Sørensen had specified: the floor was designed to breathe.' },
+      { type: 'p', text: 'The north wall was repaired by removing the cement render that had been applied in the 1990s and replacing it with a lime render, matched in colour to the original brick. The clerestory glass was replaced with a slim double-glazed unit, and the steel frame around it was repaired and repainted. The oak door was taken off its hinges, dried slowly over six months and repaired with oak grafts. The only new element is a single handrail at the west steps, made of galvanised steel and deliberately thin.' },
+      { type: 'quote', text: 'We removed three interventions and added one handrail. A good restoration is mostly subtraction.', cite: 'Ingrid Hald, architect' },
+      { type: 'p', text: 'The effect on the room is difficult to describe without sounding like a brochure. The light is lower and more even. The sound has changed: with the acoustic ceiling gone, a spoken sentence travels to the back wall and returns a fraction later, which makes people speak more slowly. “It is not a concert hall,” Hald said. “It is a room that asks you to wait.” The congregation has grown since the restoration, though nobody can prove cause and effect. The priest believes the building is doing some of the work.' },
+      { type: 'h2', text: 'What a quiet building asks' },
+      { type: 'p', text: 'The chapel is not silent. It is on a working farm, and the field behind it has a herd of dairy cattle that expresses itself regularly. The gravel drive is used by tractors. But the building has a way of holding sound that makes the interruptions feel distant, as if they belong to another room. This is partly the thick walls, partly the vault, partly the absence of soft furnishing. It is also the result of a decision Sørensen made about the floor: hard clay tiles, which reflect sound but do not amplify it.' },
+      { type: 'p', text: 'The restoration has a small exhibition in the porch, four panels in Danish and English, and a bench made from the timber removed from the acoustic ceiling. There is no café, no shop, no interactive screen. The building is open from eight in the morning until dusk, and the gate is not locked. I sat at the back for half an hour on a Tuesday afternoon and watched two people come in separately, sit for a few minutes and leave. Neither of them looked at the exhibition.' },
+      { type: 'list', items: [
+        'Removed: carpet, chipboard, acoustic ceiling, electric heating, cement render.',
+        'Revealed: the original clay floor, the concrete ring beam, the shallow vault and the north clerestory.',
+        'Repaired: the oak door, the steel window frame and the brickwork on the north wall.',
+        'Added: one handrail, one lime render, and a bench made from what came down.'
+      ] },
+      { type: 'figure', art: 'room', seed: 56, caption: 'The nave, looking towards the north light: clay tiles, a concrete ring beam and the pale underside of the vault. Illustration: Field Notes.', alt: 'Line drawing of a quiet chapel interior with a long clerestory window and rows of simple chairs.' },
+      { type: 'p', text: 'The chapel is a reminder that the twentieth century built its best religious buildings with an eye to the ordinary. Sørensen did not try to make a monument. He tried to make a room that could hold a hundred people and a death, and he did it with brick, concrete, glass and restraint. The restoration has given the room back its draughts, its echoes and its morning light. In a building like this, those are not faults. They are the point.' },
+      { type: 'note', text: 'Halvor Sørensen (1923–2011) worked mainly in Jutland and built fewer than twenty buildings. His drawings for the Værk chapel, including the original tile layout, are held in a private archive in Aarhus and were used by Studio Hald during the restoration.' }
+    ]
+  },
+  {
+    slug: 'the-last-lime-people',
+    title: 'The Last Lime People',
+    section: 'Interview',
+    tag: 'Craft',
+    deck: 'In a Suffolk village, a family firm has been mixing lime for four generations. The recipe has barely changed; the buildings it is asked to save have.',
+    author: 'tomas',
+    date: '2026-07-12',
+    issue: 'Issue 06 · Summer 2026',
+    art: 'lime',
+    seed: 66,
+    artAlt: 'Line drawing of a lime-plastered wall with an arched window, a heap of sand and a ladder in a builder’s yard.',
+    body: [
+      { type: 'p', text: 'The yard is behind the village hall in Hoxne, and it smells of wet stone and something faintly sour. There are four pits of lime putty, each the size of a bath, covered with a layer of water. Margaret Blyth has been coming here since she was six. She is sixty-eight now, and she can tell the age of a pit by the sound it makes when she pushes a stick into it.' },
+      { type: 'p', text: 'Blyth and Son have been mixing lime in this corner of Suffolk since 1926, when her great-grandfather bought a chalk pit and a horse. The firm has four employees, two vans and a waiting list of eighteen months. Most of its work is repairing medieval churches, timber-framed farmhouses and the occasional garden wall. All of it is done with a material that much of the construction industry spent the twentieth century trying to replace.' },
+      { type: 'h2', text: 'On the mix' },
+      { type: 'p', text: 'The chalk comes from a quarry near Thetford, and it is slaked on site in a pit for at least six months — longer for the finer work. “You cannot hurry it,” Blyth said. “You can add water and make a paste in an afternoon. That is not the same material. It is chalk and water, and it will fail.” The putty is mixed with sharp sand, a little horsehair from a saddler in Bungay, and, for the final coat, a pigment ground in the yard. The recipe for the outside coat has not changed in four generations. “My father used a bucket,” she said. “I use a mixer. The bucket was better.”' },
+      { type: 'h2', text: 'On the wall' },
+      { type: 'p', text: 'Lime works because it moves. A timber-framed wall in Suffolk will shift several millimetres between summer and winter; a cement render will not, so it cracks, and then water gets behind it and the timber rots. Lime render flexes, absorbs moisture and lets it evaporate. It also looks better, though Blyth is careful about saying so. “People think it is a heritage thing,” she said. “It is a physics thing. The wall has to be allowed to get wet and dry. That is all.”' },
+      { type: 'p', text: 'The firm’s current project is the chancel of a church at Wickham Skeith, where the cement render applied in 1974 has been blown off by frost. The team is three coats into a four-coat repair. The first coat, the harling, is thrown on to give a key. The second fills. The third, the float coat, is where the wall finds its level. The fourth is the lime wash, which is not really a coat at all but a colour that will need renewing in five years.' },
+      { type: 'quote', text: 'A wall is never finished. It is only looked after. If you want a wall that is finished, build it from something that will not move. Then it will break.', cite: 'Margaret Blyth, lime plasterer' },
+      { type: 'h2', text: 'On the future' },
+      { type: 'p', text: 'Tom Blyth, forty-one, joined the firm in 2012 after a degree in environmental science and a year of travelling. He is the one who answers emails and has started photographing every job. He thinks the firm could employ eight people. He also thinks it will not, because the skills take years, the work is seasonal and the pay is not what a young person in London expects. “We are not short of work,” he said. “We are short of people who can do it.”' },
+      { type: 'p', text: 'The waiting list is longest for churches. There are six hundred medieval churches in Suffolk, a good number of them wearing cement render, and every winter one or two lose a patch of it. The Blyths are one family firm among a handful in the county. They are not the last lime people in England. They are close enough to feel like it.' },
+      { type: 'list', items: [
+        'The scratch coat: lime, sand and hair, pressed into the lath to give the next coat something to hold.',
+        'The filling coat: a little weaker, left rough with a float so that water can find its way out.',
+        'The finishing coat: the finest mix, worked with a wooden float until the surface closes.',
+        'The lime wash: five thin coats, brushed on, renewed every five years if the wall is lucky.'
+      ] },
+      { type: 'figure', art: 'lime', seed: 67, caption: 'The yard at Hoxne: four lime pits, a heap of washed sand and a van that has been reversed into the same corner since 2011. Illustration: Field Notes.', alt: 'Line drawing of a builder’s yard with lime pits, a sand heap, a ladder against an old wall and an arched window.' },
+      { type: 'note', text: 'Lime putty is calcium hydroxide, made by burning limestone or chalk and slaking the quicklime in water. As lime render carbonates, it absorbs carbon dioxide from the air and slowly turns back into limestone. This is why old lime walls can last for centuries and why they need to be repairable.' }
+    ]
+  },
+  {
+    slug: 'a-library-for-four-hundred-books',
+    title: 'A Library for Four Hundred Books',
+    section: 'Essay',
+    tag: 'Interiors',
+    deck: 'A 38-square-metre flat off Via Solferino, rebuilt around a single wall of shelves and a ladder that is used more often than the owners expected.',
+    author: 'ines',
+    date: '2026-06-05',
+    issue: 'Issue 06 · Summer 2026',
+    art: 'library',
+    seed: 77,
+    artAlt: 'Line drawing of a floor-to-ceiling bookshelf wall with a rolling ladder, a folding table and a north window.',
+    body: [
+      { type: 'p', text: 'The flat is on the third floor of a 1957 block off Via Solferino, in Milan, and it is thirty-eight square metres. It contains four hundred books, a bed, a kitchen, a bathroom, a table for two and a ladder. The architect, Franco Sala, describes the plan as “a corridor that learned to sit down”.' },
+      { type: 'p', text: 'Chiara and Paolo bought the flat in 2020, after eleven years in a rented apartment with a view of a courtyard and no room for their books. They were moving from a place of sixty square metres into a place of thirty-eight, and they had already decided that the books were not negotiable. Sala proposed that the library should be the apartment, not a room in it. The books would line one wall. Everything else would fit into the space that was left.' },
+      { type: 'h2', text: 'The wall' },
+      { type: 'p', text: 'One wall, 6.4 metres long and 2.8 high, is now a grid of shelves in 18-millimetre birch ply with solid oak edges. The shelves alternate between 26 and 34 centimetres deep: shallow for novels and poetry, deep for art books and the oversized monographs that Paolo, a publisher’s editor, has been collecting since university. The uprights are only 30 millimetres thick, so the wall reads as a piece of furniture rather than a bookcase. The whole assembly sits on a low steel plinth, which keeps the bottom row off the floor and gives the room a skirting line.' },
+      { type: 'p', text: 'The books were catalogued before the shelves were drawn. Chiara, a translator, measured every volume — height, width, depth — and produced a spreadsheet with four hundred and twelve rows. Sala used it to work out where the gaps should fall. “We measured the books, not the room,” he said. “The room is small. The books have opinions.” There are spaces for books that have not been bought yet, and a low shelf for the ones that are too tall to stand upright.' },
+      { type: 'h2', text: 'The ladder' },
+      { type: 'p', text: 'The ladder is the only object in the flat that might be called a luxury. It is four metres of pine, made by a theatre supplier in Bovisa, and it runs on a brass rail fixed to the top of the shelving. It folds flat against the wall, where it reads as a diagonal line rather than a piece of equipment. Chiara uses it every day. Paolo uses it when he is looking for something specific. “I thought it would be a romantic detail,” he said. “It is actually the most practical thing in the flat.”' },
+      { type: 'p', text: 'Everything else is compressed. The kitchen is a single run of stainless steel along the opposite wall, with a two-ring hob, a small oven and a sink under the window. The bed sits in a niche behind a linen curtain, with storage below and a reading light above. The table folds down from the wall under the north window. There is one chair, a 1950s bentwood thing bought at a market in Varese, and a stool that doubles as a step. The bathroom is a wet room the size of a wardrobe, and it works.' },
+      { type: 'quote', text: 'A library is not storage. It is a route through a room. If the route is good, you stop noticing that the room is small.', cite: 'Franco Sala, architect' },
+      { type: 'p', text: 'The flat’s original layout had a corridor, a kitchen, a bedroom and a living room, all of them too small to be useful. Sala removed the corridor. The new plan is one room with three zones — kitchen, table, bed — and the shelves holding the whole thing together. The north window was already there, but it had been blocked by a wardrobe. Now it lights the table and the spines of the books opposite, which are arranged, more or less deliberately, by colour.' },
+      { type: 'h2', text: 'The numbers' },
+      { type: 'list', items: [
+        '38 square metres, one room, three zones, no corridor.',
+        '400 books, catalogued before the first shelf was cut.',
+        '9.6 metres of shelving in 18-millimetre birch ply, on a steel plinth.',
+        'A 4-metre pine ladder on a brass rail, used daily.',
+        'One north window, one folding table, one bentwood chair and one stool.'
+      ] },
+      { type: 'figure', art: 'room', seed: 78, caption: 'The sleeping niche, behind a linen curtain: a bed, a reading light and a shelf for the books that are waiting to be read. Illustration: Field Notes.', alt: 'Line drawing of a small bedroom niche with a curtain, a bed and a reading light.' },
+      { type: 'p', text: 'At seven in the evening the flat is at its best. The light comes in low from the north window, the brass rail catches it, and the books go the colour of warm stone. Chiara makes coffee in a moka pot on the two-ring hob. Paolo moves the stool to the table. There is nowhere else to put it, which is the point. “We do not have a spare room,” Chiara said. “We have a library that we also live in.”' },
+      { type: 'note', text: 'Birch plywood is used here because it is stable, light and cheap enough to make a mistake with. The oak edge protects the exposed ply from knocks and gives the shelf a line that can be dusted. The shelves are fixed, not adjustable: the books were measured first, and a shelf that cannot move is a shelf that does not sag.' }
+    ]
+  },
+  {
+    slug: 'notes-from-the-a9',
+    title: 'Notes from the A9',
+    section: 'Essay',
+    tag: 'Travel',
+    deck: 'Driving the old military road between Perth and Inverness, in search of the bridges, sheds and filling stations that hold the north together.',
+    author: 'yusuf',
+    date: '2026-07-26',
+    issue: 'Issue 06 · Summer 2026',
+    art: 'bridge',
+    seed: 88,
+    artAlt: 'Line drawing of a stone bridge over a Highland river with a single arch, hills and a telegraph pole.',
+    body: [
+      { type: 'p', text: 'The A9 leaves Perth as a dual carriageway and becomes, somewhere around Dunkeld, a road again. By the time it reaches Drumochter it is a single line of asphalt across a moor, with snow gates at either end and a sign that tells you the road might be closed. I drove it north in late July, stopping at bridges, sheds and filling stations. The road is 273 miles long. I took three days.' },
+      { type: 'p', text: 'The A9 follows, roughly, the route of the military road built by General Wade after the Jacobite rising of 1715. Wade’s road was an instrument of control: a way to move soldiers and supplies through the Highlands quickly. It was also, accidentally, a piece of civil engineering that outlasted its purpose. Parts of it are still walkable. You can see the old road in the heather beside the new one, a pale line that disappears into a cutting and comes out on the other side.' },
+      { type: 'h2', text: 'The old road' },
+      { type: 'p', text: 'The modern A9 was not built as one road. It grew by addition: a bridge here, a bypass there, a stretch of dual carriageway in the 1970s, another in the 2010s. The result is a route with several personalities. South of Pitlochry it is a tourist road, with lay-bys full of camper vans and a distillery every few miles. North of Drumochter it is a working road, carrying timber lorries and fish and the occasional convoy of hire cars. Between the two there is a stretch where the road seems to be the only thing holding the landscape apart.' },
+      { type: 'h2', text: 'The bridge at Carrbridge' },
+      { type: 'p', text: 'The old packhorse bridge at Carrbridge was built in 1717, ten years after Wade’s first road, by a local mason whose name is not recorded. It is a single span of stone, steeply humped, with parapets worn to the smoothness of a handrail. It was designed for horses carrying creels, not for cars, and it has been out of use since the 1930s. Now it sits in a small park behind a hotel, with an information board and a bin. It is still, unmistakably, a bridge: the lintel does the same job it did three hundred years ago, and the river below still takes the shape the bridge gives it.' },
+      { type: 'p', text: 'I stopped because bridges are the cheapest way to read a road. A bridge tells you what the road expected to carry, and how much the river frightened the builders. This one expected horses and feared spring floods. The concrete bridges of the 1970s expected lorries and feared nothing in particular. Both were right for their moment. Neither will be right forever.' },
+      { type: 'h2', text: 'The shed' },
+      { type: 'p', text: 'At Balsporran, near the top of Drumochter, there is a shed made of corrugated iron with a wooden door and a chimney pipe. It belongs to a farm, or possibly to nobody. It is the kind of building that appears in Highland photographs as a small dark rectangle, and in winter it is the only thing that is not white. I met an engineer called Donald in a lay-by nearby; he had spent thirty years working on the road and was driving north for no reason at all. “See that shed,” he said. “It has been there longer than any of the bridges. Somebody built it well once and nobody has needed to do it again.”' },
+      { type: 'quote', text: 'A road is not a line on a map. It is a set of decisions about where water goes and what a lorry can climb in the snow.', cite: 'Donald, retired road engineer' },
+      { type: 'p', text: 'The snow gates are open in July. In winter they close for days at a time, and the road over Drumochter becomes a rumour. The train keeps going, mostly. The hill keeps going. The road is the most fragile thing in the landscape, and the most expensive, and the one that people complain about most. It is also the reason the villages along it still have shops.' },
+      { type: 'h2', text: 'North of the pass' },
+      { type: 'p', text: 'After Drumochter the road descends into Strathspey, past the distillery at Dalwhinnie, past Aviemore, past Carrbridge, and into Inverness. The last stretch is fast and dull, which is a compliment: a road that has stopped asking to be looked at. I arrived in the early evening with the sun behind me and the Moray Firth the colour of pewter. The car smelled of coffee and wet boots. I had spent three days on a road that most people use to get somewhere else, and I had not been bored once.' },
+      { type: 'list', items: [
+        'The old packhorse bridge at Carrbridge, 1717, single span, out of use since the 1930s.',
+        'The snow gates at Drumochter, which are worth reading before you decide to cross in winter.',
+        'The shed at Balsporran, unlisted, unattributed and still watertight.',
+        'The railway bridge at Dalwhinnie, where the line and the road take different views of the same valley.',
+        'The filling station at Inverness, the last one before the north, which sells coffee and fishing permits.'
+      ] },
+      { type: 'figure', art: 'hills', seed: 89, caption: 'Drumochter in late July: a single road, a single railway, and a hillside that has been grazed for longer than either. Illustration: Field Notes.', alt: 'Line drawing of a Highland moor with a road, a railway and layered hills.' },
+      { type: 'note', text: 'The A9 is the longest road in Scotland that is neither a motorway nor part of the trunk network’s motorway approach. It is also the only road crossing the Grampians that stays open in most winter weather, which is why the snow gates at Drumochter and Helmsdale are watched by people in Inverness as closely as the weather forecast.' }
+    ]
+  },
+  {
+    slug: 'the-colour-of-a-wall-at-six-in-the-morning',
+    title: 'The Colour of a Wall at Six in the Morning',
+    section: 'Essay',
+    tag: 'Architecture',
+    deck: 'In a Rotterdam housing block, a coat of paint was specified by time of day. Willem de Groot spent a year choosing a colour that exists for forty minutes.',
+    author: 'mara',
+    date: '2026-06-21',
+    issue: 'Issue 06 · Summer 2026',
+    art: 'wall',
+    seed: 99,
+    artAlt: 'Line drawing of a housing block facade with tall windows and a diagonal band of morning light across the wall.',
+    body: [
+      { type: 'p', text: 'The wall is the colour of milk with a little ash in it, and it lasts for about forty minutes after sunrise. Willem de Groot first saw it in November 2022, standing in the stairwell of a 1954 housing block in Hillesluis, in south Rotterdam. He had come to look at a leaking roof. He left thinking about paint.' },
+      { type: 'p', text: 'Block 14 is one of sixty-four social housing units built for the port authority and now owned by a housing association. It is plain, well built and tired. The renovation, completed last year, replaced the roof, the windows and the heating system. It also changed the colour of the stairwells, the entrances and the concrete galleries, in a way that almost nobody notices and everybody feels.' },
+      { type: 'h2', text: 'A year of mock-ups' },
+      { type: 'p', text: 'De Groot’s practice, De Groot and Van Dijk, was appointed in 2021. The brief was ordinary: make the blocks warmer, drier and easier to heat. The architect asked for something extra, which was a colour study. The association agreed after some hesitation, on the condition that it cost almost nothing. It cost almost nothing: a year of the architect’s time, twelve mock-up panels and a lot of early mornings.' },
+      { type: 'p', text: 'The panels were painted on the south facade of Block 14, where the morning light arrives at a low angle and moves quickly across the wall. De Groot tested eleven colours, all of them pale and all of them mixtures rather than off-the-shelf shades: a grey-green, a grey-blue, a warm white with a little ochre, a pale lime. He looked at them at six in the morning, at six-twenty and at six-forty, for a year. The differences were small. The differences were everything.' },
+      { type: 'p', text: 'The colour he chose is a mineral silicate paint, made with a pigment called “Ochtendgrijs” — morning grey — which was mixed for the project and is now in the supplier’s catalogue. In the flat light of midday it reads as a warm off-white. In the low sun it goes the colour of milk with ash in it. In rain it is darker, and in the evening it returns to white. “The wall has a schedule,” De Groot said. “Most paint has one colour. This one has four.”' },
+      { type: 'quote', text: 'Colour is not a swatch. It is a time of day, a direction of light, and a wall that has been rained on.', cite: 'Willem de Groot, architect' },
+      { type: 'h2', text: 'The residents' },
+      { type: 'p', text: 'The residents were shown three samples at a meeting in the community room. The vote was close. Some people wanted white; some wanted the original grey; one man said the new colour looked like “a hospital in a good mood”. In the end the association backed the architect, on the grounds that the colour was cheap, reversible and part of a renovation that had already improved the buildings. The residents have since stopped mentioning it, which De Groot takes as approval.' },
+      { type: 'p', text: 'The paint is not the only colour decision. The window frames are a dark bronze-green, the doors are black, and the new entrance canopies are galvanised steel with a timber soffit. The effect is cumulative: the blocks now have a palette rather than a series of unrelated repairs. The housing association has asked De Groot to apply the same study to four more blocks. He has started getting up early again.' },
+      { type: 'h2', text: 'Six in the morning, four times' },
+      { type: 'list', items: [
+        '06:10 — the wall is grey, cool, almost blue; the streetlights are still on and the windows are dark.',
+        '06:25 — a band of light reaches the first floor and the wall turns the colour of milk.',
+        '06:40 — the whole facade is lit and the wall is warm, pale, slightly green; the shadow of the stair tower is sharp.',
+        '07:05 — the sun has moved off the wall and the colour is gone until tomorrow.'
+      ] },
+      { type: 'figure', art: 'wall', seed: 100, caption: 'Block 14 at 06:25: the band of light crossing the stair tower is the reason the paint was chosen. Illustration: Field Notes.', alt: 'Line drawing of a plain apartment block with a diagonal band of low morning light across its facade.' },
+      { type: 'p', text: 'I stood outside the block at six in the morning in June, which is earlier than any architect should reasonably ask. The wall did what he said it would do. At 06:20 it was grey. At 06:28 the light arrived. At 06:41 it was the colour of milk with ash in it, and I understood why someone would spend a year on a shade that most people would call white. Then the sun moved on, the street filled with bicycles, and the wall went back to being a wall.' },
+      { type: 'note', text: 'Mineral silicate paints bond with masonry rather than forming a film, and they remain vapour-permeable. They are more expensive than acrylic masonry paint and can be more difficult to apply, but they fade slowly and can be renewed without stripping the wall back to the substrate.' }
+    ]
+  },
+];
+POSTS.push(
+  {
+    slug: 'the-repaired-city',
+    title: 'The Repaired City',
+    section: 'Essay',
+    tag: 'Architecture',
+    deck: 'Leipzig’s post-war reconstruction is often described as a triumph of patience. A walk through the west of the city suggests it is also a record of arguments.',
+    author: 'mara',
+    date: '2025-10-14',
+    issue: 'Issue 05 · 2025',
+    art: 'city',
+    seed: 111,
+    artAlt: 'Line drawing of a city block with patched facades, infill buildings, a canal and a distant tower.',
+    body: [
+      { type: 'p', text: 'The first thing you notice in Plagwitz is how many different ages a single wall can have. A brick facade from 1890, a concrete lintel from 1955, a steel window from 1998, a painted patch from last summer. Leipzig has been rebuilt so often that its repairs have become its history.' },
+      { type: 'p', text: 'The city was heavily bombed in 1943, rebuilt under a government that preferred prefabricated slabs to the old streets, emptied by the years after 1989, and then slowly refilled. Its reconstruction has not followed a single plan. It has followed hundreds of them, at the scale of a building or a courtyard, often with money that had to be found twice.' },
+      { type: 'h2', text: 'The west' },
+      { type: 'p', text: 'In Plagwitz and along Karl-Heine-Straße, the old factories and workshops have been converted, infilled and sometimes simply held up while a new use moved in. A printing works became a school; a cotton mill became studios; a row of shops became a row of shops again. The architects are often small practices with a good relationship with a brave client and a landlord who has run out of other ideas.' },
+      { type: 'p', text: 'The most interesting repairs are the ones that admit what they are. A new bay window in a facade that has lost its neighbour. A steel frame holding a wall that no longer has a roof. A patch of render left deliberately darker than the rest. The city does not pretend to be whole. It looks like what it is: a place that has been kept going.' },
+      { type: 'quote', text: 'A city is not restored to an original. It is kept in use, and the use keeps changing.', cite: 'Katrin Vogel, city planner' },
+      { type: 'p', text: 'There is a cost to this approach. Some repairs are cosmetic, some conversions are unaffordable to the people who lived there before, and the patience of a small landlord is not a housing policy. But the alternative — clearance, or a heritage that stops at the front door — has been tried here too, and the city is more interesting for having tried the other thing.' },
+      { type: 'list', items: [
+        'Patched: a wall repaired in the same material at a different age, with the difference visible.',
+        'Infilled: a gap between two buildings filled with a new building, usually narrower than both.',
+        'Converted: an industrial shell kept and given a new use, with its structure on show.',
+        'Dismantled: the rare case where taking something down is the honest repair.'
+      ] },
+      { type: 'figure', art: 'city', seed: 112, caption: 'Karl-Heine-Straße, looking west: four decades of repair on one block, and a new stair tower at the corner. Illustration: Field Notes.', alt: 'Line drawing of a Leipzig street with mixed old and new facades, a canal and a tower.' },
+      { type: 'note', text: 'Plattenbau is the German term for the prefabricated concrete panel buildings of the 1960s to 1980s. Leipzig has tens of thousands of them, some refurbished, some demolished, and some still waiting for a decision that has been postponed for thirty years.' }
+    ]
+  },
+  {
+    slug: 'a-workshop-with-one-window',
+    title: 'A Workshop with One Window',
+    section: 'Interview',
+    tag: 'Craft',
+    deck: 'Alma Reyes makes violas in a former textile workshop in Bethnal Green, where the only north light comes through a window the size of a door.',
+    author: 'tomas',
+    date: '2025-06-02',
+    issue: 'Issue 05 · 2025',
+    art: 'workshop',
+    seed: 122,
+    artAlt: 'Line drawing of a luthier’s bench with a viola body, hand tools and a single tall north window.',
+    body: [
+      { type: 'p', text: 'The workshop is one room on the second floor of a former textile building in Bethnal Green, and it has one window. It faces north, it is the size of a door, and it is the reason Alma Reyes works here.' },
+      { type: 'p', text: 'Reyes is a luthier. She trained in Cremona, where violin making is a civic religion, and came to London in 2011 for a relationship that did not last. The workshop did. She makes violas, six or seven a year, and repairs whatever comes through the door: school cellos, a double bass from a jazz club, a violin that survived a fire and smells of it.' },
+      { type: 'h2', text: 'The window' },
+      { type: 'p', text: 'Violin making needs light that does not move. Direct sun is useless — it flattens the grain and makes varnish look like paint — and a window with a view is a distraction. A north window gives a steady, cool light all day. Reyes has hung a sheet of translucent paper over half of hers to soften the afternoon. “The wood tells you things in this light that it will not tell you in any other,” she said.' },
+      { type: 'p', text: 'The instruments begin as two pieces of wood: maple for the back, ribs and neck, spruce for the belly. The maple comes from the Dolomites, the spruce from Val di Fiemme, where the trees grow slowly enough to make a close, even grain. She carves the plates by hand, thicknessing them to a fraction of a millimetre. A viola takes about eighteen months, most of which is waiting: for the wood to settle, for the varnish to dry, for the instrument to tell her what it wants.' },
+      { type: 'quote', text: 'A viola is a room for sound. You cannot build the walls until you know who is going to stand inside.', cite: 'Alma Reyes, luthier' },
+      { type: 'p', text: 'Reyes works alone and does not advertise. Her waiting list is two years. A new viola costs £12,000, which is not a living unless she also repairs, so she keeps Thursdays for repairs and Fridays for paperwork. “The romance of the lone maker is mostly admin,” she said.' },
+      { type: 'list', items: [
+        'Roughing out: the back and belly are cut and arched, and the centre line is marked in pencil.',
+        'Arching: the plates are thicknessed by hand, tapping and listening as the wood gets thinner.',
+        'Assembly: ribs, blocks and linings are bent and glued, and the body is closed.',
+        'Varnish and set-up: eight coats of varnish, then the bridge, soundpost and strings.'
+      ] },
+      { type: 'h2', text: 'The wait' },
+      { type: 'p', text: 'There is a viola on the bench when I visit, half varnished, its colour somewhere between amber and tea. It has been there for four months. The player who commissioned it is seventeen and has been saving since she was twelve. Reyes showed me a photograph of the two of them at the first fitting: the girl holding the unfinished body, her ear against the back, listening to a box with no strings.' },
+      { type: 'figure', art: 'workshop', seed: 123, caption: 'The north bench: a half-varnished viola, a set of finger planes, and a jar of varnish that has been settling since 2017. Illustration: Field Notes.', alt: 'Line drawing of a luthier’s workbench with a viola, small planes and a varnish jar.' },
+      { type: 'p', text: 'She does not believe in a golden age of violin making, and she does not believe that old instruments are magic. “A good violin is a good violin because somebody made a hundred decisions correctly,” she said. “The age helps. The decisions matter more.”' },
+      { type: 'note', text: 'Val di Fiemme, in the Dolomites, has supplied spruce for stringed instruments since at least the seventeenth century. The trees grow slowly at altitude, producing narrow growth rings and a stiff, light wood that is well suited to the belly of a violin or viola.' }
+    ]
+  },
+  {
+    slug: 'the-hotel-that-never-opens',
+    title: 'The Hotel That Never Opens',
+    section: 'Essay',
+    tag: 'Travel',
+    deck: 'Above Sulmona, a half-built hotel has been waiting for its windows since 1987. The family who started it have a different explanation every time I ask.',
+    author: 'yusuf',
+    date: '2025-02-20',
+    issue: 'Issue 05 · 2025',
+    art: 'frame',
+    seed: 133,
+    artAlt: 'Line drawing of an unfinished concrete hotel frame with empty window openings on a hillside above an Italian town.',
+    body: [
+      { type: 'p', text: 'From the road above Sulmona, the hotel looks finished. It has five floors, a pitched roof, a terrace and a sign that still says ALBERGO. It is only when you get close that you see the windows are not windows: they are openings in a concrete frame, closed with plastic against the weather.' },
+      { type: 'p', text: 'The building was started in 1985 and stopped in 1987. The family who owns it had a plan, a loan and a brother who was a builder. The loan was withdrawn, the brother moved to Rome, and the building stayed. It has been a ruin for thirty-eight years without ever being a hotel for a single night.' },
+      { type: 'h2', text: 'The unfinished' },
+      { type: 'p', text: 'Italy has a word for this: incompiuto. The country is full of buildings that were begun with confidence and abandoned with paperwork. Some are public works, some are private dreams, and a few, like this one, are family arguments set in concrete. The hotel has been used as a store for olives, a shelter for a flock of sheep and, according to a boy on a moped, “the place where everybody goes to smoke”.' },
+      { type: 'p', text: 'The 2009 earthquake, whose epicentre was not far from here, did not bring the building down. It did make the paperwork harder. A structural report commissioned in 2011 found the frame sound and the costs of finishing it “not compatible with the current market”. The family put the report in a drawer and went back to running their restaurant in the town.' },
+      { type: 'quote', text: 'Everyone in the valley knows this building. Nobody has slept in it. That is a strange kind of fame.', cite: 'Marco, son of the owner' },
+      { type: 'p', text: 'Marco is fifty-three and runs the restaurant. He walks up to the hotel once a month to check the plastic. He has a folder of drawings, a quote for windows from a firm in Pescara and a new idea every few years: a hostel, a wedding venue, a house for his daughters. He does not expect to finish it. He does not want to sell it either. “It is the only thing my father built,” he said. “It is not a ruin to us.”' },
+      { type: 'list', items: [
+        'A store for olives, until the roof leaked in one corner.',
+        'A shelter for sheep, for one winter in the 1990s.',
+        'A landmark: the building you use to explain where you live.',
+        'A family argument, conducted in concrete for thirty-eight years.'
+      ] },
+      { type: 'figure', art: 'frame', seed: 134, caption: 'The south elevation: five floors, forty window openings and one sign. Illustration: Field Notes.', alt: 'Line drawing of an unfinished five-storey concrete building with empty window openings on a hill.' },
+      { type: 'p', text: 'I walked around the building at dusk. The concrete was warm from the day, and the plastic on the openings moved in the wind like something breathing. From the terrace you can see the whole valley, the town below, the road that goes to the motorway. It would be a good hotel. It is already a good view.' },
+      { type: 'note', text: 'The Italian term incompiuto is used for unfinished building projects of all kinds, from private houses to motorway bridges. Estimates of the number of unfinished buildings in Italy vary widely; the phenomenon is common enough that several photographers and planners have made it the subject of long-term studies.' }
+    ]
+  },
+  {
+    slug: 'twelve-doors-in-bermondsey',
+    title: 'Twelve Doors in Bermondsey',
+    section: 'Essay',
+    tag: 'Architecture',
+    deck: 'A Victorian leather warehouse was converted into twelve flats along a single corridor. The architect kept the corridor, and the building kept its manners.',
+    author: 'ines',
+    date: '2024-09-09',
+    issue: 'Issue 04 · 2024',
+    art: 'bay',
+    seed: 144,
+    artAlt: 'Line drawing of a long warehouse corridor with twelve doors, a window at each end and iron columns.',
+    body: [
+      { type: 'p', text: 'The corridor is thirty metres long, one metre wide and lit by a single window at each end. Off it are twelve front doors, six on each side, all painted the same dark green. The building was built in 1883 as a leather warehouse; it became a block of flats in 2022.' },
+      { type: 'p', text: 'The conversion was designed by Rook and Marsh, a small London practice with a taste for buildings that have already had several lives. The warehouse had good bones: brick walls, pitch pine floors, cast-iron columns and a roof that had been repaired often enough to be trusted. It also had windows on only two of its four sides, which meant that any plan would be organised around a corridor.' },
+      { type: 'h2', text: 'Keeping the corridor' },
+      { type: 'p', text: 'The obvious move was to cut the corridor up, giving each flat a slice. The architects did the opposite. They kept the corridor, widened the front doors, and let it do the work of a street. Each flat has a small lobby inside the front door, so the corridor is not asked to be private. The doors are fire-rated, the walls are insulated, and the original stone stair at the end has been repaired rather than replaced. “The corridor was the building’s only piece of public architecture,” said Nell Marsh. “We could have cut it up. We decided to leave it alone.”' },
+      { type: 'p', text: 'The flats vary in size from thirty-two to fifty-five square metres. The largest retain the original pitch pine floors and the iron columns; the smallest are single rooms with a kitchen along one wall and a bed in an alcove. The windows were repaired, not replaced: the original sashes were taken out, dipped, repaired and rehung with slim double glazing. The brass number plates on the doors came from a reclamation yard in Kent.' },
+      { type: 'quote', text: 'A corridor is not circulation. It is the part of a building where neighbours have to meet.', cite: 'Nell Marsh, architect' },
+      { type: 'p', text: 'The residents are a mixed group: a nurse, a ceramicist, a retired dockworker who has lived in Bermondsey all his life, two families with young children. They share a bike store in the basement and a courtyard that was once a loading bay. The corridor has become the place where parcels are left and plants are watered. It is not a street, but it has the manners of one.' },
+      { type: 'list', items: [
+        'Kept: the corridor, the pitch pine floors, the cast-iron columns and the stone stair.',
+        'Repaired: the sash windows, the brickwork, the roof and the brass door numbers.',
+        'Added: fire doors, acoustic insulation, kitchens, bathrooms and a bike store.',
+        'Left alone: the loading-bay courtyard, the warehouse hoist and the name of the building.'
+      ] },
+      { type: 'figure', art: 'bay', seed: 145, caption: 'The corridor at seven in the morning: twelve doors, one window at each end, and a bicycle that belongs to the nurse on the second floor. Illustration: Field Notes.', alt: 'Line drawing of a long, narrow corridor with six doors on each side and a window at the end.' },
+      { type: 'p', text: 'At the end of the corridor, the original loading-bay doors have been kept and glazed. They are four metres high and still open, though there is nothing to load. On a summer evening the residents prop them open, and the corridor fills with the noise of the street. The building has been a warehouse, a workshop and a squat. Now it is a place where people live, and the corridor is how they know each other.' },
+      { type: 'note', text: 'The leather trade shaped Bermondsey in the nineteenth century: tanneries, warehouses and workers’ housing were built within a few streets of each other. Many of the warehouses were converted to workshops and studios in the 1970s and 1980s, and to flats after the 2000s.' }
+    ]
+  },
+  {
+    slug: 'the-sound-of-a-house-settling',
+    title: 'The Sound of a House Settling',
+    section: 'Essay',
+    tag: 'Architecture',
+    deck: 'Tree-ring dating puts the frame of Dovehouse Farm at 1543. The house has been moving ever since, and its owners have stopped trying to stop it.',
+    author: 'mara',
+    date: '2024-03-03',
+    issue: 'Issue 04 · 2024',
+    art: 'house',
+    seed: 155,
+    artAlt: 'Line drawing of a timber-framed Suffolk farmhouse with a steep roof, brick chimney and a garden wall.',
+    body: [
+      { type: 'p', text: 'At night, in the back bedroom of Dovehouse Farm, you can hear the house adjust itself. A tick from the roof, a creak from the stair, a long sigh from a wall that has been standing since 1543.' },
+      { type: 'p', text: 'The house is a timber-framed Suffolk farmhouse, built on a brick plinth with a steep tiled roof and a chimney that was added in the seventeenth century. Its frame was dated by tree rings in 2019, which makes it younger than the nearby church and older than almost everything else in the village. It has been extended, reduced, re-roofed and re-rendered. It has never been still.' },
+      { type: 'h2', text: 'Why it moves' },
+      { type: 'p', text: 'A timber frame is designed to flex. The joints are pegged, not glued; the infill panels are light; the roof is heavy but the walls are not. A house like this moves by a few millimetres between the wet of winter and the drought of summer, and the movement is not a sign of failure. It is a sign that the building is doing what it was built to do: carry a load, shed water, and stay up.' },
+      { type: 'p', text: 'The problems started when someone tried to stop it moving. In the 1970s the house was rendered in cement and the internal walls were covered in gypsum plaster. The frame could not dry out, the timber began to decay at the base, and the chimney pulled away from the wall by about twenty millimetres. The current owners bought the house in 2016 and spent four years undoing those repairs. The cement came off, the lime went back on, and the frame was allowed to move again.' },
+      { type: 'quote', text: 'The house is not failing. It is doing what it was designed to do: move slowly, and stay standing.', cite: 'Edward Pryce, structural engineer' },
+      { type: 'p', text: 'The owners, an engineer and a primary school teacher, keep a record of the cracks. They have four glass tell-tales on the walls, and a notebook in which they write down dates and measurements. In five years the cracks have opened by a millimetre and closed again. “The house has a pulse,” the engineer said. “We just watch it.”' },
+      { type: 'h2', text: 'A year in the life' },
+      { type: 'p', text: 'The movement has a season. In winter the frame takes on water and the doors swell; in summer the wood dries and a gap appears under the back door that would admit a letter. The stair creaks in the same place every January. The roof ticks when the sun comes up. The owner says that visitors notice the sound within an hour, and that after a week they stop hearing it. “It is the sound of the house being alive,” she said. “Most houses are silent because they are too stiff.”' },
+      { type: 'list', items: [
+        'Winter: the frame swells, the back door sticks, and the stair creaks at the third tread.',
+        'Spring: the wood dries, the doors free themselves, and the crack over the kitchen window closes.',
+        'Summer: the roof ticks at sunrise and the clay tiles move against their pegs.',
+        'Autumn: the house takes on water again, and the cycle starts over, a little changed.'
+      ] },
+      { type: 'figure', art: 'house', seed: 156, caption: 'The south elevation: a frame of 1543, a chimney of the 1600s, and a brick plinth repaired with lime mortar in 2020. Illustration: Field Notes.', alt: 'Line drawing of an old timber-framed farmhouse with a steep roof, chimney and garden wall.' },
+      { type: 'p', text: 'The house is not a museum. The kitchen is modern, the bathroom is warm and the broadband is adequate. The owners have no intention of restoring it to a single moment in its history. They are keeping it in use, which is the only restoration a house really needs. It will move again next winter. It will tick. It will stay up.' },
+      { type: 'note', text: 'Dendrochronology, or tree-ring dating, compares the growth rings in a timber sample with a dated regional sequence. It can establish the year a tree was felled, and therefore the earliest possible construction date for the building. A frame dated 1543 may have been assembled a year or two later, when the timber had seasoned.' }
+    ]
+  }
+);
+/* ------------------------------------------------------------------
+   Drawings. Everything is geometry: 1.5px strokes, no bitmap, no
+   external file. Each call gets its own gradient ids so that covers can
+   repeat on a page without collisions.
+   ------------------------------------------------------------------ */
+var INK = '#16150f';
+var MUTED = '#6b675c';
+var ACCENT = '#2f6b4f';
+var LINE = '#e6e2d6';
+var TINT = '#eef2ec';
+var PAPER = '#fcfbf8';
+var artUid = 0;
+
+function escAttr(text) {
+  return String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function makeRnd(seed) {
+  var state = (seed || 1) % 233280;
+  return function () {
+    state = (state * 9301 + 49297) % 233280;
+    return state / 233280;
+  };
+}
+function rndBetween(rnd, min, max) {
+  return Math.round(min + rnd() * (max - min));
+}
+function pth(d, o) {
+  o = o || {};
+  var stroke = o.stroke || 'none';
+  return '<path d="' + d + '" fill="' + (o.fill || 'none') + '"' +
+    (o.fillOp != null ? ' fill-opacity="' + o.fillOp + '"' : '') +
+    (stroke !== 'none' ? ' stroke="' + stroke + '" stroke-width="' + (o.sw || 1.5) + '" stroke-opacity="' + (o.op == null ? 0.8 : o.op) + '" stroke-linecap="round" stroke-linejoin="round"' : '') +
+    (o.dash ? ' stroke-dasharray="' + o.dash + '"' : '') + '/>';
+}
+function ln(x1, y1, x2, y2, color, op) {
+  return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + (color || INK) + '" stroke-width="1.5" stroke-opacity="' + (op == null ? 0.7 : op) + '" stroke-linecap="round"/>';
+}
+function rc(x, y, w, h, o) {
+  o = o || {};
+  var stroke = o.stroke || 'none';
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + (o.fill || 'none') + '"' +
+    (o.fillOp != null ? ' fill-opacity="' + o.fillOp + '"' : '') +
+    (stroke !== 'none' ? ' stroke="' + stroke + '" stroke-width="' + (o.sw || 1.5) + '" stroke-opacity="' + (o.op == null ? 0.8 : o.op) + '"' : '') + '/>';
+}
+function ci(cx, cy, r, o) {
+  o = o || {};
+  var stroke = o.stroke || 'none';
+  return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + (o.fill || 'none') + '"' +
+    (o.fillOp != null ? ' fill-opacity="' + o.fillOp + '"' : '') +
+    (stroke !== 'none' ? ' stroke="' + stroke + '" stroke-width="' + (o.sw || 1.5) + '" stroke-opacity="' + (o.op == null ? 0.8 : o.op) + '"' : '') + '/>';
+}
+function artOpen(uid) {
+  return '<defs><linearGradient id="g' + uid + '" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#eef2ec"/><stop offset="1" stop-color="#fcfbf8"/>' +
+    '</linearGradient></defs><rect width="800" height="600" fill="url(#g' + uid + ')"/>';
+}
+function artGround(y, op) {
+  var s = ln(28, y, 772, y, INK, op == null ? 0.55 : op);
+  for (var x = 46; x < 780; x += 34) {
+    s += ln(x, y + 13, x + 17, y + 34, MUTED, 0.15);
+  }
+  return s;
+}
+function courses(x, y, w, h, gap, op) {
+  var s = '';
+  for (var yy = y + gap; yy < y + h; yy += gap) {
+    s += ln(x + 10, yy, x + w - 10, yy, MUTED, op == null ? 0.16 : op);
+  }
+  return s;
+}
+function windowGrid(x, y, w, h, cols, rows, op) {
+  var s = rc(x, y, w, h, { stroke: INK, op: op == null ? 0.65 : op, fill: PAPER, fillOp: 0.25 });
+  for (var c = 1; c < cols; c++) { s += ln(x + (w / cols) * c, y, x + (w / cols) * c, y + h, INK, 0.42); }
+  for (var r = 1; r < rows; r++) { s += ln(x, y + (h / rows) * r, x + w, y + (h / rows) * r, INK, 0.42); }
+  return s;
+}
+function sun(cx, cy, r) {
+  return ci(cx, cy, r, { stroke: ACCENT, op: 0.48, fill: ACCENT, fillOp: 0.07 });
+}
+
+function artHouse(uid, rnd) {
+  var s = '';
+  var sunX = rndBetween(rnd, 590, 680);
+  s += sun(sunX, 128, 52);
+  s += pth('M30 445 Q170 404 330 438 T780 428', { stroke: MUTED, op: 0.26 });
+  s += pth('M30 458 Q220 430 420 452 T780 444', { stroke: MUTED, op: 0.16 });
+  s += artGround(478);
+  s += pth('M96 478V262L174 214H340V478', { fill: ACCENT, fillOp: 0.045, stroke: INK, op: 0.72 });
+  s += pth('M462 478V238L532 202H706V478', { fill: ACCENT, fillOp: 0.045, stroke: INK, op: 0.72 });
+  s += ln(96, 274, 174, 226, MUTED, 0.38) + ln(174, 226, 338, 226, MUTED, 0.38);
+  s += ln(462, 250, 532, 214, MUTED, 0.38) + ln(532, 214, 704, 214, MUTED, 0.38);
+  s += courses(110, 286, 218, 180, 22, 0.15);
+  s += courses(474, 262, 220, 192, 22, 0.15);
+  s += pth('M198 214 L218 200 L250 200 L230 214 Z', { stroke: ACCENT, op: 0.55, fill: ACCENT, fillOp: 0.1 });
+  s += pth('M260 214 L280 200 L312 200 L292 214 Z', { stroke: ACCENT, op: 0.55, fill: ACCENT, fillOp: 0.1 });
+  s += windowGrid(136, 300, 78, 88, 2, 2, 0.6);
+  s += rc(256, 354, 48, 124, { stroke: INK, op: 0.65 });
+  s += ln(280, 354, 280, 478, INK, 0.4);
+  s += windowGrid(482, 296, 78, 92, 2, 2, 0.6);
+  s += windowGrid(590, 296, 78, 92, 2, 2, 0.6);
+  s += ln(128, 388, 310, 388, INK, 0.32);
+  s += ln(482, 388, 690, 388, INK, 0.32);
+  s += pth('M128 478V470H310V478', { stroke: MUTED, op: 0.3 });
+  s += pth('M482 478V470H690V478', { stroke: MUTED, op: 0.3 });
+  s += ln(340, 478, 462, 478, INK, 0.22);
+  s += pth('M340 470 H462', { stroke: MUTED, op: 0.35 });
+  s += ln(348, 470, 348, 462, MUTED, 0.3) + ln(356, 470, 356, 462, MUTED, 0.3) + ln(366, 470, 366, 462, MUTED, 0.3);
+  s += ln(436, 470, 436, 462, MUTED, 0.3) + ln(446, 470, 446, 462, MUTED, 0.3);
+  var treeX = rndBetween(rnd, 392, 414);
+  s += pth('M' + treeX + ' 462 C' + (treeX - 5) + ' 428 ' + (treeX + 5) + ' 392 ' + (treeX - 2) + ' 350', { stroke: INK, op: 0.65 });
+  s += ln(treeX - 2, 404, treeX - 26, 380, INK, 0.42);
+  s += ln(treeX - 3, 382, treeX + 22, 352, INK, 0.42);
+  s += ln(treeX - 2, 366, treeX - 20, 340, INK, 0.38);
+  s += ci(treeX - 27, 372, 22, { stroke: ACCENT, op: 0.35, fill: ACCENT, fillOp: 0.06 });
+  s += ci(treeX + 24, 346, 26, { stroke: ACCENT, op: 0.35, fill: ACCENT, fillOp: 0.06 });
+  s += ci(treeX - 4, 332, 24, { stroke: ACCENT, op: 0.35, fill: ACCENT, fillOp: 0.09 });
+  s += ci(treeX + 10, 316, 14, { stroke: ACCENT, op: 0.3, fill: ACCENT, fillOp: 0.05 });
+  s += ln(384, 470, 384, 478, MUTED, 0.3) + ln(392, 470, 392, 478, MUTED, 0.3) + ln(408, 470, 408, 478, MUTED, 0.3);
+  s += ln(96, 180, 340, 180, MUTED, 0.3) + ln(96, 174, 96, 186, MUTED, 0.4) + ln(340, 174, 340, 186, MUTED, 0.4);
+  s += ln(96, 166, 340, 166, INK, 0.0);
+  s += ln(462, 172, 706, 172, MUTED, 0.3) + ln(462, 166, 462, 178, MUTED, 0.4) + ln(706, 166, 706, 178, MUTED, 0.4);
+  s += rc(536, 410, 70, 8, { stroke: MUTED, op: 0.35 });
+  s += ln(548, 418, 548, 468, MUTED, 0.32) + ln(594, 418, 594, 468, MUTED, 0.32);
+  s += rc(636, 420, 18, 38, { stroke: INK, op: 0.45 });
+  return s;
+}
+
+function artWorkshop(uid, rnd) {
+  var s = '';
+  s += pth('M30 452 H770', { stroke: INK, op: 0.5 });
+  for (var x = 44; x < 780; x += 36) { s += ln(x, 462, x + 16, 484, MUTED, 0.13); }
+  s += windowGrid(498, 96, 218, 264, 3, 4, 0.55);
+  s += pth('M498 96 L700 330 L770 330 L770 96 Z', { fill: ACCENT, fillOp: 0.035 });
+  s += ln(498, 360, 700, 360, INK, 0.35);
+  s += ln(460, 96, 460, 452, INK, 0.55);
+  s += courses(60, 130, 360, 140, 24, 0.1);
+  s += ln(84, 280, 440, 280, INK, 0.45);
+  s += ln(84, 280, 84, 452, INK, 0.55);
+  s += ln(110, 300, 110, 360, MUTED, 0.35);
+  s += pth('M102 300 L118 300 L110 288 Z', { stroke: INK, op: 0.55 });
+  s += ln(150, 300, 150, 372, MUTED, 0.35) + ln(162, 300, 162, 356, MUTED, 0.35) + ln(174, 300, 174, 366, MUTED, 0.35);
+  s += rc(138, 298, 50, 5, { stroke: INK, op: 0.5 });
+  s += rc(88, 360, 280, 14, { stroke: INK, op: 0.7, fill: PAPER, fillOp: 0.35 });
+  s += ln(112, 374, 112, 452, INK, 0.55) + ln(342, 374, 342, 452, INK, 0.55);
+  s += ln(180, 374, 180, 420, MUTED, 0.3) + ln(300, 374, 300, 420, MUTED, 0.3);
+  s += pth('M220 360 L246 352 L258 360 L232 368 Z', { stroke: ACCENT, op: 0.6, fill: ACCENT, fillOp: 0.08 });
+  s += ln(250, 350, 270, 342, ACCENT, 0.4);
+  s += pth('M266 336 L300 336 L292 350 L258 350 Z', { stroke: INK, op: 0.5, fill: PAPER, fillOp: 0.25 });
+  s += ln(276, 336, 272, 320, INK, 0.45) + ln(288, 336, 292, 320, INK, 0.45);
+  s += ln(380, 360, 380, 452, MUTED, 0.3);
+  var cx = rndBetween(rnd, 640, 690);
+  s += pth('M' + cx + ' 452 L' + (cx - 30) + ' 470 M' + cx + ' 452 L' + (cx + 34) + ' 470 M' + (cx - 40) + ' 400 L' + cx + ' 452', { stroke: MUTED, op: 0.16 });
+  s += pth('M' + (cx - 14) + ' 300 C' + (cx - 5) + ' 260 ' + (cx - 20) + ' 220 ' + (cx - 6) + ' 172', { stroke: INK, op: 0.6 });
+  s += ln(cx - 8, 246, cx - 30, 218, INK, 0.4) + ln(cx - 6, 220, cx + 20, 192, INK, 0.4) + ln(cx - 7, 200, cx - 26, 178, INK, 0.35);
+  s += ln(cx - 6, 172, cx + 2, 156, INK, 0.35);
+  s += ci(cx - 30, 208, 18, { stroke: ACCENT, op: 0.3, fill: ACCENT, fillOp: 0.05 });
+  s += ci(cx + 22, 184, 18, { stroke: ACCENT, op: 0.3, fill: ACCENT, fillOp: 0.05 });
+  s += sun(660, 84, 34);
+  return s;
+}
+
+function artRoom(uid, rnd) {
+  var s = '';
+  s += rc(90, 90, 620, 390, { stroke: INK, op: 0.6, fill: PAPER, fillOp: 0.22 });
+  s += ln(90, 480, 710, 480, INK, 0.55);
+  s += ln(90, 480, 710, 560, MUTED, 0.18);
+  s += ln(90, 480, 710, 574, MUTED, 0.24);
+  s += ln(196, 480, 90, 560, MUTED, 0.2) + ln(302, 480, 210, 570, MUTED, 0.2) + ln(408, 480, 330, 578, MUTED, 0.2) + ln(514, 480, 470, 580, MUTED, 0.2) + ln(620, 480, 610, 580, MUTED, 0.2);
+  s += windowGrid(150, 160, 155, 245, 2, 3, 0.55);
+  s += ln(120, 160, 120, 405, MUTED, 0.24) + ln(335, 160, 335, 405, MUTED, 0.24);
+  s += ln(106, 405, 350, 405, MUTED, 0.2);
+  for (var i = 0; i < 7; i++) {
+    var wx = 158 + i * 20;
+    s += ln(wx, 190, wx - 8, 250, MUTED, 0.24);
+    s += ln(wx + 6, 280, wx - 2, 310, MUTED, 0.18);
+  }
+  s += pth('M150 405 L470 520 L700 520 L700 155 L150 155 Z', { fill: ACCENT, fillOp: 0.035 });
+  s += pth('M335 480 L560 560 L720 560 L720 480 Z', { fill: ACCENT, fillOp: 0.04 });
+  s += pth('M530 168 C530 168 640 168 640 278 L640 400 H530 Z', { stroke: INK, op: 0.5, fill: PAPER, fillOp: 0.25 });
+  s += ln(585, 168, 585, 400, INK, 0.35);
+  s += ln(530, 278, 640, 278, INK, 0.35);
+  s += rc(540, 190, 38, 66, { stroke: MUTED, op: 0.3 });
+  s += ln(540, 210, 578, 210, MUTED, 0.2) + ln(540, 234, 578, 234, MUTED, 0.2);
+  s += ci(690, 300, 14, { stroke: MUTED, op: 0.25 });
+  s += ln(690, 314, 690, 480, MUTED, 0.25);
+  s += rc(430, 430, 120, 8, { stroke: INK, op: 0.55 });
+  s += ln(442, 438, 442, 480, INK, 0.5) + ln(538, 438, 538, 480, INK, 0.5);
+  s += pth('M446 400 C446 388 466 388 466 400 L466 430 L446 430 Z', { stroke: INK, op: 0.4 });
+  s += pth('M520 396 C540 372 570 372 576 396 L576 430 L520 430 Z', { stroke: INK, op: 0.45 });
+  s += ln(520, 414, 576, 414, MUTED, 0.25);
+  s += circleOrnate(380, 300, 26);
+  s += ln(380, 274, 380, 246, MUTED, 0.3) + ln(380, 326, 380, 360, MUTED, 0.3);
+  s += ln(354, 300, 326, 300, MUTED, 0.3) + ln(406, 300, 434, 300, MUTED, 0.3);
+  s += ci(340, 120, 30, { stroke: MUTED, op: 0.2 });
+  s += pth('M330 120 C330 100 350 100 350 120', { stroke: MUTED, op: 0.25 });
+  return s;
+}
+function circleOrnate(cx, cy, r) {
+  return ci(cx, cy, r, { stroke: INK, op: 0.38 }) + ci(cx, cy, r * 0.62, { stroke: MUTED, op: 0.22 }) + ln(cx - r, cy, cx + r, cy, MUTED, 0.18) + ln(cx, cy - r, cx, cy + r, MUTED, 0.18);
+}
+
+function artHills(uid, rnd) {
+  var s = '';
+  s += sun(586, 146, 58);
+  s += pth('M0 340 C120 290 220 312 330 286 C440 260 520 300 620 282 C700 268 760 286 800 278 V600 H0 Z', { fill: ACCENT, fillOp: 0.035 });
+  s += pth('M0 372 C140 330 240 350 360 326 C480 302 570 334 680 318 C730 310 770 322 800 314', { stroke: MUTED, op: 0.35 });
+  s += pth('M0 408 C150 372 300 392 440 368 C560 348 660 376 800 356', { stroke: INK, op: 0.5 });
+  s += pth('M0 452 C180 424 340 440 500 420 C620 404 710 424 800 412', { stroke: MUTED, op: 0.3 });
+  s += pth('M0 492 C180 470 380 486 800 462', { stroke: INK, op: 0.55 });
+  for (var x = 30; x < 780; x += 42) { s += ln(x, 505, x + 20, 534, MUTED, 0.13); }
+  s += pth('M60 500 C130 474 200 470 250 452 C310 432 372 450 424 434 C480 418 540 430 600 418 C660 408 720 418 760 410', { stroke: INK, op: 0.6, dash: '7 7' });
+  s += pth('M58 498 C120 480 180 486 240 470', { stroke: MUTED, op: 0.28 });
+  var hx = rndBetween(rnd, 420, 480);
+  s += rc(hx, 356, 58, 36, { stroke: INK, op: 0.62, fill: PAPER, fillOp: 0.3 });
+  s += pth('M' + (hx - 8) + ' 356 L' + (hx + 29) + ' 332 L' + (hx + 66) + ' 356 Z', { stroke: INK, op: 0.62, fill: ACCENT, fillOp: 0.05 });
+  s += rc(hx + 22, 368, 14, 24, { stroke: MUTED, op: 0.35 });
+  s += ln(hx + 52, 350, hx + 60, 332, MUTED, 0.3);
+  s += ln(hx + 58, 338, hx + 68, 330, MUTED, 0.22);
+  s += ln(hx - 30, 392, hx - 4, 392, INK, 0.3) + ln(hx - 30, 392, hx - 30, 410, INK, 0.3) + ln(hx + 100, 392, hx + 128, 392, INK, 0.3) + ln(hx + 128, 392, hx + 128, 410, INK, 0.3);
+  s += ln(hx - 30, 404, hx + 128, 404, MUTED, 0.22) + ln(hx - 8, 398, hx - 8, 410, MUTED, 0.24) + ln(hx + 76, 398, hx + 76, 410, MUTED, 0.24);
+  s += pth('M120 330 C126 326 132 326 138 330 M148 322 C154 318 160 318 166 322', { stroke: INK, op: 0.4 });
+  s += pth('M600 300 C606 296 612 296 618 300 M626 292 C632 288 638 288 644 292', { stroke: MUTED, op: 0.3 });
+  s += ln(692, 500, 692, 410, MUTED, 0.25) + ln(692, 430, 664, 404, MUTED, 0.25) + ln(692, 448, 720, 420, MUTED, 0.25);
+  s += ln(200, 500, 200, 452, MUTED, 0.2) + ln(200, 470, 184, 446, MUTED, 0.2) + ln(200, 478, 216, 456, MUTED, 0.2);
+  return s;
+}
+
+function artChapel(uid, rnd) {
+  var s = '';
+  s += sun(654, 122, 46);
+  s += pth('M24 452 Q200 420 390 446 T776 430', { stroke: MUTED, op: 0.25 });
+  s += artGround(486);
+  s += pth('M222 486 V292 L290 206 H514 L582 292 V486', { fill: PAPER, fillOp: 0.4, stroke: INK, op: 0.72 });
+  s += pth('M206 306 L290 206 H514 L598 306', { stroke: INK, op: 0.6 });
+  s += pth('M206 306 H598 V326 H206 Z', { fill: ACCENT, fillOp: 0.06, stroke: INK, op: 0.5 });
+  s += pth('M186 486 V404 H222 M582 404 H618 V486', { stroke: INK, op: 0.55 });
+  s += courses(240, 330, 322, 130, 18, 0.14);
+  s += rc(344, 340, 108, 98, { stroke: INK, op: 0.6, fill: PAPER, fillOp: 0.35 });
+  s += ln(380, 340, 380, 438, INK, 0.35) + ln(416, 340, 416, 438, INK, 0.35);
+  s += ln(366, 390, 430, 390, MUTED, 0.25);
+  s += rc(370, 438, 56, 48, { stroke: INK, op: 0.55 });
+  s += ln(398, 438, 398, 486, MUTED, 0.25);
+  s += ln(398, 168, 398, 206, INK, 0.55) + ln(384, 180, 412, 180, INK, 0.55);
+  s += ci(398, 160, 7, { stroke: ACCENT, op: 0.5 });
+  s += windowGrid(452, 344, 82, 62, 2, 2, 0.45);
+  s += windowGrid(266, 344, 82, 62, 2, 2, 0.45);
+  s += pth('M244 486 H334 V478 H244 Z', { stroke: INK, op: 0.45 });
+  s += pth('M462 486 H552 V478 H462 Z', { stroke: INK, op: 0.45 });
+  s += ln(240, 486, 560, 486, INK, 0.5);
+  s += ln(206, 470, 594, 470, MUTED, 0.2);
+  s += ln(618, 486, 660, 486, INK, 0.35) + ln(660, 486, 690, 470, MUTED, 0.3);
+  var tree1 = 158 + rndBetween(rnd, 0, 12);
+  s += ln(tree1, 486, tree1, 386, INK, 0.5);
+  s += pth('M' + tree1 + ' 410 C' + (tree1 - 24) + ' 390 ' + (tree1 - 22) + ' 350 ' + (tree1 - 2) + ' 330 C' + (tree1 + 16) + ' 352 ' + (tree1 + 20) + ' 390 ' + tree1 + ' 410 Z', { stroke: MUTED, op: 0.35, fill: ACCENT, fillOp: 0.05 });
+  s += ln(700, 486, 700, 404, INK, 0.42);
+  s += pth('M700 420 C684 398 686 366 704 348 C720 370 720 400 700 420 Z', { stroke: MUTED, op: 0.3 });
+  s += pth('M684 486 H722', { stroke: MUTED, op: 0.2 });
+  s += pth('M60 486 H180', { stroke: INK, op: 0.3 }) + ln(72, 486, 72, 462, MUTED, 0.25) + ln(98, 486, 98, 466, MUTED, 0.22) + ln(124, 486, 124, 462, MUTED, 0.25);
+  return s;
+}
+
+function artLime(uid, rnd) {
+  var s = '';
+  s += artGround(484);
+  s += rc(74, 104, 514, 380, { stroke: INK, op: 0.6, fill: PAPER, fillOp: 0.25 });
+  s += courses(90, 124, 482, 330, 24, 0.13);
+  s += pth('M250 484 V276 A84 84 0 0 1 418 276 V484', { stroke: INK, op: 0.65, fill: ACCENT, fillOp: 0.035 });
+  s += pth('M266 484 V280 A68 68 0 0 1 402 280 V484', { stroke: MUTED, op: 0.35 });
+  s += ln(334, 212, 334, 484, INK, 0.32);
+  s += pth('M96 484 V104 H588 V484', { stroke: INK, op: 0.0 });
+  s += pth('M112 168 C170 150 204 190 262 172 C300 160 318 186 356 174', { stroke: MUTED, op: 0.28 });
+  s += pth('M430 220 C470 200 512 240 556 226', { stroke: MUTED, op: 0.24 });
+  s += pth('M120 350 C156 334 188 354 224 344', { stroke: MUTED, op: 0.22 });
+  s += pth('M404 400 C444 384 480 404 524 394', { stroke: MUTED, op: 0.22 });
+  s += ln(640, 484, 640, 150, INK, 0.55) + ln(718, 484, 718, 168, INK, 0.55);
+  s += ln(640, 190, 718, 208, MUTED, 0.35) + ln(640, 256, 718, 274, MUTED, 0.35) + ln(640, 322, 718, 340, MUTED, 0.35) + ln(640, 388, 718, 406, MUTED, 0.35);
+  s += ln(640, 150, 640, 104, MUTED, 0.3) + ln(670, 164, 670, 110, MUTED, 0.3) + ln(718, 168, 718, 118, MUTED, 0.3);
+  s += ln(640, 112, 718, 126, MUTED, 0.3);
+  s += pth('M588 484 C588 458 610 436 646 432 C682 436 704 458 704 484', { stroke: INK, op: 0.55 });
+  s += pth('M596 484 C606 462 622 448 648 446 C672 448 688 462 696 484', { stroke: MUTED, op: 0.28 });
+  s += pth('M96 484 V444 H170 V484', { stroke: INK, op: 0.5 });
+  s += rc(118, 452, 30, 22, { stroke: MUTED, op: 0.35 });
+  s += pth('M122 452 C122 440 144 440 144 452', { stroke: INK, op: 0.5 });
+  s += pth('M96 452 H170', { stroke: INK, op: 0.45 });
+  s += pth('M520 484 L538 450 H570 L586 484 Z', { stroke: INK, op: 0.5, fill: PAPER, fillOp: 0.3 });
+  s += pth('M532 450 L546 434 L562 450', { stroke: INK, op: 0.45 });
+  s += ln(552, 436, 552, 484, MUTED, 0.22);
+  var px = rndBetween(rnd, 200, 240);
+  s += pth('M' + px + ' 484 C' + (px - 10) + ' 462 ' + (px + 8) + ' 448 ' + (px + 30) + ' 450 C' + (px + 54) + ' 452 ' + (px + 74) + ' 468 ' + (px + 76) + ' 484', { stroke: MUTED, op: 0.3 });
+  s += ln(px + 44, 450, px + 58, 430, INK, 0.3);
+  s += pth('M700 486 C706 476 714 476 720 486', { stroke: MUTED, op: 0.2 });
+  return s;
+}
+
+function artLibrary(uid, rnd) {
+  var s = '';
+  s += rc(96, 92, 610, 386, { stroke: INK, op: 0.6, fill: PAPER, fillOp: 0.15 });
+  s += artGround(484);
+  var shelfX = 112;
+  var shelfW = 572;
+  for (var row = 0; row < 5; row++) {
+    var sy = 122 + row * 68;
+    s += ln(112, sy, 684, sy, INK, 0.52);
+    s += ln(112, sy + 52, 684, sy + 52, MUTED, 0.3);
+    for (var bx = 130; bx < 672; bx += 20) {
+      var bh = rndBetween(rnd, 26, 40);
+      var bw = rndBetween(rnd, 8, 14);
+      s += rc(bx, sy + 50 - bh, bw, bh, { stroke: MUTED, op: 0.32, fill: ACCENT, fillOp: rnd() > 0.6 ? 0.06 : 0 });
+      if (rnd() > 0.76) { s += ln(bx + 3, sy + 50 - bh + 5, bx + 3, sy + 45, MUTED, 0.2); }
+    }
+  }
+  s += ln(112, 462, 684, 462, INK, 0.5);
+  s += ln(112, 92, 112, 484, INK, 0.5) + ln(684, 92, 684, 484, INK, 0.5) + ln(684, 92, 700, 92, INK, 0.3);
+  s += ln(700, 484, 700, 92, INK, 0.45);
+  s += windowGrid(596, 150, 74, 150, 2, 2, 0.45);
+  s += ln(560, 122, 560, 484, INK, 0.55) + ln(560, 210, 584, 180, INK, 0.35);
+  s += ln(530, 484, 530, 104, INK, 0.55) + ln(548, 104, 500, 484, INK, 0.55);
+  for (var rung = 0; rung < 7; rung++) {
+    var ry = 168 + rung * 44;
+    var rx = 548 - rung * 6.6;
+    s += ln(rx, ry, rx + 14, ry, INK, 0.45);
+  }
+  s += rc(190, 404, 210, 8, { stroke: INK, op: 0.55 });
+  s += ln(204, 412, 204, 484, INK, 0.45) + ln(390, 412, 390, 484, INK, 0.45);
+  s += pth('M236 404 C236 388 262 388 262 404 Z', { stroke: INK, op: 0.35 });
+  s += ln(280, 380, 280, 360, MUTED, 0.3) + pth('M264 360 H296 L288 344 H272 Z', { stroke: MUTED, op: 0.3 });
+  s += ci(206, 220, 24, { stroke: ACCENT, op: 0.3, fill: ACCENT, fillOp: 0.04 });
+  s += ci(226, 250, 18, { stroke: ACCENT, op: 0.25, fill: ACCENT, fillOp: 0.03 });
+  return s;
+}
+
+function artBridge(uid, rnd) {
+  var s = '';
+  s += sun(638, 132, 48);
+  s += pth('M20 346 C140 300 240 324 350 300 C470 274 560 314 660 292 C720 280 760 292 790 286', { stroke: MUTED, op: 0.28 });
+  s += pth('M20 390 C160 356 300 378 440 354 C560 334 680 356 790 338', { stroke: INK, op: 0.42 });
+  s += pth('M0 448 H800', { stroke: INK, op: 0.55 });
+  s += pth('M0 484 H800', { stroke: MUTED, op: 0.28 });
+  s += pth('M0 520 H800', { stroke: MUTED, op: 0.18 });
+  for (var x = 40; x < 790; x += 46) { s += ln(x, 500, x + 22, 524, MUTED, 0.11); }
+  s += pth('M120 486 L120 392 H680 L680 486 Z', { fill: ACCENT, fillOp: 0.03 });
+  s += pth('M270 486 V430 A130 130 0 0 1 530 430 V486', { stroke: INK, op: 0.68, fill: PAPER, fillOp: 0.2 });
+  s += pth('M286 486 V432 A114 114 0 0 1 514 432 V486', { stroke: MUTED, op: 0.3 });
+  s += pth('M120 392 H680', { stroke: INK, op: 0.65 });
+  s += pth('M112 380 H688', { stroke: INK, op: 0.55 });
+  s += ln(148, 392, 148, 380, INK, 0.35) + ln(188, 392, 188, 380, INK, 0.35) + ln(228, 392, 228, 380, INK, 0.35) + ln(562, 392, 562, 380, INK, 0.35) + ln(602, 392, 602, 380, INK, 0.35) + ln(642, 392, 642, 380, INK, 0.35);
+  s += ln(140, 340, 150, 340, MUTED, 0.25) + ln(140, 352, 150, 352, MUTED, 0.22) + ln(140, 364, 150, 364, MUTED, 0.2);
+  s += ln(260, 486, 250, 508, MUTED, 0.22) + ln(270, 486, 264, 508, MUTED, 0.22) + ln(530, 486, 536, 508, MUTED, 0.22) + ln(540, 486, 550, 508, MUTED, 0.22);
+  s += ln(140, 480, 140, 410, MUTED, 0.25) + ln(140, 430, 128, 414, MUTED, 0.2) + ln(140, 446, 152, 426, MUTED, 0.2);
+  s += ci(170, 300, 22, { stroke: MUTED, op: 0.25 });
+  s += ln(170, 322, 170, 346, MUTED, 0.22);
+  s += pth('M700 346 C700 334 712 334 712 346 L712 392 L700 392 Z', { stroke: INK, op: 0.4, fill: ACCENT, fillOp: 0.04 });
+  s += ln(700, 300, 700, 346, MUTED, 0.2);
+  s += pth('M700 300 C692 292 688 282 690 272 M706 300 C714 292 718 284 716 274', { stroke: MUTED, op: 0.22 });
+  s += pth('M600 330 C606 326 612 326 618 330 M626 322 C632 318 638 318 644 322', { stroke: INK, op: 0.32 });
+  s += ln(520, 460, 560, 456, MUTED, 0.2) + ln(600, 470, 648, 466, MUTED, 0.16);
+  return s;
+}
+
+function artWall(uid, rnd) {
+  var s = '';
+  s += sun(612, 116, 40);
+  s += artGround(486);
+  s += rc(92, 104, 616, 382, { stroke: INK, op: 0.62, fill: PAPER, fillOp: 0.2 });
+  s += pth('M92 104 L708 104 L708 300 L92 196 Z', { fill: ACCENT, fillOp: 0.055, stroke: ACCENT, op: 0.18 });
+  s += courses(110, 130, 578, 330, 20, 0.12);
+  s += windowGrid(140, 244, 96, 158, 2, 3, 0.5);
+  s += windowGrid(286, 244, 96, 158, 2, 3, 0.5);
+  s += windowGrid(432, 244, 96, 158, 2, 3, 0.5);
+  s += windowGrid(578, 244, 96, 158, 2, 3, 0.5);
+  s += ln(92, 430, 708, 430, INK, 0.4);
+  s += pth('M120 486 V430 H180 V486 Z', { stroke: INK, op: 0.5 });
+  s += pth('M188 486 V430 H236 V486 Z', { stroke: MUTED, op: 0.32 });
+  s += ln(92, 486, 708, 486, INK, 0.5);
+  s += pth('M430 430 H640 V462 H430 Z', { stroke: INK, op: 0.4 });
+  s += ln(444, 430, 444, 462, MUTED, 0.25) + ln(472, 430, 472, 462, MUTED, 0.25) + ln(500, 430, 500, 462, MUTED, 0.25);
+  s += ln(620, 104, 620, 486, INK, 0.35);
+  s += pth('M92 104 L92 486', { stroke: INK, op: 0.35 });
+  s += pth('M92 120 L240 120 L240 104', { stroke: MUTED, op: 0.24 });
+  var tx = rndBetween(rnd, 668, 700);
+  s += ln(tx, 486, tx, 404, INK, 0.45);
+  s += ci(tx, 384, 24, { stroke: ACCENT, op: 0.3, fill: ACCENT, fillOp: 0.05 });
+  s += ci(tx - 20, 400, 15, { stroke: ACCENT, op: 0.25, fill: ACCENT, fillOp: 0.04 });
+  s += pth('M56 486 H84', { stroke: MUTED, op: 0.25 });
+  return s;
+}
+
+function artCity(uid, rnd) {
+  var s = '';
+  s += sun(640, 118, 44);
+  s += artGround(470);
+  s += pth('M40 470 V292 H120 V246 H178 V470', { stroke: INK, op: 0.55, fill: PAPER, fillOp: 0.15 });
+  s += pth('M178 470 V212 H262 V470', { stroke: INK, op: 0.62, fill: ACCENT, fillOp: 0.035 });
+  s += pth('M262 470 V322 H340 V470', { stroke: MUTED, op: 0.4 });
+  s += pth('M340 470 V160 H420 V470', { stroke: INK, op: 0.6, fill: PAPER, fillOp: 0.2 });
+  s += pth('M420 470 V270 H486 V470', { stroke: INK, op: 0.5 });
+  s += pth('M486 470 V330 H552 V470', { stroke: MUTED, op: 0.38 });
+  s += pth('M552 470 V230 H622 V470', { stroke: INK, op: 0.55, fill: ACCENT, fillOp: 0.03 });
+  s += pth('M622 470 V300 H700 V470', { stroke: INK, op: 0.5 });
+  s += ln(178, 212, 262, 212, INK, 0.55) + ln(340, 160, 420, 160, INK, 0.5);
+  s += ln(352, 160, 352, 118, INK, 0.5) + ln(352, 118, 360, 108, INK, 0.4) + ln(360, 108, 404, 108, INK, 0.4) + ln(404, 108, 412, 120, INK, 0.4);
+  s += ln(40, 292, 120, 292, MUTED, 0.35) + ln(120, 246, 178, 246, MUTED, 0.35) + ln(262, 322, 340, 322, MUTED, 0.35) + ln(420, 270, 486, 270, MUTED, 0.35) + ln(486, 330, 552, 330, MUTED, 0.3) + ln(552, 230, 622, 230, MUTED, 0.3) + ln(622, 300, 700, 300, MUTED, 0.3);
+  var rows = [0, 1, 2, 3];
+  for (var i = 0; i < rows.length; i++) {
+    var wy = 250 + i * 46;
+    if (wy > 430) continue;
+    s += windowGrid(64, wy, 40, 24, 2, 1, 0.32);
+    s += windowGrid(198, wy - 30, 48, 22, 2, 1, 0.32);
+    s += windowGrid(282, wy + 8, 40, 22, 2, 1, 0.28);
+    s += windowGrid(358, wy - 14, 44, 24, 2, 1, 0.32);
+    s += windowGrid(566, wy - 20, 40, 26, 2, 1, 0.32);
+    s += windowGrid(642, wy + 6, 40, 22, 2, 1, 0.3);
+  }
+  s += pth('M36 470 H760', { stroke: INK, op: 0.7 });
+  s += pth('M150 470 H740 V510 H150 Z', { fill: ACCENT, fillOp: 0.03 });
+  s += ln(160, 470, 160, 510, MUTED, 0.3) + ln(250, 470, 250, 510, MUTED, 0.25) + ln(380, 470, 380, 510, MUTED, 0.3) + ln(520, 470, 520, 510, MUTED, 0.25) + ln(650, 470, 650, 510, MUTED, 0.3);
+  s += ln(180, 490, 216, 490, MUTED, 0.2) + ln(300, 500, 348, 500, MUTED, 0.16) + ln(560, 486, 600, 486, MUTED, 0.2);
+  s += ln(708, 470, 708, 300, MUTED, 0.28) + ln(708, 320, 744, 288, MUTED, 0.28) + ln(744, 288, 744, 254, MUTED, 0.22);
+  s += ln(420, 470, 420, 486, INK, 0.3) + ln(486, 470, 486, 486, INK, 0.3);
+  s += pth('M456 160 C462 150 470 150 476 160 M492 140 C498 132 506 132 512 140', { stroke: INK, op: 0.32 });
+  return s;
+}
+
+function artFrame(uid, rnd) {
+  var s = '';
+  s += sun(690, 112, 38);
+  s += pth('M0 430 C160 386 300 404 430 380 C560 356 680 384 800 360 V600 H0 Z', { fill: ACCENT, fillOp: 0.035, stroke: 'none' });
+  s += pth('M0 430 C160 386 300 404 430 380 C560 356 680 384 800 360', { stroke: MUTED, op: 0.25 });
+  s += artGround(486);
+  s += rc(170, 138, 500, 348, { stroke: INK, op: 0.45 });
+  for (var bay = 0; bay <= 4; bay++) {
+    var bx = 170 + bay * 96;
+    s += ln(bx, 138, bx, 486, INK, 0.6);
+  }
+  for (var fl = 0; fl <= 4; fl++) {
+    var fy = 138 + fl * 87;
+    s += ln(170, fy, 670, fy, INK, 0.55);
+  }
+  s += ln(170, 138, 670, 138, INK, 0.65) + ln(170, 486, 670, 486, INK, 0.65);
+  s += rc(202, 170, 42, 44, { stroke: MUTED, op: 0.3, fill: PAPER, fillOp: 0.35 });
+  s += rc(394, 170, 42, 44, { stroke: MUTED, op: 0.28, fill: PAPER, fillOp: 0.2 });
+  s += pth('M302 486 V410 H370 V486 Z', { stroke: INK, op: 0.55, fill: ACCENT, fillOp: 0.05 });
+  s += ln(330, 410, 330, 486, MUTED, 0.25);
+  s += pth('M494 138 L526 92 L558 138', { stroke: INK, op: 0.55, fill: PAPER, fillOp: 0.3 });
+  s += ln(490, 92, 566, 92, INK, 0.4) + ln(490, 108, 566, 108, INK, 0.4);
+  s += pth('M610 226 C618 216 628 226 636 216 C644 206 654 216 662 206', { stroke: ACCENT, op: 0.45 });
+  s += pth('M236 286 C244 278 252 286 260 278', { stroke: ACCENT, op: 0.4 });
+  s += pth('M452 330 C460 320 470 330 478 320', { stroke: MUTED, op: 0.35 });
+  s += rc(214, 486, 396, 16, { stroke: INK, op: 0.4, fill: TINT, fillOp: 0.4 });
+  s += ln(620, 486, 620, 400, INK, 0.4) + ln(640, 486, 640, 400, INK, 0.4) + ln(620, 430, 640, 430, MUTED, 0.3) + ln(620, 454, 640, 454, MUTED, 0.3);
+  s += pth('M620 400 L630 360 L640 400', { stroke: INK, op: 0.35 });
+  return s;
+}
+
+function artBay(uid, rnd) {
+  var s = '';
+  s += rc(60, 80, 680, 440, { stroke: INK, op: 0.4, fill: PAPER, fillOp: 0.1 });
+  s += ln(400, 80, 400, 80, INK, 0.1);
+  s += pth('M400 520 V210', { stroke: MUTED, op: 0.25 });
+  s += pth('M60 80 L330 210 H470 L740 80', { stroke: MUTED, op: 0.35 });
+  s += pth('M60 520 L330 430 H470 L740 520', { stroke: MUTED, op: 0.35 });
+  s += pth('M400 210 L470 250 V430 L400 470 Z', { stroke: INK, op: 0.6, fill: PAPER, fillOp: 0.35 });
+  s += pth('M400 210 L330 250 V430 L400 470 Z', { stroke: INK, op: 0.6, fill: ACCENT, fillOp: 0.035 });
+  s += rc(340, 250, 120, 180, { stroke: INK, op: 0.55, fill: TINT, fillOp: 0.4 });
+  s += ln(400, 250, 400, 430, INK, 0.45) + ln(340, 340, 460, 340, INK, 0.4);
+  s += pth('M330 250 H470 V226 H330 Z', { stroke: MUTED, op: 0.3 });
+  s += pth('M80 96 L328 224 V424 L80 512 Z', { stroke: INK, op: 0.4, fill: MUTED, fillOp: 0.02 });
+  s += pth('M720 96 L472 224 V424 L720 512 Z', { stroke: INK, op: 0.4, fill: MUTED, fillOp: 0.02 });
+  var doorYs = [200, 300, 400];
+  for (var d = 0; d < 3; d++) {
+    var dy = doorYs[d];
+    s += pth('M110 ' + (dy + 10) + ' H270 V' + (dy + 110) + ' H110 Z', { stroke: INK, op: 0.55, fill: PAPER, fillOp: 0.3 });
+    s += pth('M120 ' + (dy + 18) + ' H260 V' + (dy + 102) + ' H120 Z', { stroke: MUTED, op: 0.28 });
+    s += ci(236, dy + 64, 2.5, { fill: ACCENT, fillOp: 0.8 });
+    s += pth('M530 ' + (dy + 10) + ' H690 V' + (dy + 110) + ' H530 Z', { stroke: INK, op: 0.55, fill: PAPER, fillOp: 0.3 });
+    s += pth('M540 ' + (dy + 18) + ' H680 V' + (dy + 102) + ' H540 Z', { stroke: MUTED, op: 0.28 });
+    s += ci(554, dy + 64, 2.5, { fill: ACCENT, fillOp: 0.8 });
+  }
+  s += ln(100, 530, 700, 530, INK, 0.4);
+  for (var xx = 120; xx < 700; xx += 40) { s += ln(xx, 530, xx + 10, 552, MUTED, 0.14); }
+  s += pth('M330 430 H470', { stroke: MUTED, op: 0.3 });
+  s += windowGrid(330, 250, 140, 180, 2, 3, 0.5);
+  s += ln(340, 280, 460, 280, MUTED, 0.22) + ln(340, 340, 460, 340, MUTED, 0.22) + ln(400, 250, 400, 430, MUTED, 0.2);
+  s += ci(400, 638, 20, { stroke: ACCENT, op: 0.3 });
+  s += ci(400, 622, 8, { stroke: ACCENT, op: 0.4, fill: ACCENT, fillOp: 0.1 });
+  return s;
+}
+
+function artSvg(variant, seed, label) {
+  var uid = 'a' + (++artUid);
+  var rnd = makeRnd(seed || 1);
+  var inner;
+  switch (variant) {
+    case 'workshop': inner = artWorkshop(uid, rnd); break;
+    case 'room': inner = artRoom(uid, rnd); break;
+    case 'hills': inner = artHills(uid, rnd); break;
+    case 'chapel': inner = artChapel(uid, rnd); break;
+    case 'lime': inner = artLime(uid, rnd); break;
+    case 'library': inner = artLibrary(uid, rnd); break;
+    case 'bridge': inner = artBridge(uid, rnd); break;
+    case 'wall': inner = artWall(uid, rnd); break;
+    case 'city': inner = artCity(uid, rnd); break;
+    case 'frame': inner = artFrame(uid, rnd); break;
+    case 'bay': inner = artBay(uid, rnd); break;
+    default: inner = artHouse(uid, rnd);
+  }
+  var aria = label ? ' role="img" aria-label="' + escAttr(label) + '"' : ' aria-hidden="true"';
+  return '<svg class="art-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice"' + aria + '>' + artOpen(uid) + inner + '</svg>';
+}
+/*__RENDER__*/
+/*__INIT__*/
+})();
+</script>
 </body>
 </html>

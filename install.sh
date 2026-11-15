@@ -17,7 +17,7 @@
 #
 #  Неинтерактивный режим:
 #    ... install.sh --yes --node-port 2222 --panel-ip 1.2.3.4 --secret-key KEY \
-#                   --connect-port 443 --domain vpn.example.com --template landing
+#                   --connect-port 443 --domain vpn.example.com --template shop
 #
 #  Порты: спрашивается ОДИН порт подключения — на нём работают xHTTP, gRPC и TCP.
 #  Какой именно inbound какого типа — установщику не важно: важны firewall и
@@ -52,7 +52,7 @@
 
 set -euo pipefail
 
-VERSION="1.2.0"
+VERSION="1.3.0"
 
 REPO_OWNER="Asteliat"
 REPO_NAME="remnanode-installer"
@@ -79,7 +79,7 @@ HYSTERIA="${HYSTERIA:-}"            # yes = Hysteria2 (UDP на CONNECT_PORT)
 USE_SELFSTEAL="${USE_SELFSTEAL:-yes}"
 DOMAIN="${DOMAIN:-}"
 SELFSTEAL_PORT="${SELFSTEAL_PORT:-9443}"
-TEMPLATE="${TEMPLATE:-landing}"
+TEMPLATE="${TEMPLATE:-shop}"
 
 # --- сеть -------------------------------------------------------------------
 DUAL_IP="${DUAL_IP:-no}"        # yes = вход на IP1, выход через IP2
@@ -134,7 +134,8 @@ Remnawave Node + Caddy selfsteal — установщик
   --selfsteal yes|no     разворачивать сайт-заглушку
   --domain DOMAIN        домен для selfsteal
   --selfsteal-port PORT  внутренний порт Caddy (9443)
-  --template NAME        шаблон сайта (см. templates/manifest.tsv: landing, docs, news, ...)
+  --template NAME        сайт-заглушка: shop (по умолчанию), studio, saas, docs,
+                         blog, dashboard, restaurant, travel, forum, hosting
   --one-ip | --two-ip    схема сети (2 IP: клиенты входят на --ip1, нода выходит с --ip2)
   --ip1 IP               IP для входа (по умолчанию — автоопределённый IP сервера;
                          можно указать докупленный адрес)
@@ -159,7 +160,7 @@ Remnawave Node + Caddy selfsteal — установщик
   bash install.sh
   bash install.sh --yes --node-port 2222 --panel-ip 1.2.3.4 --secret-key KEY \
       --connect-port 443 --hysteria yes \
-      --domain vpn.example.com --template landing --two-ip --ip2 5.6.7.8
+      --domain vpn.example.com --template shop --two-ip --ip2 5.6.7.8
 USAGE
 }
 
@@ -582,8 +583,8 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
     if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/templates/manifest.tsv" ]; then
         cp "$SCRIPT_DIR/templates/manifest.tsv" "$_mf"
     elif ! fetch "$TEMPLATES_BASE/manifest.tsv" "$_mf" 2>/dev/null; then
-        warn "не удалось получить список шаблонов — доступен только landing"
-        printf 'landing|лендинг — визитка небольшой компании\n' > "$_mf"
+        warn "не удалось получить список шаблонов — доступен только shop"
+        printf 'shop|магазин керамики — каталог, фильтры, корзина\n' > "$_mf"
     fi
     while IFS='|' read -r _tk _td; do
         _tk="${_tk%$'\r'}"
@@ -595,9 +596,34 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
     rm -f "$_mf"
     unset _tk _td _mf 2>/dev/null || true
     if [ "${#TEMPLATE_KEYS[@]}" -eq 0 ]; then
-        TEMPLATE_KEYS=(landing)
-        TEMPLATE_DESCS=("лендинг — визитка небольшой компании")
+        TEMPLATE_KEYS=(shop)
+        TEMPLATE_DESCS=("магазин керамики — каталог, фильтры, корзина")
     fi
+
+    # Совместимость со старым answers.env: там мог остаться ключ из прежнего
+    # набора из 50 заглушек. Молча подставляем ближайший по смыслу сайт,
+    # иначе повторная установка упала бы на «неизвестный шаблон».
+    _tvalid=false
+    for k in "${TEMPLATE_KEYS[@]}"; do [ "$k" = "$TEMPLATE" ] && _tvalid=true; done
+    if [ "$_tvalid" != true ]; then
+        _old="$TEMPLATE"
+        case "$TEMPLATE" in
+            startup)                                 TEMPLATE=saas ;;
+            agency|portfolio|landing)                TEMPLATE=studio ;;
+            wiki|paste|git)                          TEMPLATE=docs ;;
+            analytics|auth|mail|chat|calendar|notes)  TEMPLATE=dashboard ;;
+            tasks|crm|hr|edu|quiz|crypto|finance)     TEMPLATE=dashboard ;;
+            news|torrent|music|video|cinema)          TEMPLATE=blog ;;
+            podcast|radio|hotel|photos|gallery)       TEMPLATE=travel ;;
+            fitness|health|law|insurance|realestate)  TEMPLATE=shop ;;
+            auto|logistics|speedtest)                 TEMPLATE=hosting ;;
+            status|503|cdn|cloud)                     TEMPLATE=hosting ;;
+            *)                                       TEMPLATE="${TEMPLATE_KEYS[0]}" ;;
+        esac
+        note "шаблон «$_old» из прежнего набора заменён на «$TEMPLATE»"
+        unset _old 2>/dev/null || true
+    fi
+    unset _tvalid 2>/dev/null || true
     for i in "${!TEMPLATE_KEYS[@]}"; do
         printf "    %2d) %-12s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
     done

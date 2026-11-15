@@ -2,59 +2,2148 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<title>Northbound — small-group journeys in Norway, Iceland, the Faroe Islands and Lapland</title>
+<meta name="description" content="Northbound runs small-group walking journeys in Norway, Iceland, the Faroe Islands and Lapland: eight routes, six travellers, local guides, six to nine nights.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ветер — путешествия</title>
+<meta name="theme-color" content="#14212b">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314212b'/%3E%3Cpath d='M8 48 24 19l9 16 6-10 17 23z' fill='%23f6f4ef'/%3E%3Ccircle cx='46' cy='18' r='5' fill='%23c9a06a'/%3E%3C/svg%3E">
+<meta property="og:title" content="Northbound — go north, slowly">
+<meta property="og:description" content="Eight small-group routes through Norway, Iceland, the Faroe Islands and Lapland. Six travellers, one local guide, and enough time to stand still.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Northbound">
 <style>
-  :root{color-scheme:light dark}
-  *{box-sizing:border-box}
-  body{margin:0;background:#fbfbf9;color:#1a1c18;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-  @media (prefers-color-scheme:dark){body{background:#0e0f0d;color:#d9dcd4}.card,.trip{background:#151714!important;border-color:#232621!important}}
-  .nav{padding:16px 22px;display:flex;align-items:center;gap:18px;border-bottom:1px solid #eceae3;background:#fff}
-  .logo{font-weight:700;letter-spacing:-.01em}
-  .nav a{color:inherit;text-decoration:none;font-size:14px;opacity:.65}
-  .nav .me{margin-left:auto;font-size:13px;opacity:.55}
-  .hero{padding:46px 22px;text-align:center;background:linear-gradient(180deg,#f2f5ea,#fbfbf9)}
-  @media (prefers-color-scheme:dark){.hero{background:linear-gradient(180deg,#161b12,#0e0f0d)}}
-  .hero h1{font-size:clamp(26px,4.6vw,40px);margin:0 0 10px;letter-spacing:-.025em}
-  .hero p{margin:0 auto;max-width:52ch;opacity:.7}
-  .search{max-width:560px;margin:22px auto 0;display:flex;gap:8px;background:#fff;border:1px solid #e4e7de;border-radius:12px;padding:8px}
-  .search input{flex:1;border:0;padding:9px 11px;font:inherit;background:transparent;color:inherit;outline:none}
-  .search button{padding:10px 18px;border:0;border-radius:9px;background:#3f6212;color:#f7ffe9;font:600 14px/1 inherit;cursor:pointer}
-  .wrap{max-width:1000px;margin:0 auto;padding:26px 20px 70px}
-  h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.5;margin:0 0 12px}
-  .trips{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-  .trip{background:#fff;border:1px solid #eceae3;border-radius:12px;overflow:hidden}
-  .trip .img{height:130px;background:linear-gradient(150deg,#cfe0c2,#a8c48f)}
-  .trip:nth-child(2) .img{background:linear-gradient(150deg,#c2d6e0,#8fb2c4)}
-  .trip:nth-child(3) .img{background:linear-gradient(150deg,#e0d2c2,#c4a88f)}
-  .trip .body{padding:12px 14px}
-  .trip .t{font-weight:600;font-size:15px}
-  .trip .d{font-size:13px;opacity:.6}
-  .trip .p{margin-top:8px;font-weight:600;font-size:14px;color:#3f6212}
-  @media (prefers-color-scheme:dark){.trip .p{color:#a3c97a}}
+:root{
+  --bg:#f6f4ef;--ink:#14212b;--muted:#64707a;--line:#e2e0d8;
+  --accent:#0f6f8f;--sand:#c9a06a;--sky:#dbe9ef;
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;--s8:64px;--s9:96px;
+  --r1:12px;--r2:14px;--r3:16px;
+  --hdr:72px;--wrap:1240px;--pad:clamp(20px,5vw,48px);
+  --ease:cubic-bezier(.2,.65,.25,1);--t:180ms;--t2:220ms;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:ui-serif,Georgia,"Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
+  --star:var(--sand);--star:color-mix(in srgb,var(--sand) 60%,var(--ink));
+  --shadow1:0 1px 2px rgba(20,33,43,.05),0 10px 26px rgba(20,33,43,.06);
+  --shadow2:0 2px 6px rgba(20,33,43,.06),0 22px 48px rgba(20,33,43,.14);
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;padding:0}
+html.no-scroll{overflow:hidden}
+html.no-scroll body{padding-right:var(--sbw,0)}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+img,svg{display:block;max-width:100%}
+h1,h2,h3,h4,p,ul,ol,figure{margin:0}
+ul,ol{padding:0;list-style:none}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+::selection{background:rgba(15,111,143,.22)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.wrap{width:100%;max-width:var(--wrap);margin-inline:auto;padding-inline:var(--pad)}
+.icon{width:20px;height:20px;flex:none}
+.icon--line{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icon--solid{fill:currentColor;stroke:none}
+.reveal{opacity:0;transform:translateY(12px);transition:opacity 240ms var(--ease),transform 240ms var(--ease)}
+.reveal.is-in{opacity:1;transform:none}
+.skip{position:fixed;left:16px;top:-80px;z-index:200;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:var(--r1);font-size:14px;font-weight:600;transition:top 160ms var(--ease)}
+.skip:focus{top:12px}
+
+/* ---------- header ---------- */
+.site-head{position:sticky;top:0;z-index:60;background:rgba(246,244,239,.9);-webkit-backdrop-filter:blur(14px) saturate(1.05);backdrop-filter:blur(14px) saturate(1.05);border-bottom:1px solid var(--line)}
+.head__in{display:flex;align-items:center;gap:var(--s4);height:var(--hdr);max-width:var(--wrap);margin-inline:auto;padding-inline:var(--pad)}
+.brand{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:-.015em;white-space:nowrap}
+.brand__mark{width:31px;height:31px;color:var(--accent);transition:color var(--t)}
+.brand:hover .brand__mark{color:var(--ink)}
+.nav{display:flex;align-items:center;gap:2px;margin-inline:auto}
+.nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border-radius:var(--r1);font-size:14.5px;color:var(--muted);transition:color var(--t),background-color var(--t)}
+.nav a:hover{color:var(--ink);background:rgba(20,33,43,.045)}
+.nav a[aria-current="page"]{color:var(--ink)}
+.nav .nav__saved,.nav .nav__cta{display:none}
+.head__act{display:flex;align-items:center;gap:var(--s3)}
+.saved-link{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 12px 0 10px;border:1px solid var(--line);border-radius:var(--r1);background:rgba(255,255,255,.55);color:var(--muted);font-size:13.5px;white-space:nowrap;transition:color var(--t),border-color var(--t),background-color var(--t),transform var(--t)}
+.saved-link:hover{color:var(--ink);border-color:var(--muted);background:#fff}
+.saved-link svg{width:16px;height:16px;color:var(--accent)}
+.saved-link[aria-current="page"]{border-color:var(--accent);color:var(--ink);background:rgba(219,233,239,.7)}
+.saved-link.is-pop .js-saved-count{animation:pop 240ms var(--ease)}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.35)}100%{transform:scale(1)}}
+.js-saved-count{display:inline-block;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+.burger{display:none;width:44px;height:44px;border:1px solid var(--line);border-radius:var(--r1);background:rgba(255,255,255,.55);place-items:center}
+.burger:hover{border-color:var(--muted);background:#fff}
+.burger__bars{position:relative;display:block;width:18px;height:12px}
+.burger__bars span{position:absolute;left:0;width:18px;height:1.8px;border-radius:2px;background:var(--ink);transition:top 200ms var(--ease),transform 200ms var(--ease)}
+.burger__bars span:nth-child(1){top:0}
+.burger__bars span:nth-child(2){top:10px}
+.burger[aria-expanded="true"] .burger__bars span:nth-child(1){top:5px;transform:rotate(45deg)}
+.burger[aria-expanded="true"] .burger__bars span:nth-child(2){top:5px;transform:rotate(-45deg)}
+
+/* ---------- buttons, chips, forms ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border:1px solid transparent;border-radius:var(--r1);font-size:14.5px;font-weight:600;letter-spacing:.005em;text-align:center;transition:transform var(--t) var(--ease),background-color var(--t),border-color var(--t),box-shadow var(--t),color var(--t)}
+.btn:active{transform:translateY(0) scale(.99)}
+.btn--primary{background:var(--accent);color:var(--bg);box-shadow:0 1px 2px rgba(20,33,43,.16)}
+.btn--primary:hover{background:var(--accent);background:color-mix(in srgb,var(--accent) 86%,var(--ink));transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,111,143,.26)}
+.btn--ghost{border-color:var(--line);background:rgba(255,255,255,.6);color:var(--ink)}
+.btn--ghost:hover{border-color:var(--muted);background:#fff;transform:translateY(-1px);box-shadow:var(--shadow1)}
+.btn--sand{background:var(--sand);color:var(--ink)}
+.btn--sand:hover{background:var(--sand);background:color-mix(in srgb,var(--sand) 88%,var(--ink));transform:translateY(-1px)}
+.btn[disabled]{opacity:.55;cursor:not-allowed;transform:none!important;box-shadow:none}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:var(--r1);background:rgba(255,255,255,.6);color:var(--muted);font-size:13.5px;font-weight:500;white-space:nowrap;transition:color var(--t),background-color var(--t),border-color var(--t),transform var(--t)}
+.chip:hover{color:var(--ink);border-color:var(--muted);background:#fff}
+.chip:active{transform:scale(.98)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg);box-shadow:0 2px 10px rgba(15,111,143,.22)}
+.chip[aria-pressed="true"]:hover{background:var(--accent);background:color-mix(in srgb,var(--accent) 86%,var(--ink));color:var(--bg)}
+.field{display:grid;gap:6px;align-content:start}
+.field>label{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:13.5px;font-weight:600;letter-spacing:.005em}
+.field .opt{font-weight:400;color:var(--muted)}
+.input{width:100%;min-height:48px;padding:0 14px;border:1px solid var(--line);border-radius:var(--r1);background:rgba(255,255,255,.72);color:var(--ink);font-size:15px;transition:border-color var(--t),box-shadow var(--t),background-color var(--t)}
+.input::placeholder{color:var(--muted);opacity:.85}
+.input:hover{border-color:var(--muted)}
+.input:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(15,111,143,.18)}
+textarea.input{min-height:96px;padding:12px 14px;resize:vertical;line-height:1.5}
+select.input{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364707a' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px;cursor:pointer}
+.input[aria-invalid="true"]{border-color:var(--ink);background:rgba(255,255,255,.92)}
+.hint{font-size:12.5px;line-height:1.45;color:var(--muted);margin:0}
+.err{display:flex;align-items:center;gap:6px;font-size:12.5px;line-height:1.4;font-weight:600;color:var(--ink);margin:0}
+.err svg{width:14px;height:14px;color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;display:flex;align-items:flex-end;overflow:hidden;isolation:isolate;background:var(--ink);color:var(--bg);min-height:calc(100vh - var(--hdr));min-height:calc(100svh - var(--hdr))}
+.hero__art{position:absolute;inset:0;z-index:0}
+.hero__art svg{width:100%;height:100%}
+.hero__scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(20,33,43,.3) 0%,rgba(20,33,43,.06) 30%,rgba(20,33,43,.26) 60%,rgba(20,33,43,.8) 100%),radial-gradient(120% 85% at 14% 82%,rgba(20,33,43,.5),rgba(20,33,43,0) 64%)}
+.hero__in{position:relative;z-index:2;display:grid;gap:var(--s4);padding-block:var(--s9) var(--s8)}
+.hero__eyebrow{display:flex;align-items:center;gap:10px;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(246,244,239,.95);font-weight:500;text-shadow:0 1px 14px rgba(20,33,43,.4)}
+.hero__eyebrow::before{content:"";width:28px;height:1px;background:rgba(246,244,239,.55)}
+.hero__title{font-family:var(--serif);font-weight:500;font-size:clamp(46px,7.4vw,98px);line-height:.98;letter-spacing:-.035em;text-wrap:balance;max-width:16ch;text-shadow:0 2px 34px rgba(20,33,43,.3);margin:0}
+.hero__title em{font-style:italic;color:var(--sand)}
+.hero__lede{max-width:57ch;font-size:clamp(16px,1.35vw,18.5px);line-height:1.55;color:rgba(246,244,239,.9);margin:0;text-wrap:pretty}
+.hero__search{margin-top:var(--s2);max-width:620px}
+.hero__chips{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s1)}
+.hero .chip{background:rgba(20,33,43,.32);border-color:rgba(246,244,239,.34);color:rgba(246,244,239,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.hero .chip:hover{background:rgba(20,33,43,.5);border-color:rgba(246,244,239,.6);color:var(--bg)}
+.hero .chip[aria-pressed="true"]{background:var(--bg);border-color:var(--bg);color:var(--ink);box-shadow:0 4px 16px rgba(20,33,43,.3)}
+.hero .chip[aria-pressed="true"]:hover{background:var(--bg);color:var(--ink)}
+.hero__facts{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s5);margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid rgba(246,244,239,.24);font-size:12.5px;letter-spacing:.04em;color:rgba(246,244,239,.82)}
+.hero__facts li{display:flex;align-items:center;gap:7px}
+.hero__facts li::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--sand)
+}
+.hero__title-saved{display:block}
+.hero--compact{min-height:0;background:linear-gradient(180deg,var(--sky) 0%,var(--bg) 92%);color:var(--ink);align-items:flex-start}
+.hero--compact .hero__art,
+.hero--compact .hero__scrim,
+.hero--compact .hero__eyebrow,
+.hero--compact .hero__lede,
+.hero--compact .hero__search,
+.hero--compact .hero__chips,
+.hero--compact .hero__facts{display:none}
+.hero--compact .hero__in{padding-block:var(--s8) var(--s6);gap:0}
+.hero--compact .hero__title{color:var(--ink);font-size:clamp(38px,5.2vw,62px);text-shadow:none;max-width:none}
+
+/* ---------- search ---------- */
+.search{display:flex;align-items:center;gap:var(--s2);width:100%;padding:8px;border:1px solid rgba(20,33,43,.1);border-radius:var(--r3);background:rgba(246,244,239,.96);box-shadow:0 20px 50px rgba(20,33,43,.24);transition:box-shadow var(--t),transform var(--t)}
+.search:focus-within{box-shadow:0 20px 50px rgba(20,33,43,.3),0 0 0 3px rgba(15,111,143,.35)}
+.search__icon{width:20px;height:20px;margin-left:8px;color:var(--muted);flex:none}
+.search input{flex:1;min-width:0;min-height:44px;padding:0 2px;border:0;background:transparent;color:var(--ink);font-size:15px;outline:none}
+.search input::placeholder{color:var(--muted)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.search__clear{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;color:var(--muted);transition:color var(--t),background-color var(--t)}
+.search__clear:hover{color:var(--ink);background:rgba(20,33,43,.06)}
+.search .btn{flex:none}
+
+/* ---------- sections ---------- */
+.section{padding-block:var(--s9);scroll-margin-top:calc(var(--hdr) + 12px)}
+.section--tight{padding-block:var(--s8)}
+.section--tint{background:linear-gradient(180deg,rgba(219,233,239,.55),rgba(219,233,239,0) 88%)}
+.sec-head{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(280px,420px);align-items:end;gap:var(--s3) var(--s7);margin-bottom:var(--s7)}
+.sec-head .eyebrow{grid-column:1/-1}
+.sec-head__title{font-family:var(--serif);font-weight:500;font-size:clamp(30px,3.7vw,47px);line-height:1.05;letter-spacing:-.025em;margin:0;text-wrap:balance}
+.sec-head__lede{color:var(--muted);font-size:16.5px;line-height:1.6;text-wrap:pretty;padding-bottom:4px}
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--sand)}
+.sec-note{font-size:13.5px;color:var(--muted)}
+
+/* ---------- toolbar ---------- */
+.toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--s3) var(--s6);padding-block:var(--s4);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:var(--s6)}
+.toolbar__rows{display:grid;gap:var(--s2)}
+.toolbar__row{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+.toolbar__label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);min-width:54px;font-weight:600}
+.toolbar__meta{display:grid;justify-items:end;gap:4px}
+.toolbar__count{font-size:13.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.toolbar__count strong{color:var(--ink);font-size:15px}
+.toolbar__reset{font-size:13px;font-weight:600;color:var(--accent);min-height:32px;display:inline-flex;align-items:center;transition:color var(--t)}
+.toolbar__reset:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- grid + cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:var(--s5) var(--s4)}
+.card{position:relative;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:var(--r3);background:rgba(255,255,255,.66);box-shadow:var(--shadow1);transition:transform 200ms var(--ease),box-shadow 200ms var(--ease),border-color 200ms var(--ease),background-color 200ms var(--ease)}
+.card:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--line) 55%,var(--muted));background:#fff;box-shadow:var(--shadow2)}
+.card:active{transform:translateY(-1px)}
+.card:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+.card__cover{position:relative;height:186px;overflow:hidden;background:var(--sky)}
+.card__badge{position:absolute;left:12px;top:12px;z-index:2;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--r1);background:rgba(20,33,43,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--bg);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.card__body{display:flex;flex:1;flex-direction:column;gap:var(--s2);padding:var(--s4)}
+.card__meta{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.card__title{font-family:var(--serif);font-weight:500;font-size:21px;line-height:1.16;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.card__link{color:var(--ink)}
+.card__link::after{content:"";position:absolute;inset:0;z-index:1;border-radius:inherit}
+.card__link:focus-visible{outline:none}
+.card__sum{font-size:13.5px;line-height:1.5;color:var(--muted);text-wrap:pretty}
+.card__row{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);margin-top:var(--s1);flex-wrap:wrap}
+.rating{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.rating strong{color:var(--ink);font-size:13px;font-variant-numeric:tabular-nums}
+.stars{position:relative;display:inline-block;width:70px;height:13px;line-height:0}
+.stars__bg,.stars__fg{position:absolute;top:0;left:0;display:flex;gap:1px;width:70px;overflow:hidden}
+.stars__bg{color:var(--line)}
+.stars__fg{color:var(--star)}
+.stars svg{width:13px;height:13px;flex:0 0 13px}
+.card__walk{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.card__best{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.card__best::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--sky);box-shadow:0 0 0 1px var(--muted)}
+.card__best time{color:var(--ink);font-weight:500}
+.card__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin-top:auto;padding-top:var(--s3);border-top:1px solid var(--line)}
+.price{display:flex;align-items:baseline;gap:4px;font-size:11.5px;color:var(--muted)}
+.price strong{font-size:17px;letter-spacing:-.015em;color:var(--ink);font-variant-numeric:tabular-nums}
+.card__cta{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--accent);transition:gap var(--t)}
+.card__cta svg{width:14px;height:14px}
+.card:hover .card__cta{gap:9px}
+.save{position:absolute;right:10px;top:10px;z-index:3;display:grid;place-items:center;width:44px;height:44px;border:1px solid rgba(20,33,43,.08);border-radius:50%;background:rgba(246,244,239,.94);color:var(--ink);box-shadow:0 1px 6px rgba(20,33,43,.14);transition:background-color var(--t),transform var(--t),color var(--t),box-shadow var(--t)}
+.save:hover{background:#fff;transform:scale(1.06);box-shadow:0 4px 14px rgba(20,33,43,.18)}
+.save:active{transform:scale(.96)}
+.save .icon{width:19px;height:19px;transition:transform 200ms var(--ease),fill 180ms var(--t)}
+.save[aria-pressed="true"]{color:var(--accent)}
+.save[aria-pressed="true"] .icon{fill:currentColor;stroke:currentColor}
+.save.is-bump .icon{animation:bump 240ms var(--ease)}
+@keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.24)}100%{transform:scale(1)}}
+
+/* ---------- CSS art ---------- */
+.art{position:absolute;inset:0;overflow:hidden;background:radial-gradient(90% 70% at var(--sun-x,70%) var(--sun-y,24%),rgba(201,160,106,.3),transparent 62%),linear-gradient(176deg,#c6dbe7 0%,#dbe9ef 34%,#eef0e8 62%,#f6f4ef 100%)}
+.art--warm{background:radial-gradient(90% 72% at var(--sun-x,70%) var(--sun-y,24%),rgba(201,160,106,.42),transparent 66%),linear-gradient(176deg,#c3d9e4 0%,#dde8e7 38%,#f0e4cf 72%,#f6f4ef 100%)}
+.art__stars{position:absolute;top:0;left:0;right:0;height:52%;opacity:var(--stars,0);background-image:radial-gradient(1.4px 1.4px at 18% 20%,rgba(246,244,239,.95) 50%,transparent 51%),radial-gradient(1.2px 1.2px at 33% 9%,rgba(246,244,239,.85) 50%,transparent 51%),radial-gradient(1px 1px at 47% 26%,rgba(246,244,239,.8) 50%,transparent 51%),radial-gradient(1.3px 1.3px at 62% 13%,rgba(246,244,239,.9) 50%,transparent 51%),radial-gradient(1px 1px at 74% 30%,rgba(246,244,239,.75) 50%,transparent 51%),radial-gradient(1.2px 1.2px at 86% 16%,rgba(246,244,239,.9) 50%,transparent 51%),radial-gradient(1px 1px at 91% 34%,rgba(246,244,239,.7) 50%,transparent 51%),radial-gradient(1.1px 1.1px at 8% 38%,rgba(246,244,239,.8) 50%,transparent 51%)}
+.art__aurora{position:absolute;left:-6%;right:-6%;top:-12%;height:66%;opacity:var(--aurora,0);filter:blur(11px);transform:rotate(-6deg);background:radial-gradient(50% 38% at 27% 27%,rgba(15,111,143,.55),transparent 70%),radial-gradient(42% 30% at 62% 12%,rgba(201,160,106,.4),transparent 72%),radial-gradient(36% 26% at 82% 31%,rgba(219,233,239,.5),transparent 70%)}
+.art__sun{position:absolute;top:var(--sun-y,24%);left:var(--sun-x,70%);width:var(--sun-s,54px);height:var(--sun-s,54px);border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 50% 50%,#fbf6ea 0 34%,rgba(201,160,106,.92) 42% 60%,rgba(201,160,106,.18) 68% 100%);box-shadow:0 0 40px 12px rgba(201,160,106,.2)}
+.art__ridge{position:absolute;left:-6%;right:-6%;bottom:calc(var(--water-h,26%) - 1%)}
+.art__ridge--far{height:72%;background:linear-gradient(180deg,#f6f4ef 0 5%,#dfe7e9 15%,rgba(100,112,122,.45) 44%,rgba(100,112,122,.6) 100%)}
+.art__ridge--mid{height:48%;background:linear-gradient(180deg,#eef0ee 0 5%,rgba(100,112,122,.72) 28%,rgba(20,33,43,.62) 100%)}
+.art__water{position:absolute;left:0;right:0;bottom:0;height:var(--water-h,26%);overflow:hidden;background:linear-gradient(180deg,rgba(159,186,197,.92) 0%,rgba(15,111,143,.6) 36%,rgba(20,33,43,.88) 100%)}
+.art__water::before{content:"";position:absolute;top:0;left:var(--sun-x,70%);width:36%;height:94%;transform:translateX(-50%);background:radial-gradient(50% 100% at 50% 0%,rgba(250,240,222,.8),rgba(201,160,106,.34) 44%,transparent 74%);filter:blur(3px)}
+.art__water::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(180deg,rgba(246,244,239,.13) 0 1px,transparent 1px 9px);opacity:.55;-webkit-mask-image:linear-gradient(180deg,#000,transparent 76%);mask-image:linear-gradient(180deg,#000,transparent 76%)}
+.art__ridge--near{position:absolute;left:-4%;right:-4%;bottom:0;height:30%;background:linear-gradient(180deg,#dfe5e2 0 4%,#2f4a59 22%,#14212b 100%)}
+.art__trees{position:absolute;left:4%;bottom:calc(var(--water-h,26%) - 3%);width:min(36%,150px);height:auto;color:rgba(20,33,43,.85);opacity:var(--trees,0)}
+.art.shape-a .art__ridge--far{clip-path:polygon(0 100%,0 62%,8% 46%,14% 58%,22% 26%,29% 48%,36% 34%,44% 54%,52% 22%,60% 46%,68% 30%,76% 52%,84% 40%,92% 58%,100% 44%,100% 100%)}
+.art.shape-a .art__ridge--mid{clip-path:polygon(0 100%,0 78%,10% 62%,18% 74%,28% 50%,38% 68%,48% 56%,58% 76%,68% 54%,78% 72%,88% 60%,100% 76%,100% 100%)}
+.art.shape-a .art__ridge--near{clip-path:polygon(0 100%,0 54%,7% 40%,13% 56%,20% 46%,26% 100%,74% 100%,81% 52%,88% 44%,94% 58%,100% 48%,100% 100%)}
+.art.shape-b .art__ridge--far{clip-path:polygon(0 100%,0 70%,10% 52%,18% 64%,28% 34%,36% 52%,45% 20%,54% 44%,63% 28%,72% 50%,82% 36%,90% 56%,100% 48%,100% 100%)}
+.art.shape-b .art__ridge--mid{clip-path:polygon(0 100%,0 74%,12% 58%,22% 70%,32% 48%,42% 66%,52% 52%,62% 72%,72% 56%,82% 68%,92% 54%,100% 70%,100% 100%)}
+.art.shape-b .art__ridge--near{clip-path:polygon(0 100%,0 44%,8% 52%,15% 38%,22% 60%,30% 100%,70% 100%,78% 58%,86% 42%,93% 54%,100% 40%,100% 100%)}
+.art.shape-c .art__ridge--far{clip-path:polygon(0 100%,0 56%,6% 44%,13% 60%,20% 40%,30% 56%,38% 24%,47% 46%,56% 30%,65% 50%,74% 38%,83% 58%,92% 44%,100% 60%,100% 100%)}
+.art.shape-c .art__ridge--mid{clip-path:polygon(0 100%,0 80%,8% 66%,16% 76%,26% 56%,36% 70%,46% 60%,56% 78%,66% 58%,76% 74%,86% 62%,94% 74%,100% 66%,100% 100%)}
+.art.shape-c .art__ridge--near{clip-path:polygon(0 100%,0 62%,10% 50%,18% 62%,25% 100%,75% 100%,83% 44%,90% 56%,96% 46%,100% 60%,100% 100%)}
+.art.shape-d .art__ridge--far{clip-path:polygon(0 100%,0 68%,9% 54%,17% 66%,26% 46%,34% 60%,43% 30%,52% 50%,61% 36%,70% 56%,79% 42%,88% 60%,96% 50%,100% 64%,100% 100%)}
+.art.shape-d .art__ridge--mid{clip-path:polygon(0 100%,0 72%,10% 60%,20% 72%,30% 52%,40% 66%,50% 58%,60% 74%,70% 54%,80% 70%,90% 58%,100% 74%,100% 100%)}
+.art.shape-d .art__ridge--near{clip-path:polygon(0 100%,0 40%,9% 54%,17% 42%,24% 100%,76% 100%,84% 50%,91% 62%,97% 48%,100% 56%,100% 100%)}
+
+/* ---------- empty state ---------- */
+.empty{display:grid;justify-items:center;gap:var(--s3);padding:var(--s9) var(--s5);border:1px dashed color-mix(in srgb,var(--line) 60%,var(--muted));border-radius:var(--r3);background:rgba(219,233,239,.3);text-align:center}
+.empty__art{width:96px;height:74px;color:var(--accent)}
+.empty h2,.empty h3{font-family:var(--serif);font-weight:500;font-size:clamp(22px,3vw,28px);letter-spacing:-.02em;margin:0}
+.empty p{color:var(--muted);max-width:46ch;font-size:14.5px;margin:0}
+.empty .btn{margin-top:var(--s2)}
+
+/* ---------- steps, stats ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4);margin-top:var(--s6)}
+.step{position:relative;display:grid;align-content:start;gap:var(--s2);padding:var(--s5);border:1px solid var(--line);border-radius:var(--r2);background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.4))}
+.step__num{font-family:var(--serif);font-style:italic;font-size:34px;line-height:1;color:var(--sand)}
+.step h3{font-family:var(--serif);font-weight:500;font-size:19.5px;line-height:1.2;letter-spacing:-.01em;margin:0}
+.step p{font-size:14px;line-height:1.55;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s4);margin-top:var(--s7);padding-top:var(--s5);border-top:1px solid var(--line)}
+.stat{display:grid;gap:2px}
+.stat strong{font-family:var(--serif);font-weight:500;font-size:clamp(28px,3.2vw,38px);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- guides ---------- */
+.guides{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4)}
+.guide{display:grid;gap:var(--s3);align-content:start;padding:var(--s5);border:1px solid var(--line);border-radius:var(--r2);background:rgba(255,255,255,.55);transition:transform 200ms var(--ease),box-shadow 200ms var(--ease),background-color 200ms var(--ease)}
+.guide:hover{transform:translateY(-3px);background:#fff;box-shadow:var(--shadow1)}
+.guide__top{display:flex;align-items:center;gap:var(--s3)}
+.avatar{display:grid;place-items:center;flex:none;width:54px;height:54px;border-radius:50%;font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:.02em;border:1px solid rgba(20,33,43,.08)}
+.avatar--a{background:linear-gradient(145deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--ink)));color:var(--bg)}
+.avatar--b{background:linear-gradient(145deg,var(--sand),color-mix(in srgb,var(--sand) 70%,var(--ink)));color:var(--ink)}
+.avatar--c{background:linear-gradient(145deg,var(--ink),color-mix(in srgb,var(--ink) 70%,var(--accent)));color:var(--bg)}
+.guide h3{font-family:var(--serif);font-weight:500;font-size:19px;letter-spacing:-.01em;margin:0}
+.guide__role{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.guide p{font-size:14px;line-height:1.55;color:var(--muted)}
+.guide__langs{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;padding-top:var(--s2);border-top:1px solid var(--line)}
+.guide__langs svg{width:14px;height:14px;color:var(--accent)}
+
+/* ---------- journal ---------- */
+.journal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4) var(--s5)}
+.note{display:grid;align-content:start;gap:var(--s2);padding-top:var(--s4);border-top:1px solid var(--ink)}
+.note time{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.note h3{font-family:var(--serif);font-weight:500;font-size:21px;line-height:1.18;letter-spacing:-.015em;text-wrap:balance}
+.note p{font-size:14px;line-height:1.58;color:var(--muted);text-wrap:pretty}
+.note__meta{font-size:12px;color:var(--muted);letter-spacing:.04em}
+
+/* ---------- FAQ ---------- */
+.faq{max-width:860px;border-top:1px solid var(--line)}
+.faq__item{border-bottom:1px solid var(--line)}
+.faq__btn{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);width:100%;min-height:64px;padding:var(--s3) 4px;text-align:left;font-size:17px;font-weight:500;letter-spacing:-.005em;transition:color var(--t)}
+.faq__btn:hover{color:var(--accent)}
+.faq__icon{position:relative;flex:none;width:20px;height:20px;color:var(--accent)}
+.faq__icon::before,.faq__icon::after{content:"";position:absolute;left:50%;top:50%;width:13px;height:1.6px;border-radius:2px;background:currentColor;transform:translate(-50%,-50%);transition:transform 200ms var(--ease)}
+.faq__icon::after{transform:translate(-50%,-50%) rotate(90deg)}
+.faq__btn[aria-expanded="true"] .faq__icon::after{transform:translate(-50%,-50%) rotate(0)}
+.faq__panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows 240ms var(--ease)}
+.faq__panel>div{overflow:hidden}
+.faq__btn[aria-expanded="true"]+.faq__panel{grid-template-rows:1fr}
+.faq__panel p{padding:0 40px var(--s4) 4px;font-size:14.5px;line-height:1.62;color:var(--muted);max-width:74ch}
+
+/* ---------- footer ---------- */
+.site-foot{margin-top:var(--s9);padding-block:var(--s9) var(--s5);background:var(--ink);color:var(--bg)}
+.site-foot .brand{color:var(--bg);font-size:19px}
+.site-foot .brand__mark{color:var(--sky)}
+.foot__grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.15fr;gap:var(--s6) var(--s7)}
+.foot__blurb{max-width:34ch;margin-top:var(--s3);font-size:14px;line-height:1.6;color:rgba(246,244,239,.72)}
+.foot h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(246,244,239,.55);font-weight:600;margin:0 0 var(--s2)}
+.foot ul{display:grid}
+.foot a{display:inline-flex;align-items:center;min-height:44px;font-size:14.5px;color:rgba(246,244,239,.84);transition:color var(--t)}
+.foot a:hover{color:var(--bg);text-decoration:underline;text-underline-offset:4px}
+.foot__contact{display:grid;gap:2px;font-size:14px;color:rgba(246,244,239,.84)}
+.foot__contact strong{color:var(--bg);font-weight:600;display:block;margin-bottom:4px;font-size:13.5px}
+.foot__small{font-size:12.5px;color:rgba(246,244,239,.58);line-height:1.55;margin-top:var(--s2)}
+.foot__bottom{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s3) var(--s5);margin-top:var(--s8);padding-top:var(--s4);border-top:1px solid rgba(246,244,239,.16);font-size:12.5px;color:rgba(246,244,239,.6)}
+.foot__bottom p{margin:0}
+
+/* ---------- cookie ---------- */
+.cookie{position:fixed;left:0;right:0;bottom:0;z-index:70;background:rgba(246,244,239,.98);border-top:1px solid var(--line);box-shadow:0 -14px 44px rgba(20,33,43,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.cookie__in{display:flex;align-items:center;justify-content:space-between;gap:var(--s3) var(--s5);padding-block:var(--s4);flex-wrap:wrap}
+.cookie p{margin:0;font-size:13.5px;line-height:1.5;color:var(--muted);max-width:66ch}
+.cookie p strong{color:var(--ink)}
+.cookie__act{display:flex;gap:var(--s2);flex-wrap:wrap}
+.cookie.is-hiding{opacity:0;transform:translateY(10px);transition:opacity 200ms var(--ease),transform 200ms var(--ease)}
+
+/* ---------- toasts ---------- */
+.toasts{position:fixed;right:var(--s5);bottom:calc(var(--s5) + var(--cookie-h,0px));z-index:140;display:grid;gap:var(--s2);width:min(370px,calc(100vw - 32px));pointer-events:none}
+.toast{display:flex;align-items:flex-start;gap:10px;padding:10px 8px 10px 14px;border-radius:var(--r2);background:var(--ink);color:var(--bg);box-shadow:0 18px 44px rgba(20,33,43,.3);font-size:13.5px;line-height:1.45;pointer-events:auto;opacity:0;transform:translateY(10px);transition:opacity 200ms var(--ease),transform 200ms var(--ease)}
+.toast.is-in{opacity:1;transform:none}
+.toast__icon{width:18px;height:18px;flex:none;margin-top:1px;color:var(--sand)}
+.toast p{flex:1;margin:0}
+.toast__x{display:grid;place-items:center;width:44px;height:44px;margin:-12px -6px -12px 0;border-radius:var(--r1);color:rgba(246,244,239,.7);font-size:18px;line-height:1}
+.toast__x:hover{color:var(--bg);background:rgba(246,244,239,.1)}
+
+/* ---------- overlays + dialog ---------- */
+.overlay{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:clamp(8px,2.5vw,28px);background:rgba(20,33,43,.6);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);opacity:0;transition:opacity 200ms var(--ease);overflow:auto;overscroll-behavior:contain}
+.overlay.is-open{opacity:1}
+.dialog{position:relative;display:flex;flex-direction:column;width:min(1000px,100%);max-height:min(92svh,940px);overflow:hidden;border-radius:var(--r3);background:var(--bg);box-shadow:0 40px 110px rgba(20,33,43,.45);transform:translateY(14px);transition:transform 200ms var(--ease)}
+.overlay.is-open .dialog{transform:none}
+.dialog__scroll{overflow:auto;overscroll-behavior:contain;scroll-behavior:smooth}
+.dialog__close{position:absolute;right:12px;top:12px;z-index:6;display:grid;place-items:center;width:44px;height:44px;border:1px solid rgba(20,33,43,.1);border-radius:50%;background:rgba(246,244,239,.95);color:var(--ink);box-shadow:0 2px 10px rgba(20,33,43,.16);transition:background-color var(--t),transform var(--t),box-shadow var(--t)}
+.dialog__close:hover{background:#fff;transform:scale(1.05);box-shadow:0 6px 18px rgba(20,33,43,.22)}
+.dialog__pad{padding:52px clamp(20px,3.6vw,40px) clamp(28px,4vw,44px)}
+.dlg-head{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);gap:clamp(20px,3.4vw,40px);align-items:start}
+.gallery{display:grid;gap:var(--s2);min-width:0}
+.gframe{position:relative;height:286px;overflow:hidden;border:1px solid var(--line);border-radius:var(--r2);background:var(--sky)}
+.gcap{min-height:18px;font-size:12px;color:var(--muted);letter-spacing:.02em}
+.gthumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
+.gthumb{position:relative;height:54px;overflow:hidden;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--sky);opacity:.7;transition:opacity var(--t),border-color var(--t),box-shadow var(--t),transform var(--t)}
+.gthumb:hover{opacity:1;transform:translateY(-1px)}
+.gthumb[aria-pressed="true"]{opacity:1;border-color:var(--accent);box-shadow:0 0 0 2px rgba(15,111,143,.22)}
+.gthumb .art{background-attachment:local}
+.dlg-intro{display:grid;gap:var(--s3);align-content:start;min-width:0}
+.dlg-title{font-family:var(--serif);font-weight:500;font-size:clamp(28px,3.4vw,40px);line-height:1.04;letter-spacing:-.025em;margin:0;text-wrap:balance}
+.dlg-sum{font-size:15px;line-height:1.55;color:var(--muted);text-wrap:pretty}
+.dlg-facts{display:grid;gap:6px;padding-block:var(--s3);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.dlg-facts li{display:flex;align-items:center;gap:var(--s2);font-size:13.5px;color:var(--muted)}
+.dlg-facts strong{color:var(--ink);font-weight:600}
+.dlg-facts__k{min-width:66px;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.dlg-price{display:flex;align-items:baseline;gap:7px;font-size:13px;color:var(--muted)}
+.dlg-price strong{font-family:var(--serif);font-weight:500;font-size:clamp(28px,3vw,36px);letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
+.dlg-actions{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s1)}
+.dlg-sec{padding-top:var(--s6);margin-top:var(--s6);border-top:1px solid var(--line)}
+.dlg-h3{font-family:var(--serif);font-weight:500;font-size:22px;letter-spacing:-.015em;margin:0 0 var(--s3)}
+.dlg-prose{display:grid;gap:var(--s3);max-width:70ch}
+.dlg-prose p{font-size:14.5px;line-height:1.65;color:color-mix(in srgb,var(--ink) 78%,var(--muted))}
+.days{border-top:1px solid var(--line)}
+.day{border-bottom:1px solid var(--line)}
+.day__btn{display:flex;align-items:center;gap:var(--s3);width:100%;min-height:62px;padding:var(--s3) 2px;text-align:left}
+.day__num{flex:none;min-width:52px;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.day__name{flex:1;font-family:var(--serif);font-weight:500;font-size:18.5px;line-height:1.25;letter-spacing:-.01em}
+.day__chev{width:18px;height:18px;color:var(--muted);transition:transform 200ms var(--ease)}
+.day__btn:hover .day__name{color:var(--accent)}
+.day__btn[aria-expanded="true"] .day__chev{transform:rotate(180deg);color:var(--accent)}
+.day__panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows 240ms var(--ease)}
+.day__panel>div{overflow:hidden}
+.day__btn[aria-expanded="true"]+.day__panel{grid-template-rows:1fr}
+.day__in{padding:0 2px var(--s4) 68px;font-size:14px;line-height:1.62;color:var(--muted);max-width:78ch}
+.dlg-cols{display:grid;grid-template-columns:1fr 1fr;gap:var(--s6)}
+.ticks{display:grid;gap:var(--s2)}
+.ticks li{display:flex;align-items:flex-start;gap:9px;font-size:14px;line-height:1.5;color:color-mix(in srgb,var(--ink) 74%,var(--muted))}
+.ticks svg{width:16px;height:16px;margin-top:2px;flex:none;color:var(--accent)}
+.ticks--no svg{color:var(--muted)}
+.brk{width:100%;border-collapse:collapse;max-width:520px}
+.brk th{text-align:left;font-weight:400;font-size:14px;color:var(--muted);padding:10px 0;border-bottom:1px solid var(--line)}
+.brk td{text-align:right;font-size:14px;padding:10px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+.brk tr:last-child th,.brk tr:last-child td{border-bottom:0;padding-top:14px}
+.brk tr:last-child th{color:var(--ink);font-weight:600}
+.brk tr:last-child td{font-size:18px;font-weight:600;letter-spacing:-.01em}
+.note-line{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:var(--s2)}
+.calc{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(20px,3vw,40px);padding:clamp(18px,2.6vw,28px);border:1px solid var(--line);border-radius:var(--r2);background:rgba(219,233,239,.34)}
+.calc__fields{display:grid;gap:var(--s5);align-content:start}
+.calc .field>label{font-size:13.5px}
+.calc output{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:1px 8px;border-radius:8px;background:rgba(20,33,43,.06);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+.range{width:100%;height:44px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+.range:focus{outline:none}
+.range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(15,111,143,.35)}
+.range::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--accent) var(--p,50%),var(--line) var(--p,50%))}
+.range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;margin-top:-8px;border:1px solid rgba(20,33,43,.14);border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(20,33,43,.24);transition:transform var(--t),box-shadow var(--t)}
+.range:hover::-webkit-slider-thumb{transform:scale(1.08);box-shadow:0 3px 10px rgba(20,33,43,.26)}
+.range:active::-webkit-slider-thumb{transform:scale(.98)}
+.range::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+.range::-moz-range-progress{height:6px;border-radius:3px;background:var(--accent)}
+.range::-moz-range-thumb{width:20px;height:20px;border:1px solid rgba(20,33,43,.14);border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(20,33,43,.24)}
+.range__scale{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:-4px;font-variant-numeric:tabular-nums}
+.calc__out{display:grid;align-content:center;gap:4px;padding:var(--s4) var(--s5);border-radius:var(--r2);background:var(--ink);color:var(--bg)}
+.calc__label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(246,244,239,.64);font-weight:600}
+.calc__total{font-family:var(--serif);font-weight:500;font-size:clamp(30px,3.6vw,40px);line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.calc__pp{font-size:13.5px;color:var(--sand)}
+.calc__note{font-size:12px;line-height:1.45;color:rgba(246,244,239,.7);margin-top:var(--s1)}
+.req{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--s3)}
+.req .field{flex:1 1 260px}
+.req .btn{flex:none}
+.dlg-note{font-size:12.5px;color:var(--muted);margin-top:var(--s3);line-height:1.5}
+.plan{display:grid;gap:var(--s4)}
+.plan .dlg-title{font-size:clamp(26px,3.4vw,36px)}
+.plan__fields{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4)}
+.plan__fields .field--wide{grid-column:1/-1}
+.plan .dlg-actions{align-items:center}
+.plan .note-line{margin:0}
+.plan__form{display:grid;gap:var(--s4)}
+.plan__form .dlg-actions{margin-top:var(--s2);align-items:center}
+.btn--save .icon{width:17px;height:17px}
+.btn--save[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:rgba(219,233,239,.55)}
+.btn--save[aria-pressed="true"] .icon{fill:currentColor}
+.saved-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--s3) var(--s5);margin-bottom:var(--s5)}
+.saved-head__text{display:grid;gap:var(--s2)}
+.saved-head p{font-size:14.5px;color:var(--muted);max-width:60ch}
+.saved-count{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.back-link{display:inline-flex;align-items:center;gap:7px;min-height:44px;font-size:13.5px;font-weight:600;color:var(--accent);transition:color var(--t),gap var(--t)}
+.back-link:hover{color:var(--ink);gap:10px}
+.back-link svg{width:15px;height:15px}
+.saved-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s2) var(--s4);margin-bottom:var(--s5)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .foot__grid{grid-template-columns:1.4fr 1fr 1fr;gap:var(--s6)}
+  .foot__contact-col{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);padding-top:var(--s4);border-top:1px solid rgba(246,244,239,.16)}
+}
+@media (max-width:980px){
+  :root{--hdr:66px}
+  .nav{position:fixed;top:var(--hdr);left:0;right:0;z-index:55;display:grid;gap:2px;margin:0;padding:var(--s3) var(--pad) var(--s5);background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 24px 44px rgba(20,33,43,.16);opacity:0;visibility:hidden;transform:translateY(-10px);transition:opacity 180ms var(--ease),transform 180ms var(--ease),visibility 180ms;max-height:calc(100svh - var(--hdr));overflow:auto}
+  .nav.is-open{opacity:1;visibility:visible;transform:none}
+  .nav a{padding:0 10px;font-size:16px;color:var(--ink)}
+  .nav a:hover{background:rgba(20,33,43,.05)}
+  .nav .nav__saved{display:inline-flex;color:var(--muted)}
+  .nav .nav__cta{display:inline-flex;margin-top:var(--s3);width:100%}
+  .burger{display:grid}
+  .head__cta{display:none}
+  .sec-head{grid-template-columns:1fr;gap:var(--s3)}
+  .sec-head__lede{max-width:60ch}
+  .steps{grid-template-columns:1fr;gap:var(--s3)}
+  .stats{grid-template-columns:repeat(2,1fr);gap:var(--s4) var(--s5)}
+  .guides{grid-template-columns:1fr;gap:var(--s3)}
+  .journal{grid-template-columns:1fr;gap:var(--s4)}
+  .dlg-head{grid-template-columns:1fr}
+  .gframe{height:250px}
+  .calc{grid-template-columns:1fr}
+  .overlay{padding:clamp(8px,2vw,20px)}
+}
+@media (max-width:820px){
+  .hero__in{padding-block:var(--s8) var(--s7)}
+  .hero__title{max-width:12ch}
+  .toolbar{grid-template-columns:1fr;align-items:start}
+  .toolbar__meta{justify-items:start}
+  .dlg-cols{grid-template-columns:1fr;gap:var(--s6)}
+  .plan__fields{grid-template-columns:1fr}
+  .foot__grid{grid-template-columns:1fr 1fr}
+  .foot__brand{grid-column:1/-1}
+  .foot__contact-col{grid-template-columns:1fr}
+  .site-foot{margin-top:var(--s8);padding-block:var(--s8) var(--s5)}
+  .section{padding-block:var(--s8)}
+  .section--tight{padding-block:var(--s7)}
+  .day__in{padding-left:0}
+}
+@media (max-width:640px){
+  .overlay{padding:0;align-items:stretch}
+  .dialog{max-height:100svh;height:100svh;border-radius:0}
+  .dialog__pad{padding:52px var(--s5) var(--s6)}
+  .gframe{height:220px}
+  .dialog__close{top:8px;right:8px}
+  .hero__title{font-size:clamp(40px,11vw,58px)}
+  .hero__facts{gap:var(--s1) var(--s4);font-size:11.5px}
+  .search{padding:6px}
+  .search .btn{padding:0 14px;font-size:13.5px}
+  .card__cover{height:172px}
+  .toasts{right:12px;left:12px;width:auto;bottom:calc(12px + var(--cookie-h,0px))}
+  .cookie__in{padding-block:var(--s3)}
+  .cookie__act{width:100%}
+  .cookie__act .btn{flex:1}
+  .foot__grid{grid-template-columns:1fr}
+  .foot__bottom{flex-direction:column;align-items:flex-start}
+  .stats{gap:var(--s4)}
+  .saved-head{align-items:flex-start}
+  .req{flex-direction:column;align-items:stretch}
+  .req .field{flex:1 1 auto}
+  .req .btn{width:100%}
+  .plan .dlg-actions{flex-direction:column;align-items:stretch}
+  .plan .dlg-actions .btn{width:100%}
+}
+@media (max-width:400px){
+  .brand{font-size:19px;gap:8px}
+  .brand__mark{width:27px;height:27px}
+  .head__in{gap:var(--s2)}
+  .saved-link{padding:0 9px;font-size:12.5px}
+  .hero .chip,.chip{padding:0 13px;font-size:13px}
+  .dlg-facts li{font-size:13px}
+  .toolbar__row{gap:var(--s2)}
+}
+@media (min-width:1440px){
+  .hero__in{padding-block:var(--s9) var(--s9)}
+  .card__cover{height:196px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .reveal{opacity:1!important;transform:none!important}
+}
 </style>
+<noscript><style>.reveal{opacity:1!important;transform:none!important}.nav__cta,.nav__saved{display:inline-flex}</style></noscript>
 </head>
 <body>
-<div class="nav">
-  <div class="logo">Ветер</div>
-  <a href="#">Направления</a><a href="#">Маршруты</a><a href="#">Советы</a>
-  <div class="me">сохранено 4 маршрута</div>
-</div>
-<div class="hero">
-  <h1>Небольшие поездки без спешки</h1>
-  <p>Маршруты на 3–5 дней: природа, тихие города и дорога без пересадок.</p>
-  <form class="search" onsubmit="return false">
-    <input placeholder="Куда хотите поехать?" aria-label="destination">
-    <button type="submit">Найти</button>
-  </form>
-</div>
-<div class="wrap">
-  <h2>Популярно в ноябре</h2>
-  <div class="trips">
-    <div class="trip"><div class="img"></div><div class="body"><div class="t">Карелия · 4 дня</div><div class="d">Озёра, гранит, бани</div><div class="p">от 28 400 ₽</div></div></div>
-    <div class="trip"><div class="img"></div><div class="body"><div class="t">Дагестан · 5 дней</div><div class="d">Ущелья и старые аулы</div><div class="p">от 41 900 ₽</div></div></div>
-    <div class="trip"><div class="img"></div><div class="body"><div class="t">Алтай · 3 дня</div><div class="d">Тихие тропы, перевалы</div><div class="p">от 22 700 ₽</div></div></div>
+<a class="skip" href="#main">Skip to content</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-mark" viewBox="0 0 32 32">
+      <path d="M2.5 25.5 13 8l5.6 9.2 3.4-5.4L30 25.5z" fill="currentColor"/>
+      <circle cx="24.5" cy="6.8" r="2.4" fill="currentColor" opacity=".5"/>
+      <path d="M2 25.6h28" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24">
+      <path d="M12 20.3s-7.8-4.6-7.8-10A4.5 4.5 0 0 1 12 7.1a4.5 4.5 0 0 1 7.8 3.2c0 5.4-7.8 10-7.8 10Z"/>
+    </symbol>
+    <symbol id="i-star" viewBox="0 0 20 20">
+      <path d="m10 1.6 2.4 5 5.5.7-4 3.9 1 5.5-4.9-2.7-4.9 2.7 1-5.5-4-3.9 5.5-.7z"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="6.2"/><path d="m16 16 4.4 4.4"/>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M18 6 6 18"/>
+    </symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24">
+      <path d="M5 12h13M13 6.5 18.5 12 13 17.5"/>
+    </symbol>
+    <symbol id="i-back" viewBox="0 0 24 24">
+      <path d="M19 12H6M11 6.5 5.5 12 11 17.5"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="m5 12.5 4.5 4.5L19 7"/>
+    </symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24">
+      <path d="M6 12h12"/>
+    </symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24">
+      <path d="m6 9.5 6 6 6-6"/>
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.6"/><path d="M12 8v4.6M12 16.2v.2"/>
+    </symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24">
+      <path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21Z"/><circle cx="12" cy="10" r="2.4"/>
+    </symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.4 3.6 8.6S14.4 18.2 12 20.6c-2.4-2.4-3.6-5.4-3.6-8.6S9.6 5.8 12 3.4Z"/>
+    </symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24">
+      <rect x="3.4" y="5.6" width="17.2" height="12.8" rx="2.4"/><path d="m4.6 8 7.4 5.2L19.4 8"/>
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.2 1.8"/>
+    </symbol>
+    <symbol id="i-foot" viewBox="0 0 24 24">
+      <path d="M7.6 4.6c1.8 0 2.6 1.6 2.6 3.6 0 1.6-.6 2.8-.6 4.4 0 1.2.8 1.8.8 3 0 2-1.4 3.8-3.6 3.8S3.2 17.8 3.2 15.8c0-1.2.8-1.8.8-3 0-1.6-.6-2.8-.6-4.4 0-2 .8-3.8 2.6-3.8Z" transform="translate(1.2 -.6)"/>
+      <path d="M16.4 8.4c1.4 0 2 1.2 2 2.8 0 1.2-.4 2.2-.4 3.4 0 .9.6 1.4.6 2.3 0 1.5-1 2.9-2.8 2.9s-2.8-1.6-2.8-3.2c0-.9.6-1.4.6-2.3 0-1.2-.4-2.2-.4-3.4 0-1.6.8-2.5 3.2-2.5Z" transform="translate(1.2 -.6)"/>
+    </symbol>
+  </defs>
+</svg>
+<header class="site-head">
+  <div class="head__in">
+    <a class="brand" href="#/" aria-label="Northbound — home">
+      <svg class="brand__mark icon icon--solid" aria-hidden="true"><use href="#i-mark"/></svg>
+      <span>Northbound</span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Main">
+      <a href="#/destinations">Destinations</a>
+      <a href="#/itineraries">Itineraries</a>
+      <a href="#/guides">Guides</a>
+      <a href="#/journal">Journal</a>
+      <a class="nav__saved" href="#/saved" aria-label="Saved destinations">Saved (<span class="js-saved-count">0</span>)</a>
+      <button class="btn btn--primary nav__cta" type="button" data-open-plan>Plan a trip</button>
+    </nav>
+    <div class="head__act">
+      <a class="saved-link" id="savedLink" href="#/saved" aria-label="Saved destinations">
+        <svg class="icon icon--line" aria-hidden="true"><use href="#i-heart"/></svg>
+        <span>Saved (<span class="js-saved-count">0</span>)</span>
+      </a>
+      <button class="btn btn--primary head__cta" type="button" data-open-plan>Plan a trip</button>
+      <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="nav" aria-label="Open menu">
+        <span class="burger__bars" aria-hidden="true"><span></span><span></span></span>
+      </button>
+    </div>
+  </div>
+</header>
+<main id="main" tabindex="-1">
+  <section class="hero" id="hero" aria-labelledby="heroTitle">
+    <div class="hero__art" aria-hidden="true">
+      <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" focusable="false">
+        <defs>
+          <linearGradient id="hSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#bfd8e4"/><stop offset=".34" stop-color="#dbe9ef"/>
+            <stop offset=".62" stop-color="#efecdf"/><stop offset=".82" stop-color="#f3e2c7"/>
+            <stop offset="1" stop-color="#f6f4ef"/>
+          </linearGradient>
+          <radialGradient id="hGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0" stop-color="#fbf4e6" stop-opacity=".95"/>
+            <stop offset=".3" stop-color="#c9a06a" stop-opacity=".45"/>
+            <stop offset="1" stop-color="#c9a06a" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="hFar" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f6f4ef"/><stop offset=".14" stop-color="#e2eaec"/>
+            <stop offset=".4" stop-color="#b3c7d1"/><stop offset="1" stop-color="#8aa3b1"/>
+          </linearGradient>
+          <linearGradient id="hMid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#eef1ef"/><stop offset=".12" stop-color="#b2c4cc"/>
+            <stop offset=".34" stop-color="#6d8794"/><stop offset="1" stop-color="#3a5665"/>
+          </linearGradient>
+          <linearGradient id="hWater" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#a9c4ce"/><stop offset=".26" stop-color="#6d93a2"/>
+            <stop offset=".62" stop-color="#2e4a59"/><stop offset="1" stop-color="#14212b"/>
+          </linearGradient>
+          <linearGradient id="hRefl" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fae9cf" stop-opacity=".85"/>
+            <stop offset=".55" stop-color="#c9a06a" stop-opacity=".3"/>
+            <stop offset="1" stop-color="#c9a06a" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="hShore" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#405b6a"/><stop offset="1" stop-color="#14212b"/>
+          </linearGradient>
+        </defs>
+        <rect width="1440" height="900" fill="url(#hSky)"/>
+        <circle cx="1004" cy="440" r="262" fill="url(#hGlow)"/>
+        <circle cx="1004" cy="440" r="57" fill="#fbf4e6"/>
+        <path d="M0 648 0 552 72 498 146 540 222 460 296 524 368 474 438 402 504 486 568 442 642 508 716 450 792 518 864 466 938 522 1012 470 1088 528 1162 470 1238 522 1312 480 1388 532 1440 506 1440 648Z" fill="url(#hFar)"/>
+        <path d="M0 666 0 600 92 566 168 606 252 540 334 596 414 556 494 612 574 560 654 616 734 570 814 620 894 574 974 622 1054 578 1134 622 1214 584 1294 620 1372 586 1440 616 1440 666Z" fill="url(#hMid)"/>
+        <rect x="0" y="648" width="1440" height="252" fill="url(#hWater)"/>
+        <ellipse cx="1004" cy="690" rx="192" ry="44" fill="url(#hRefl)"/>
+        <g fill="#f6e8cf" opacity=".55">
+          <ellipse cx="1004" cy="676" rx="86" ry="5"/><ellipse cx="1004" cy="702" rx="124" ry="4"/>
+          <ellipse cx="1004" cy="728" rx="66" ry="3.4"/><ellipse cx="1004" cy="756" rx="140" ry="2.8"/>
+          <ellipse cx="1004" cy="788" rx="88" ry="2.2"/>
+        </g>
+        <g stroke="#f6f4ef" stroke-width="1.4" stroke-linecap="round" opacity=".16">
+          <path d="M120 700h120M300 742h150M620 710h110M180 772h90M860 732h120M1280 702h90M400 792h130M960 806h90"/>
+        </g>
+        <g fill="#14212b" opacity=".5">
+          <path d="M400 700h54l-9 11h-37z"/><path d="M426 698v-27l19 27z"/>
+        </g>
+        <g stroke="#14212b" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".28">
+          <path d="M598 326q10-9 20 0"/><path d="M626 338q9-8 18 0"/><path d="M566 344q8-7 16 0"/>
+        </g>
+        <path d="M0 900V784c58-6 117 8 172 28 50 18 92 46 128 88Z" fill="url(#hShore)"/>
+        <path d="M1440 900V770c-56 10-114 26-166 58-40 24-70 46-92 72Z" fill="url(#hShore)"/>
+        <path d="M0 784c58-6 117 8 172 28 34 12 62 30 90 54" fill="none" stroke="#f6f4ef" stroke-width="2" opacity=".2"/>
+        <path d="M1440 770c-56 10-114 26-166 58-28 17-50 33-68 50" fill="none" stroke="#f6f4ef" stroke-width="2" opacity=".2"/>
+      </svg>
+    </div>
+    <div class="hero__scrim" aria-hidden="true"></div>
+    <div class="wrap hero__in">
+      <p class="hero__eyebrow">Small-group journeys · 66°N to 78°N</p>
+      <h1 class="hero__title" id="heroTitle" tabindex="-1">
+        <span class="hero__title-home">Go north. <em>Slowly.</em></span>
+        <span class="hero__title-saved" hidden>Saved destinations</span>
+      </h1>
+      <p class="hero__lede">Eight walking routes through Norway, Iceland, the Faroe Islands and Lapland. Six travellers, one local guide, and enough time to stand still and look up.</p>
+      <div class="hero__search">
+        <form class="search" id="searchForm" role="search" autocomplete="off">
+          <svg class="search__icon icon icon--line" aria-hidden="true"><use href="#i-search"/></svg>
+          <label class="sr-only" for="q">Search destinations</label>
+          <input id="q" name="q" type="search" placeholder="Try “aurora”, “fjords” or “Faroe”" aria-describedby="searchHint">
+          <span class="sr-only" id="searchHint">Filters the routes below as you type. Press Enter to jump to the results.</span>
+          <button class="search__clear" id="qClear" type="button" aria-label="Clear search" hidden>
+            <svg class="icon icon--line" aria-hidden="true"><use href="#i-close"/></svg>
+          </button>
+          <button class="btn btn--primary" type="submit">Find routes</button>
+        </form>
+      </div>
+      <div class="hero__chips" role="group" aria-label="Filter routes by region">
+        <button class="chip" type="button" data-filter="region" data-value="all" data-jump="destinations" aria-pressed="true">All</button>
+        <button class="chip" type="button" data-filter="region" data-value="Norway" data-jump="destinations" aria-pressed="false">Norway</button>
+        <button class="chip" type="button" data-filter="region" data-value="Iceland" data-jump="destinations" aria-pressed="false">Iceland</button>
+        <button class="chip" type="button" data-filter="region" data-value="Faroe" data-jump="destinations" aria-pressed="false">Faroe</button>
+        <button class="chip" type="button" data-filter="region" data-value="Lapland" data-jump="destinations" aria-pressed="false">Lapland</button>
+      </div>
+      <ul class="hero__facts">
+        <li>8 routes · 6 to 9 nights</li>
+        <li>Six travellers maximum</li>
+        <li>4.8 average from 779 reviews</li>
+      </ul>
+    </div>
+  </section>
+
+  <div id="homeView">
+    <section class="section" id="destinations" aria-labelledby="destTitle">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <p class="eyebrow">Destinations</p>
+          <h2 class="sec-head__title" id="destTitle">Eight routes, north of the crowd</h2>
+          <p class="sec-head__lede">Every trip runs with one guide and no more than six travellers. Walk 6–18 km a day, sleep in family-run guesthouses, and let the weather choose the order of things.</p>
+        </div>
+        <div class="toolbar reveal">
+          <div class="toolbar__rows">
+            <div class="toolbar__row" role="group" aria-labelledby="regionLabel">
+              <span class="toolbar__label" id="regionLabel">Region</span>
+              <button class="chip" type="button" data-filter="region" data-value="all" aria-pressed="true">All</button>
+              <button class="chip" type="button" data-filter="region" data-value="Norway" aria-pressed="false">Norway</button>
+              <button class="chip" type="button" data-filter="region" data-value="Iceland" aria-pressed="false">Iceland</button>
+              <button class="chip" type="button" data-filter="region" data-value="Faroe" aria-pressed="false">Faroe</button>
+              <button class="chip" type="button" data-filter="region" data-value="Lapland" aria-pressed="false">Lapland</button>
+            </div>
+            <div class="toolbar__row" role="group" aria-labelledby="seasonLabel">
+              <span class="toolbar__label" id="seasonLabel">Season</span>
+              <button class="chip" type="button" data-filter="season" data-value="all" aria-pressed="true">Any season</button>
+              <button class="chip" type="button" data-filter="season" data-value="winter" aria-pressed="false">Winter</button>
+              <button class="chip" type="button" data-filter="season" data-value="summer" aria-pressed="false">Summer</button>
+              <button class="chip" type="button" data-filter="season" data-value="shoulder" aria-pressed="false">Shoulder</button>
+            </div>
+          </div>
+          <div class="toolbar__meta">
+            <p class="toolbar__count" aria-live="polite"><span id="countNow">8</span> of <span id="countAll">8</span></p>
+            <button class="toolbar__reset" id="resetFilters" type="button" hidden>Clear all filters</button>
+          </div>
+        </div>
+        <div class="grid" id="grid"></div>
+        <div class="empty" id="gridEmpty" hidden>
+          <svg class="empty__art" viewBox="0 0 96 74" fill="none" aria-hidden="true">
+            <path d="M4 64h88" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".4"/>
+            <path d="M12 64 34 26l12 20 8-12 22 30Z" fill="currentColor" opacity=".16"/>
+            <path d="M12 64 34 26l12 20 8-12 22 30" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="68" cy="18" r="7" stroke="currentColor" stroke-width="2"/>
+            <path d="M20 54c7-3 14-3 21 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+          </svg>
+          <h3>No routes match</h3>
+          <p id="emptyText">Try another region, another season, or a shorter search.</p>
+          <button class="btn btn--ghost" type="button" data-reset>Clear filters</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="itineraries" aria-labelledby="howTitle">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <p class="eyebrow">Itineraries</p>
+          <h2 class="sec-head__title" id="howTitle">How a Northbound trip comes together</h2>
+          <p class="sec-head__lede">No booking engines, no upsell calls. One conversation, one route drawn by hand, one guide who stays with you from the airport to the last breakfast.</p>
+        </div>
+        <div class="steps">
+          <article class="step reveal">
+            <span class="step__num" aria-hidden="true">01</span>
+            <h3>A 20-minute call</h3>
+            <p>Tell us when you can travel, how far you like to walk and what you want to see. Bring your questions — we answer them before you pay anything.</p>
+          </article>
+          <article class="step reveal">
+            <span class="step__num" aria-hidden="true">02</span>
+            <h3>A route drawn for you</h3>
+            <p>Within a week you get a day-by-day plan with two alternative days, a price in euro and the name of your guide. Change it twice if you need to.</p>
+          </article>
+          <article class="step reveal">
+            <span class="step__num" aria-hidden="true">03</span>
+            <h3>One guide, all week</h3>
+            <p>The same person meets you at the airport, walks with you, cooks on the last night and knows which bakery opens at six.</p>
+          </article>
+        </div>
+        <div class="stats reveal" role="list">
+          <div class="stat" role="listitem"><strong id="statRoutes">8</strong><span>routes a year</span></div>
+          <div class="stat" role="listitem"><strong>4</strong><span>regions</span></div>
+          <div class="stat" role="listitem"><strong>6</strong><span>travellers max</span></div>
+          <div class="stat" role="listitem"><strong id="statRating">4.8</strong><span>from <span id="statReviews">779</span> reviews</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="guides" aria-labelledby="guidesTitle">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <p class="eyebrow">Guides</p>
+          <h2 class="sec-head__title" id="guidesTitle">The people you actually walk with</h2>
+          <p class="sec-head__lede">Every Northbound guide lives in the region they guide. They are not contractors flown in for the season, and they are not reading from a script.</p>
+        </div>
+        <div class="guides">
+          <article class="guide reveal">
+            <div class="guide__top">
+              <span class="avatar avatar--a" aria-hidden="true">ME</span>
+              <div>
+                <h3>Marta Eriksen</h3>
+                <p class="guide__role">Norway · Lofoten &amp; Lyngen</p>
+              </div>
+            </div>
+            <p>Twelve winters above the Arctic Circle. Former fisherman, now full-time guide — she knows which harbour café stays open in a storm.</p>
+            <p class="guide__langs"><svg class="icon icon--line" aria-hidden="true"><use href="#i-globe"/></svg>Norwegian, English, some German</p>
+          </article>
+          <article class="guide reveal">
+            <div class="guide__top">
+              <span class="avatar avatar--b" aria-hidden="true">JÞ</span>
+              <div>
+                <h3>Jónas Þórsson</h3>
+                <p class="guide__role">Iceland · south coast</p>
+              </div>
+            </div>
+            <p>Glacier guide and a farmer's son from Höfn. He knows every farm gate between Vík and Jökulsárlón, and when to skip the famous stop.</p>
+            <p class="guide__langs"><svg class="icon icon--line" aria-hidden="true"><use href="#i-globe"/></svg>Icelandic, English, Danish</p>
+          </article>
+          <article class="guide reveal">
+            <div class="guide__top">
+              <span class="avatar avatar--c" aria-hidden="true">RC</span>
+              <div>
+                <h3>Rakul Clementsen</h3>
+                <p class="guide__role">Faroe Islands · all 18</p>
+              </div>
+            </div>
+            <p>Grew up in Gásadalur and walks the old postal routes in all weather. Carries two flasks, a rope and an unreasonable number of biscuits.</p>
+            <p class="guide__langs"><svg class="icon icon--line" aria-hidden="true"><use href="#i-globe"/></svg>Faroese, English, Danish</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--tight" id="journal" aria-labelledby="journalTitle">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <p class="eyebrow">Journal</p>
+          <h2 class="sec-head__title" id="journalTitle">Notes from the north</h2>
+          <p class="sec-head__lede">Short dispatches from our guides — weather, paths, and the small decisions that make a week feel longer than it is.</p>
+        </div>
+        <div class="journal">
+          <article class="note reveal">
+            <time datetime="2026-10-02">2 October 2026</time>
+            <h3>Why we walk instead of drive on Senja</h3>
+            <p>The coast road takes forty minutes. The old path above it takes four hours and passes three beaches, a wreck and a farm that sells eggs from a box.</p>
+            <p class="note__meta">Marta Eriksen · 6 min read</p>
+          </article>
+          <article class="note reveal">
+            <time datetime="2026-01-18">18 January 2026</time>
+            <h3>February light on the Lyngen fjord</h3>
+            <p>At 69° north the sun returns in mid-January. By February it is in the sky for six hours and everything below it is pink and white.</p>
+            <p class="note__meta">Marta Eriksen · 4 min read</p>
+          </article>
+          <article class="note reveal">
+            <time datetime="2025-11-06">6 November 2025</time>
+            <h3>Packing for a Faroese shoulder week</h3>
+            <p>Two pairs of gloves, one waterproof notebook, and no umbrella. Forty millimetres of rain can pass through in an afternoon, and usually does.</p>
+            <p class="note__meta">Rakul Clementsen · 5 min read</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq" aria-labelledby="faqTitle">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <p class="eyebrow">FAQ</p>
+          <h2 class="sec-head__title" id="faqTitle">Questions we get asked most</h2>
+          <p class="sec-head__lede">Still unsure about something? Write to us — a real guide answers, usually within two working days.</p>
+        </div>
+        <div class="faq reveal">
+          <div class="faq__item">
+            <button class="faq__btn" type="button" id="faqBtn1" aria-expanded="false" aria-controls="faqPanel1">How many people are in a group?<span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__panel" id="faqPanel1" aria-hidden="true"><div><p>Six travellers and one guide. On Lapland routes in midwinter we take four, because the cabins are small and the light is short. We never add a solo supplement for a group you join — that is our problem, not yours.</p></div></div>
+          </div>
+          <div class="faq__item">
+            <button class="faq__btn" type="button" id="faqBtn2" aria-expanded="false" aria-controls="faqPanel2">What happens if the weather changes the plan?<span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__panel" id="faqPanel2" aria-hidden="true"><div><p>We rewrite the day. Every route has two backups — a shorter walk and an indoor plan — and the guide decides which one by 07:00. Nobody has ever been sent home with nothing to do; the record so far is a sauna, a museum and a baker's course.</p></div></div>
+          </div>
+          <div class="faq__item">
+            <button class="faq__btn" type="button" id="faqBtn3" aria-expanded="false" aria-controls="faqPanel3">How fit do I need to be?<span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__panel" id="faqPanel3" aria-hidden="true"><div><p>Most days are 6–18 km on paths, with 200–500 m of climb. If you can walk for four hours with stops, you are ready. Tell us about knees, hearts and fears of heights when you book — we plan around them, quietly.</p></div></div>
+          </div>
+          <div class="faq__item">
+            <button class="faq__btn" type="button" id="faqBtn4" aria-expanded="false" aria-controls="faqPanel4">When do I pay, and can I change dates?<span class="faq__icon" aria-hidden="true"></span></button>
+            <div class="faq__panel" id="faqPanel4" aria-hidden="true"><div><p>A 25% deposit holds your place, the balance is due 60 days before departure. Date changes are free up to 45 days before, and moving a trip once costs nothing. Insurance is required, not sold by us.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="section" id="savedView" aria-labelledby="savedHeading" hidden>
+    <div class="wrap">
+      <div class="saved-top">
+        <a class="back-link" href="#/"><svg class="icon icon--line" aria-hidden="true"><use href="#i-back"/></svg>All destinations</a>
+        <p class="saved-count" id="savedMeta">0 of 8 routes saved</p>
+      </div>
+      <h2 class="sr-only" id="savedHeading">Your saved routes</h2>
+      <div class="saved-head">
+        <div class="saved-head__text">
+          <p>Saved here in this browser, nothing leaves your device. Prices and availability are checked again when you request a date.</p>
+        </div>
+      </div>
+      <div class="grid" id="savedGrid"></div>
+      <div class="empty" id="savedEmpty" hidden>
+        <svg class="empty__art" viewBox="0 0 96 74" fill="none" aria-hidden="true">
+          <path d="M4 64h88" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".4"/>
+          <path d="M14 62 36 28l11 18 8-12 20 28Z" fill="currentColor" opacity=".14"/>
+          <path d="M14 62 36 28l11 18 8-12 20 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M48 24c-5-5-13-2-13 4 0 6 13 12 13 12s13-6 13-12c0-6-8-9-13-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        <h2>Nothing saved yet</h2>
+        <p>Tap the heart on any route to keep it here. Saved trips stay in this browser — no account, no emails.</p>
+        <a class="btn btn--primary" href="#/">Browse destinations</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot__grid">
+      <div class="foot__brand">
+        <a class="brand" href="#/" aria-label="Northbound — home">
+          <svg class="brand__mark icon icon--solid" aria-hidden="true"><use href="#i-mark"/></svg>
+          <span>Northbound</span>
+        </a>
+        <p class="foot__blurb">Small-group walking journeys in Norway, Iceland, the Faroe Islands and Lapland. Six travellers, one local guide, no coach in sight.</p>
+        <p class="foot__small">Founded in Tromsø in 2014. Prices in euro, per person, twin share.</p>
+      </div>
+      <div class="foot">
+        <h2>Routes</h2>
+        <ul>
+          <li><a href="#/d/lofoten">Lofoten in winter</a></li>
+          <li><a href="#/d/senja">Senja coast, slow</a></li>
+          <li><a href="#/d/ringroad">South Iceland</a></li>
+          <li><a href="#/d/faroe">Faroe Islands</a></li>
+          <li><a href="#/d/saariselka">Saariselkä aurora</a></li>
+        </ul>
+      </div>
+      <div class="foot">
+        <h2>Company</h2>
+        <ul>
+          <li><a href="#/itineraries">How it works</a></li>
+          <li><a href="#/guides">Guides</a></li>
+          <li><a href="#/journal">Journal</a></li>
+          <li><a href="#/faq">FAQ</a></li>
+          <li><a href="#/saved">Saved routes</a></li>
+        </ul>
+      </div>
+      <div class="foot foot__contact-col">
+        <div class="foot">
+          <h2>Practical</h2>
+          <div class="foot__contact">
+            <strong>Questions before booking?</strong>
+            <span>hello@northbound.example</span>
+            <span>+47 77 00 12 40</span>
+            <span>Mon–Fri, 09:00–17:00 CET</span>
+          </div>
+        </div>
+        <div class="foot__small">Flights are booked by you; we meet you at the airport. Travel insurance is required on every route. Cancel free up to 45 days before departure.</div>
+      </div>
+    </div>
+    <div class="foot__bottom">
+      <p>© <time datetime="2026">2026</time> Northbound AS · Org. 912 345 678 · Tromsø, Norway</p>
+      <p>Prices include guiding, stays and listed meals. No booking fees.</p>
+    </div>
+  </div>
+</footer>
+
+<div class="overlay" id="tripOverlay" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" id="tripDialog">
+    <button class="dialog__close" type="button" id="tripClose" aria-label="Close itinerary">
+      <svg class="icon icon--line" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+    <div class="dialog__scroll" id="dlgScroll">
+      <div class="dialog__pad" id="dlgBody"></div>
+    </div>
   </div>
 </div>
+
+<div class="overlay" id="planOverlay" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="planTitle" aria-describedby="planIntro" id="planDialog">
+    <button class="dialog__close" type="button" id="planClose" aria-label="Close plan a trip">
+      <svg class="icon icon--line" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+    <div class="dialog__scroll">
+      <div class="dialog__pad">
+        <div class="plan">
+          <p class="eyebrow">Plan a trip</p>
+          <h2 class="dlg-title" id="planTitle">Tell us roughly what you want.</h2>
+          <p class="dlg-sum" id="planIntro">A guide reads every request — no sales team, no automated quote. We reply within two working days with a route outline and a price.</p>
+          <form class="plan__form" id="planForm" novalidate>
+            <div class="plan__fields">
+              <div class="field">
+                <label for="planName">Your name</label>
+                <input class="input" id="planName" name="name" type="text" autocomplete="name" placeholder="Anna Lindqvist" aria-describedby="planNameErr">
+                <p class="err" id="planNameErr" hidden><svg class="icon icon--line" aria-hidden="true"><use href="#i-alert"/></svg>Please tell us your name.</p>
+              </div>
+              <div class="field">
+                <label for="planEmail">Email</label>
+                <input class="input" id="planEmail" name="email" type="email" autocomplete="email" inputmode="email" placeholder="anna@example.com" aria-describedby="planEmailErr">
+                <p class="err" id="planEmailErr" hidden><svg class="icon icon--line" aria-hidden="true"><use href="#i-alert"/></svg>Enter an address like anna@example.com.</p>
+              </div>
+              <div class="field">
+                <label for="planRegion">Where</label>
+                <select class="input" id="planRegion" name="region">
+                  <option value="Norway">Norway — Lofoten, Senja, Lyngen</option>
+                  <option value="Iceland">Iceland — south coast, Westfjords</option>
+                  <option value="Faroe">Faroe Islands — all 18</option>
+                  <option value="Lapland">Lapland — Saariselkä, Kilpisjärvi</option>
+                  <option value="anywhere">Not sure yet — surprise me</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="planWhen">When, roughly</label>
+                <select class="input" id="planWhen" name="when">
+                  <option value="winter">Winter — December to March</option>
+                  <option value="spring">Late winter — March to April</option>
+                  <option value="summer">Summer — June to August</option>
+                  <option value="shoulder">Shoulder — May or September</option>
+                  <option value="flexible">Flexible — suggest something</option>
+                </select>
+              </div>
+              <div class="field field--wide">
+                <label for="planNotes">Anything we should know? <span class="opt">(optional)</span></label>
+                <textarea class="input" id="planNotes" name="notes" rows="3" placeholder="Two of us, we walk slowly uphill, one dodgy knee, and we would love a night in a lighthouse."></textarea>
+              </div>
+            </div>
+            <div class="dlg-actions">
+              <button class="btn btn--primary" type="submit">Send request</button>
+              <p class="note-line">No deposit yet. No mailing list — one reply from one guide.</p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cookie" id="cookie" hidden>
+  <div class="wrap cookie__in">
+    <p><strong>No tracking here.</strong> Your saved routes and this choice are kept in this browser only — no analytics, no third-party cookies.</p>
+    <div class="cookie__act">
+      <button class="btn btn--ghost" type="button" data-cookie="essential">Essential only</button>
+      <button class="btn btn--primary" type="button" data-cookie="all">Got it</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+<script>
+(function () {
+  "use strict";
+
+  var doc = document;
+  var $ = function (sel, root) { return (root || doc).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || doc).querySelectorAll(sel)); };
+
+  var reduceMotion = false;
+  try { reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { reduceMotion = false; }
+
+  function money(n) { return "€" + Math.round(n).toLocaleString("en-US"); }
+  function seasonLabel(s) { return { winter: "Winter", summer: "Summer", shoulder: "Shoulder" }[s] || s; }
+  function repeat(str, n) { var out = ""; for (var i = 0; i < n; i++) { out += str; } return out; }
+  function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(String(v || "").trim()); }
+
+  var MONTH_ISO = { January: "01", February: "02", March: "03", April: "04", May: "05", June: "06", July: "07", August: "08", September: "09", October: "10", November: "11", December: "12" };
+
+  function bestHtml(t) {
+    var parts = String(t.best).split("–");
+    var a = MONTH_ISO[parts[0]] || "01";
+    var b = MONTH_ISO[parts[1]] || a;
+    return '<time datetime="2026-' + a + '">' + parts[0] + '</time>–<time datetime="2026-' + b + '">' + (parts[1] || "") + '</time>';
+  }
+
+  var STAR = '<svg viewBox="0 0 20 20" aria-hidden="true"><use href="#i-star"/></svg>';
+  function starsHtml(rating) {
+    var pct = Math.max(4, Math.min(100, Math.round(rating / 5 * 100)));
+    return '<span class="stars" role="img" aria-label="Rated ' + rating.toFixed(1) + ' out of 5">' +
+      '<span class="stars__bg">' + repeat(STAR, 5) + '</span>' +
+      '<span class="stars__fg" style="width:' + pct + '%">' + repeat(STAR, 5) + '</span></span>';
+  }
+
+  var TREES = '<svg class="art__trees" viewBox="0 0 150 64" aria-hidden="true" focusable="false"><path d="M14 64V50H6l9-15 9 15h-8v14ZM38 64V42H29l12-20 12 20h-9v22ZM69 64V54H62l9-14 9 14h-7v10ZM95 64V44H86l12-19 12 19h-9v20ZM126 64V52H120l8-13 8 13h-6v12Z" fill="currentColor"/></svg>';
+
+  function artHtml(t, extra) {
+    var a = t.art;
+    var style = "--sun-x:" + a.sunX + ";--sun-y:" + a.sunY + ";--sun-s:" + a.sunS + ";--water-h:" + a.water +
+      ";--aurora:" + a.aurora + ";--stars:" + a.stars + ";--trees:" + a.trees + ";" + (extra || "");
+    return '<div class="art ' + (a.warm ? "art--warm " : "") + "shape-" + a.shape + '" style="' + style + '" aria-hidden="true">' +
+      '<span class="art__stars"></span><span class="art__aurora"></span><span class="art__sun"></span>' +
+      '<span class="art__ridge art__ridge--far"></span><span class="art__ridge art__ridge--mid"></span>' +
+      '<span class="art__water"></span><span class="art__ridge art__ridge--near"></span>' + TREES + "</div>";
+  }
+
+  var GALLERY_VARIANTS = ["", "--sun-x:26%;--sun-y:13%;--water-h:34%;", "--sun-x:80%;--sun-y:37%;--water-h:20%;--trees:0;"];
+  var GROUP_MUL = { 1: 1.25, 2: 1, 3: 0.97, 4: 0.95, 5: 0.94, 6: 0.93 };
+
+  var TRIPS = [
+    {
+      id: "lofoten", name: "Lofoten in Winter Light", region: "Norway", nights: 6, price: 1740,
+      rating: 4.9, reviews: 128, seasons: ["winter", "shoulder"], walk: 9, best: "February–March",
+      summary: "Skrei season, empty beaches and aurora over Reine — six winter nights on the outer islands.",
+      tags: ["aurora", "northern lights", "cod", "fishing", "snow", "fjord", "photography", "lofoten"],
+      gallery: ["Reine harbour, first light", "The ridge above Reinefjord", "Dusk at the drying racks"],
+      about: [
+        "Lofoten in February is quiet in the way cities never are: red cabins, grey water, and cod drying on wooden racks while the light goes pink at two in the afternoon. We stay in two villages, Reine and Nusfjord, and walk the coast paths when the weather allows.",
+        "No technical skills are needed. The walks follow old fishermen's paths, about nine kilometres a day, and every day has a shorter version. We keep one evening free for the aurora and, if the sky stays closed, take a small boat out to the skrei grounds instead."
+      ],
+      days: [
+        { t: "Reine, after dark", x: "Meet in Reine at 17:00. Short walk to the harbour, dinner of cod and root vegetables, and a first look at the forecast for the week." },
+        { t: "Reinebringen, slowly", x: "The staircase to the ridge is 1,600 steps. We take it at a talking pace and stop often for the view over Reinefjord. Soup back at the guesthouse." },
+        { t: "Å and the drying racks", x: "Drive to Å, walk the old village and the cod-drying grounds, then a two-hour beach walk on the north side of the island." },
+        { t: "The boat to the skrei grounds", x: "Out on a small fishing boat with a local skipper. If the catch is good, dinner is decided before we dock." },
+        { t: "Nusfjord, and last light", x: "Move to Nusfjord, walk the harbour and the valley path, and finish with a slow dinner in the old trading post." },
+        { t: "Home", x: "Breakfast, a short walk to the bus, and the 11:40 out of Leknes. Late flights from Evenes are fine." }
+      ],
+      included: ["Six nights in two family-run rorbuer, twin share", "All ferries, road transfers and the skrei boat day", "A local guide for the whole week", "Breakfast daily and four dinners", "Snowshoes, poles and headlamps if needed"],
+      excluded: ["Flights to Evenes or Leknes", "Travel insurance (required on every route)", "Lunches and two dinners", "Single-room supplement €280", "Alcohol, museum tickets and gratuities"],
+      art: { shape: "a", warm: false, sunX: "76%", sunY: "20%", sunS: "54px", water: "30%", aurora: 0.85, stars: 0.9, trees: 0 }
+    },
+    {
+      id: "tromso", name: "Tromsø & the Lyngen Fjord", region: "Norway", nights: 5, price: 1590,
+      rating: 4.8, reviews: 94, seasons: ["winter"], walk: 7, best: "January–March",
+      summary: "City, fjord and two aurora nights — a gentle five-night winter week from Tromsø.",
+      tags: ["aurora", "northern lights", "city", "sauna", "snow", "fjord", "tromsø"],
+      gallery: ["Tromsø harbour in the blue hour", "Lyngen under snow", "Aurora over the fjord"],
+      about: [
+        "Tromsø is a city of 78,000 people at 69° north and the easiest place in Europe to be a beginner in the Arctic. We use it as a base: a warm hotel, a good bakery, and a car and a boat that take us out when the weather turns.",
+        "The Lyngen fjord opens the week up. We drive out on two days, walk the shoreline below the peaks, and keep the evenings for the aurora — no fixed schedule, because the sky sets it. Two hours of walking on uneven ground is enough to enjoy the rest."
+      ],
+      days: [
+        { t: "Tromsø, on foot", x: "Arrive and walk the harbour, the old town and the Polar Museum. Evening briefing over fish soup with the aurora forecast on the table." },
+        { t: "The fjord road to Lyngen", x: "Two-hour drive, a shoreline walk under the Lyngen peaks, and lunch in a fishing village. Back for a late sauna." },
+        { t: "Aurora night", x: "A guide drives us out of the city lights, we set up tripods and wait. Thermos, reindeer skins and no promises about the sky." },
+        { t: "Snowshoe day", x: "A short snowshoe climb to a ridge above the fjord — seven kilometres, four hours, and a view that makes the climb forgettable." },
+        { t: "Slow morning, flight home", x: "Breakfast, the botanical garden if it is open, and the 14:00 flight south." }
+      ],
+      included: ["Five nights in a small Tromsø hotel, breakfast included", "Two guided fjord days and one aurora night", "Sauna and hot tub at the harbour", "Snowshoes, poles and headlamps", "Airport transfers both ways"],
+      excluded: ["Flights to Tromsø", "Travel insurance", "Lunches and three dinners", "Dog-sledding add-on (€190 per person)", "Single supplement €210"],
+      art: { shape: "b", warm: false, sunX: "26%", sunY: "24%", sunS: "48px", water: "34%", aurora: 0.9, stars: 1, trees: 0 }
+    },
+    {
+      id: "senja", name: "Senja Coast, Slow", region: "Norway", nights: 7, price: 1980,
+      rating: 4.9, reviews: 61, seasons: ["summer", "shoulder"], walk: 11, best: "June–August",
+      summary: "Seven nights on Norway's second-largest island — sea, birch and nowhere to rush.",
+      tags: ["summer", "midnight sun", "hiking", "ferry", "fishing village", "senja", "photography"],
+      gallery: ["Tungeneset boardwalk", "The Devil's Teeth ridge", "Birch and farms inland"],
+      about: [
+        "Senja is what Lofoten looks like when the coach tours stay away. The outer coast is sharp and weather-beaten; the inner side is green, with farms and sheltered water. We walk both sides, sleeping in four small places along the way.",
+        "We plan around the weather, not against it. Some days that means the ridge we planned; other days a beach, a bakery and a long lunch. Groups are six, the guide is local, and the walking — eleven kilometres a day — is the point of the trip."
+      ],
+      days: [
+        { t: "Finnsnes, then the outer coast", x: "Ferry across the sound and a first walk at Tungeneset, where the boardwalk meets the sea. Two nights in Hamn." },
+        { t: "The Devil's Teeth", x: "A guided ridge walk above Tungeneset — eleven kilometres, a little easy scrambling, and a long lunch where the view is the restaurant." },
+        { t: "Husøy and the fishing harbour", x: "Short ferry, a walk around the island, coffee in the old harbour. The afternoon is free: swim, sleep or read." },
+        { t: "Inland: birch and farms", x: "Move to the inner side for a valley walk through birch forest, a visit to a working farm, and dinner cooked by the family." },
+        { t: "The ridge above Mefjordvær", x: "Six hours on the ridge with sea on three sides. Weather decides the route; the guide always has a shorter version." },
+        { t: "Slow morning, home", x: "Breakfast, the ferry back to Finnsnes, and the evening flight from Bardufoss." }
+      ],
+      included: ["Seven nights in four small guesthouses", "All ferries and road transfers", "A local guide and one farm dinner", "Breakfast daily and three dinners", "Route notes and a weather plan for every day"],
+      excluded: ["Flights to Bardufoss or Tromsø", "Travel insurance", "Lunches and three dinners", "Sea-fishing add-on (€140)", "Single supplement €320"],
+      art: { shape: "c", warm: true, sunX: "62%", sunY: "16%", sunS: "62px", water: "24%", aurora: 0, stars: 0, trees: 1 }
+    },
+    {
+      id: "ringroad", name: "South Iceland, Ring Road", region: "Iceland", nights: 8, price: 2340,
+      rating: 4.9, reviews: 203, seasons: ["summer"], walk: 14, best: "June–September",
+      summary: "Waterfalls, black sand and the long light of an Icelandic June — eight nights, one loop.",
+      tags: ["waterfalls", "glacier", "black sand", "ring road", "iceland", "summer", "midnight sun"],
+      gallery: ["Skógafoss in the morning", "The black sand at Reynisfjara", "Ice on Jökulsárlón"],
+      about: [
+        "The south coast is the Iceland everyone photographs, and it earns it: Skógafoss, the black beach at Reynisfjara, the lagoon at Jökulsárlón. We drive it slowly, in one van, with two nights in most places.",
+        "Fourteen kilometres a day on average, none of it technical. The guide grew up here and will tell you when to skip the famous stop for the quiet one — and which swimming pool has the hottest water on a wet afternoon."
+      ],
+      days: [
+        { t: "Reykjavík to Vík", x: "South coast in one day: two waterfalls, a walk on the black sand and dinner in Vík. Two nights here." },
+        { t: "Reynisfjara and the cliffs", x: "Early beach walk, then the cliff path at Dyrhólaey. Afternoon in the wool shop and the village swimming pool." },
+        { t: "The glacier edge", x: "East along the ring road, a guided walk to the tongue of Svínafellsjökull, and a night near Höfn." },
+        { t: "Jökulsárlón and the diamond beach", x: "Morning at the lagoon, a boat among the icebergs, and a slow walk back along the shore." },
+        { t: "The east fjords", x: "Quiet roads, a fishing village, and an afternoon hike above Seyðisfjörður. Last night near Egilsstaðir." },
+        { t: "Home from Egilsstaðir", x: "Early flight to Reykjavík, or the long drive back with a stop at a hot spring on the way." }
+      ],
+      included: ["Eight nights in guesthouses and farm stays", "A van, fuel and a driver-guide for the loop", "Glacier walk with a certified guide", "Boat on Jökulsárlón", "Breakfast daily and five dinners"],
+      excluded: ["Flights to Keflavík", "Travel insurance", "Lunches and three dinners", "Blue Lagoon entry", "Single supplement €410"],
+      art: { shape: "b", warm: false, sunX: "44%", sunY: "28%", sunS: "58px", water: "18%", aurora: 0, stars: 0, trees: 0.6 }
+    },
+    {
+      id: "westfjords", name: "Westfjords & Snæfellsnes", region: "Iceland", nights: 9, price: 2680,
+      rating: 4.8, reviews: 77, seasons: ["summer", "shoulder"], walk: 12, best: "June–August",
+      summary: "The empty west: nine nights, two ferries and cliffs full of birds.",
+      tags: ["cliffs", "puffins", "birds", "ferry", "westfjords", "remote", "hiking"],
+      gallery: ["Látrabjarg cliffs", "Rauðasandur beach", "The fjord road to Ísafjörður"],
+      about: [
+        "The Westfjords are the part of Iceland most people skip, which is exactly why we go. Roads follow the water in and out of every fjord; the settlements are small; the puffins are unbothered.",
+        "We split the trip between the Westfjords and Snæfellsnes, with a ferry across Breiðafjörður in the middle. Twelve kilometres of walking a day, mostly on old paths and beaches, with one long day on the cliffs at Látrabjarg."
+      ],
+      days: [
+        { t: "Reykjavík to Stykkishólmur", x: "Drive north, walk the shore at Arnarstapi, and take the evening ferry across the bay. Two nights in Patreksfjörður." },
+        { t: "Látrabjarg", x: "The cliffs are 440 metres at their highest and full of birds. A four-hour walk with a picnic, eyes on the path." },
+        { t: "Rauðasandur", x: "The red sand beach, a swim for the brave, and a slow afternoon at the seal colony." },
+        { t: "Ísafjörður and the fjord road", x: "East along the fjords, a stop at the old shark-curing yard, and a walk through town in the evening." },
+        { t: "Hornstrandir, day trip", x: "The ferry out to the empty peninsula, a guided walk, and the last boat back — weather permitting, always." },
+        { t: "Snæfellsnes", x: "Across the bay again: lava at Berserkjahraun, the black pebbles at Djúpalónssandur, and a night in Hellnar." },
+        { t: "Home", x: "A short walk to the church at Hellnar, then the drive back to Reykjavík for the evening flight." }
+      ],
+      included: ["Nine nights in guesthouses and a farm", "Two ferries and the Hornstrandir day trip", "Guided cliff walks and a bird guide", "Breakfast daily and six dinners", "A van and driver-guide for nine days"],
+      excluded: ["Flights to Keflavík", "Travel insurance", "Lunches and three dinners", "Sea-angling add-on (€160)", "Single supplement €460"],
+      art: { shape: "d", warm: false, sunX: "22%", sunY: "18%", sunS: "52px", water: "36%", aurora: 0, stars: 0, trees: 0.9 }
+    },
+    {
+      id: "faroe", name: "Faroe Islands, Between Weathers", region: "Faroe", nights: 6, price: 1890,
+      rating: 4.8, reviews: 46, seasons: ["summer", "shoulder"], walk: 18, best: "May–August",
+      summary: "Eighteen islands, one guide and weather that changes its mind every hour.",
+      tags: ["islands", "puffins", "waterfalls", "cliffs", "faroese", "hiking", "weather", "postal routes"],
+      gallery: ["Sørvágsvatn above the sea", "Gásadalur waterfall", "Kallur lighthouse, Kalsoy"],
+      about: [
+        "The Faroes are eighteen islands in the North Atlantic, connected by tunnels, ferries and bridges. We base in two villages and walk the old postal routes between them — grass-roofed farm tracks, sea cliffs and the famous lake above the ocean at Sørvágsvatn.",
+        "People ask if it rains. Yes, often, and it is part of the trip. We plan a hard day and a soft day for each stretch; the guide carries the forecast in his phone the way other people carry keys."
+      ],
+      days: [
+        { t: "Vágar, and the lake above the sea", x: "Land at Vágar, settle into a village guesthouse, and walk to Sørvágsvatn in the evening light." },
+        { t: "The postal route to Gásadalur", x: "The old route over the mountain and down to the waterfall village. Eighteen kilometres, no rush, a packed lunch." },
+        { t: "Tórshavn, then north", x: "The tiny capital in the morning, the ferry to Streymoy in the afternoon, and a walk on the cliffs above Vestmanna." },
+        { t: "Kalsoy and the lighthouse", x: "Two ferries and a walk to the Kallur lighthouse — the postcard, with the wind included." },
+        { t: "Soft day, home", x: "A short coastal walk, a wool workshop, and the afternoon flight from Vágar." }
+      ],
+      included: ["Six nights in village guesthouses", "All ferries, tunnels and transfers", "A Faroese guide for the whole week", "Breakfast daily and four dinners", "Packed lunches on both long walking days"],
+      excluded: ["Flights to Vágar", "Travel insurance", "Two dinners and all drinks", "Boat trip to Mykines (€95)", "Single supplement €260"],
+      art: { shape: "d", warm: true, sunX: "78%", sunY: "16%", sunS: "50px", water: "30%", aurora: 0.3, stars: 0.2, trees: 0.8 }
+    },
+    {
+      id: "saariselka", name: "Saariselkä Forest & Aurora", region: "Lapland", nights: 4, price: 1240,
+      rating: 4.7, reviews: 112, seasons: ["winter"], walk: 8, best: "December–March",
+      summary: "Four nights in a cabin at the forest edge, with the aurora as the evening plan.",
+      tags: ["aurora", "northern lights", "husky", "sauna", "forest", "snow", "lapland", "cabin"],
+      gallery: ["Blue light over the forest", "A cabin at the treeline", "Aurora over Saariselkä"],
+      about: [
+        "Saariselkä sits at 68° north inside the Finnish forest belt, and the nearest town is 250 kilometres away. That means dark skies, quiet snow and a very good chance of seeing the northern lights if you are willing to stay up.",
+        "Days are short in December — four hours of blue light — and long by March, when the sun comes back over the treeline. We walk eight kilometres a day on forest trails, with one snowshoe day and one night in a glass-roofed cabin."
+      ],
+      days: [
+        { t: "Arrive, and the first night", x: "Transfer from Ivalo, settle into the cabin, and a short walk in the blue light. Briefing, thermals, first aurora watch." },
+        { t: "Snowshoe through the forest", x: "Three hours on snowshoes with a local guide, a fire and sausages at a lean-to, then the sauna." },
+        { t: "The glass cabin night", x: "Walk out to the fell and spend the night under a glass roof. No guarantee of aurora, but the stars are reliable." },
+        { t: "Husky day", x: "A short husky ride in the morning — not a race, a ride — and a long lunch by the fire. Optional evening walk." },
+        { t: "Home", x: "Breakfast, the 12:10 bus to Ivalo, and the flight south." }
+      ],
+      included: ["Four nights in a cabin and one in a glass-roofed cabin", "All transfers from Ivalo", "Aurora guide, thermals, snowshoes", "Breakfast daily and three dinners", "Husky ride, eight kilometres"],
+      excluded: ["Flights to Ivalo or Kittilä", "Travel insurance", "Lunches and one dinner", "Ski rental (€60)", "Single supplement €180"],
+      art: { shape: "a", warm: false, sunX: "66%", sunY: "22%", sunS: "46px", water: "12%", aurora: 1, stars: 1, trees: 1 }
+    },
+    {
+      id: "kilpisjarvi", name: "Kilpisjärvi Ice Road", region: "Lapland", nights: 5, price: 1460,
+      rating: 4.8, reviews: 58, seasons: ["winter", "shoulder"], walk: 6, best: "March–April",
+      summary: "Five nights where Finland, Sweden and Norway meet — and the ice road to the border.",
+      tags: ["ice road", "aurora", "border", "sauna", "fells", "lapland", "snow", "hiking"],
+      gallery: ["The ice road to Norway", "Saana fell in April", "The frozen lake at dusk"],
+      about: [
+        "Kilpisjärvi is a village of about a hundred people at the western tip of Finnish Lapland. In April, when the light returns, we walk the frozen lake and cross into Norway on the ice road — the only road in Europe that changes every winter.",
+        "The walking is easy: six kilometres a day on the lake and the lower fells, with a guide who has lived here for twenty years. Two nights are aurora nights, one is a sauna and silence, and one is for the mountain hut."
+      ],
+      days: [
+        { t: "Kilpisjärvi, the first night", x: "Transfer from Tromsø, walk out onto the ice in the late light, and a dinner of salmon and potatoes." },
+        { t: "The ice road to Norway", x: "Cross the frozen lake on foot with a guide, stop at the border marker, and come back by the Swedish side." },
+        { t: "Saana fell", x: "The easy route up the fell: four hours, 400 metres of climbing, a thermos at the top. Afternoon sauna." },
+        { t: "Mountain hut and aurora", x: "Walk to the hut, eat early, and wait. In April the aurora comes later but the night is warmer." },
+        { t: "Home", x: "Slow breakfast, a last walk to the lake, and the bus to Tromsø." }
+      ],
+      included: ["Five nights in a small hotel and one in a mountain hut", "All transfers from Tromsø", "A local guide, snowshoes and ice grips", "Breakfast daily and four dinners", "Sauna every evening"],
+      excluded: ["Flights to Tromsø", "Travel insurance", "Lunches and one dinner", "Ice-fishing add-on (€80)", "Single supplement €230"],
+      art: { shape: "c", warm: false, sunX: "48%", sunY: "30%", sunS: "56px", water: "40%", aurora: 0.7, stars: 0.8, trees: 0 }
+    }
+  ];
+
+  function tripById(id) {
+    for (var i = 0; i < TRIPS.length; i++) { if (TRIPS[i].id === id) { return TRIPS[i]; } }
+    return null;
+  }
+
+  /* ---------------- storage ---------------- */
+  var SAVED_KEY = "northbound.saved.v1";
+  var COOKIE_KEY = "northbound.cookies.v1";
+
+  function storeGet(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
+  function storeSet(key, value) { try { window.localStorage.setItem(key, value); return true; } catch (e) { return false; } }
+
+  var saved = [];
+  try {
+    var stored = storeGet(SAVED_KEY);
+    if (stored) {
+      var ids = JSON.parse(stored);
+      if (Array.isArray(ids)) {
+        ids.forEach(function (id) {
+          if (typeof id === "string" && saved.indexOf(id) === -1 && tripById(id)) { saved.push(id); }
+        });
+      }
+    }
+  } catch (e) { saved = []; }
+
+  /* ---------------- DOM refs ---------------- */
+  var hero = $("#hero");
+  var heroTitle = $("#heroTitle");
+  var titleHome = $(".hero__title-home");
+  var titleSaved = $(".hero__title-saved");
+  var homeView = $("#homeView");
+  var savedView = $("#savedView");
+  var grid = $("#grid");
+  var gridEmpty = $("#gridEmpty");
+  var emptyText = $("#emptyText");
+  var savedGrid = $("#savedGrid");
+  var savedEmpty = $("#savedEmpty");
+  var savedMeta = $("#savedMeta");
+  var savedLink = $("#savedLink");
+  var countNow = $("#countNow");
+  var countAll = $("#countAll");
+  var resetFilters = $("#resetFilters");
+  var qInput = $("#q");
+  var qClear = $("#qClear");
+  var searchForm = $("#searchForm");
+  var burger = $("#burger");
+  var nav = $("#nav");
+  var cookieEl = $("#cookie");
+  var toastHost = $("#toasts");
+  var tripOverlay = $("#tripOverlay");
+  var tripDialog = $("#tripDialog");
+  var dlgBody = $("#dlgBody");
+  var dlgScroll = $("#dlgScroll");
+  var planOverlay = $("#planOverlay");
+  var planForm = $("#planForm");
+  var planName = $("#planName");
+  var planNameErr = $("#planNameErr");
+  var planEmail = $("#planEmail");
+  var planEmailErr = $("#planEmailErr");
+  var HOME_TITLE = doc.title;
+
+  var state = { q: "", region: "all", season: "all" };
+  var currentView = "home";
+  var homeScroll = 0;
+  var navOpen = false;
+  var tripOpen = false;
+  var planOpen = false;
+  var currentTrip = null;
+  var dialogOpenedInternal = false;
+  var lastFocus = null;
+  var lastPlanFocus = null;
+  var scrollLocks = 0;
+  var io = null;
+  var booted = false;
+  var lastHash = null;
+
+  /* ---------------- reveal ---------------- */
+  function observeReveals(els) {
+    els.forEach(function (el) {
+      if (!io) { el.classList.add("is-in"); return; }
+      if (el.classList.contains("is-in")) { return; }
+      io.observe(el);
+    });
+  }
+
+  function setupReveals() {
+    if ("IntersectionObserver" in window && !reduceMotion) {
+      io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) { entry.target.classList.add("is-in"); io.unobserve(entry.target); }
+        });
+      }, { threshold: 0.08, rootMargin: "0px 0px -6% 0px" });
+    }
+    observeReveals($$(".reveal"));
+  }
+
+  /* ---------------- cards ---------------- */
+  function cardHtml(t) {
+    var on = saved.indexOf(t.id) !== -1;
+    var label = (on ? "Remove " + t.name + " from saved" : "Save " + t.name);
+    return '<article class="card reveal" data-id="' + t.id + '">' +
+      '<div class="card__cover">' + artHtml(t) +
+      '<span class="card__badge">' + t.seasons.map(seasonLabel).join(" · ") + '</span>' +
+      '<button class="save" type="button" data-save="' + t.id + '" aria-pressed="' + on + '" aria-label="' + label + '">' +
+      '<svg class="icon" aria-hidden="true"><use href="#i-heart"/></svg></button></div>' +
+      '<div class="card__body">' +
+      '<p class="card__meta">' + t.region + " · " + t.nights + ' nights</p>' +
+      '<h3 class="card__title"><a class="card__link" href="#/d/' + t.id + '">' + t.name + "</a></h3>" +
+      '<p class="card__sum">' + t.summary + "</p>" +
+      '<div class="card__row"><span class="rating">' + starsHtml(t.rating) +
+      '<strong>' + t.rating.toFixed(1) + '</strong><span>(' + t.reviews + ')</span></span>' +
+      '<span class="card__walk">' + t.walk + ' km/day</span></div>' +
+      '<p class="card__best">Best in ' + bestHtml(t) + "</p>" +
+      '<div class="card__foot"><p class="price"><span>from</span> <strong>' + money(t.price) + '</strong> <span>pp</span></p>' +
+      '<span class="card__cta">View route <svg class="icon icon--line" aria-hidden="true"><use href="#i-arrow"/></svg></span></div>' +
+      "</div></article>";
+  }
+
+  function renderGrid(list) {
+    grid.innerHTML = list.map(cardHtml).join("");
+    grid.hidden = list.length === 0;
+    gridEmpty.hidden = list.length !== 0;
+    if (list.length === 0) {
+      var bits = [];
+      if (state.q.trim()) { bits.push("“" + state.q.trim() + "”"); }
+      if (state.region !== "all") { bits.push(state.region); }
+      if (state.season !== "all") { bits.push(seasonLabel(state.season).toLowerCase() + " season"); }
+      emptyText.textContent = bits.length
+        ? "No routes match " + bits.join(" · ") + ". Try another region or clear the search."
+        : "Try another region, another season, or a shorter search.";
+    }
+    observeReveals($$(".card.reveal", grid));
+  }
+
+  function syncChips() {
+    $$("[data-filter]").forEach(function (btn) {
+      var kind = btn.getAttribute("data-filter");
+      var value = btn.getAttribute("data-value");
+      btn.setAttribute("aria-pressed", state[kind] === value ? "true" : "false");
+    });
+  }
+
+  function applyFilters() {
+    var q = state.q.trim().toLowerCase();
+    var list = TRIPS.filter(function (t) {
+      var hay = [t.name, t.region, t.summary, t.best, t.walk + " km/day", t.nights + " nights",
+        t.seasons.map(seasonLabel).join(" "), t.tags.join(" ")].join(" ").toLowerCase();
+      var okQ = !q || hay.indexOf(q) !== -1;
+      var okR = state.region === "all" || t.region === state.region;
+      var okS = state.season === "all" || t.seasons.indexOf(state.season) !== -1;
+      return okQ && okR && okS;
+    });
+    renderGrid(list);
+    countNow.textContent = String(list.length);
+    countAll.textContent = String(TRIPS.length);
+    var dirty = !!(state.q.trim() || state.region !== "all" || state.season !== "all");
+    resetFilters.hidden = !dirty;
+    qClear.hidden = !state.q;
+    syncChips();
+  }
+
+  function setFilter(kind, value) {
+    if (kind !== "region" && kind !== "season") { return; }
+    state[kind] = value;
+    applyFilters();
+  }
+
+  function resetAll() {
+    state.q = "";
+    state.region = "all";
+    state.season = "all";
+    if (qInput) { qInput.value = ""; }
+    applyFilters();
+  }
+
+  /* ---------------- saved ---------------- */
+  function syncSavedUI() {
+    $$(".js-saved-count").forEach(function (el) { el.textContent = String(saved.length); });
+    var link = savedLink;
+    if (link) {
+      link.classList.remove("is-pop");
+      link.setAttribute("aria-label", "Saved destinations, " + saved.length + " saved");
+    }
+    if (savedMeta) { savedMeta.textContent = saved.length + " of " + TRIPS.length + " routes saved"; }
+    $$("[data-save]").forEach(function (btn) {
+      var id = btn.getAttribute("data-save");
+      var t = tripById(id);
+      var on = saved.indexOf(id) !== -1;
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.setAttribute("aria-label", (on ? "Remove " + (t ? t.name : "route") + " from saved" : "Save " + (t ? t.name : "route")));
+      var labelEl = btn.querySelector("[data-save-label]");
+      if (labelEl) { labelEl.textContent = on ? "Saved" : "Save route"; }
+    });
+  }
+
+  function renderSaved() {
+    if (!savedGrid) { return; }
+    var items = saved.map(tripById).filter(Boolean);
+    savedGrid.innerHTML = items.map(cardHtml).join("");
+    savedGrid.hidden = items.length === 0;
+    savedEmpty.hidden = items.length !== 0;
+    observeReveals($$(".card.reveal", savedGrid));
+    syncSavedUI();
+  }
+
+  function toggleSave(id, btn) {
+    var t = tripById(id);
+    if (!t) { return; }
+    var index = saved.indexOf(id);
+    var on;
+    if (index > -1) {
+      saved.splice(index, 1);
+      on = false;
+      toast("Removed “" + t.name + "” from saved.");
+    } else {
+      saved.push(id);
+      on = true;
+      toast("Saved “" + t.name + "”. It is waiting under Saved in the header.");
+    }
+    storeSet(SAVED_KEY, JSON.stringify(saved));
+    syncSavedUI();
+    if (savedLink) {
+      savedLink.classList.remove("is-pop");
+      void savedLink.offsetWidth;
+      savedLink.classList.add("is-pop");
+    }
+    if (on && btn) {
+      btn.classList.remove("is-bump");
+      void btn.offsetWidth;
+      btn.classList.add("is-bump");
+    }
+    if (currentView === "saved") { renderSaved(); }
+  }
+
+  /* ---------------- toasts ---------------- */
+  function toast(message) {
+    if (!toastHost) { return; }
+    while (toastHost.children.length >= 3) { toastHost.removeChild(toastHost.firstChild); }
+    var el = doc.createElement("div");
+    el.className = "toast";
+    el.innerHTML = '<svg class="toast__icon icon icon--line" aria-hidden="true"><use href="#i-check"/></svg>';
+    var text = doc.createElement("p");
+    text.textContent = message;
+    el.appendChild(text);
+    var close = doc.createElement("button");
+    close.type = "button";
+    close.className = "toast__x";
+    close.setAttribute("aria-label", "Dismiss notification");
+    close.textContent = "×";
+    el.appendChild(close);
+    toastHost.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add("is-in"); });
+    var removed = false;
+    function remove() {
+      if (removed || !el.parentNode) { return; }
+      removed = true;
+      el.classList.remove("is-in");
+      window.setTimeout(function () { if (el.parentNode) { el.parentNode.removeChild(el); } }, 240);
+    }
+    close.addEventListener("click", remove);
+    window.setTimeout(remove, 4800);
+  }
+
+  /* ---------------- cookie banner ---------------- */
+  function measureCookie() {
+    if (!cookieEl || cookieEl.hidden) { doc.documentElement.style.setProperty("--cookie-h", "0px"); return; }
+    var h = Math.ceil(cookieEl.getBoundingClientRect().height);
+    doc.documentElement.style.setProperty("--cookie-h", h + "px");
+  }
+
+  function showCookie() {
+    if (!cookieEl) { return; }
+    cookieEl.hidden = false;
+    doc.body.classList.add("cookie-open");
+    measureCookie();
+  }
+
+  function hideCookie() {
+    if (!cookieEl || cookieEl.hidden) { return; }
+    cookieEl.classList.add("is-hiding");
+    doc.body.classList.remove("cookie-open");
+    window.setTimeout(function () {
+      cookieEl.hidden = true;
+      cookieEl.classList.remove("is-hiding");
+      measureCookie();
+    }, reduceMotion ? 0 : 220);
+  }
+
+  function chooseCookies(value) {
+    storeSet(COOKIE_KEY, value);
+    hideCookie();
+    toast("Preference saved. Only what you need is stored in this browser.");
+  }
+
+  function initCookie() {
+    if (!cookieEl) { return; }
+    if (!storeGet(COOKIE_KEY)) { showCookie(); }
+    window.addEventListener("resize", measureCookie);
+  }
+
+  /* ---------------- stats ---------------- */
+  function fillStats() {
+    var statRoutes = $("#statRoutes");
+    var statRating = $("#statRating");
+    var statReviews = $("#statReviews");
+    var total = 0;
+    var weighted = 0;
+    TRIPS.forEach(function (t) { total += t.reviews; weighted += t.rating * t.reviews; });
+    if (statRoutes) { statRoutes.textContent = String(TRIPS.length); }
+    if (statReviews) { statReviews.textContent = String(total); }
+    if (statRating) { statRating.textContent = (weighted / total).toFixed(1); }
+  }
+
+  /* ---------------- scroll + inert ---------------- */
+  function scrollToId(id) {
+    var el = doc.getElementById(id);
+    if (!el) { return; }
+    try { el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" }); }
+    catch (e) { el.scrollIntoView(); }
+  }
+
+  function lockScroll() {
+    if (scrollLocks === 0) {
+      var sbw = Math.max(0, window.innerWidth - doc.documentElement.clientWidth);
+      doc.documentElement.style.setProperty("--sbw", sbw + "px");
+      doc.documentElement.classList.add("no-scroll");
+    }
+    scrollLocks++;
+  }
+
+  function unlockScroll() {
+    scrollLocks = Math.max(0, scrollLocks - 1);
+    if (scrollLocks === 0) { doc.documentElement.classList.remove("no-scroll"); }
+  }
+
+  function setPageInert(on) {
+    var nodes = [doc.querySelector(".site-head"), doc.querySelector("main"), doc.querySelector(".site-foot"), cookieEl];
+    nodes.forEach(function (node) {
+      if (!node) { return; }
+      if ("inert" in node) { node.inert = on; }
+      else if (on) { node.setAttribute("aria-hidden", "true"); }
+      else { node.removeAttribute("aria-hidden"); }
+    });
+    doc.body.classList.toggle("has-modal", on);
+  }
+
+  function refreshInert() { setPageInert(tripOpen || planOpen); }
+
+  function focusEl(el) {
+    if (!el) { return; }
+    try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  }
+
+  /* ---------------- trip dialog ---------------- */
+  function priceSplit(t) {
+    var shares = [
+      [0.36, "Accommodation, " + t.nights + " nights"],
+      [0.42, "Guiding and route planning"],
+      [0.14, "Transfers, ferries and boats"]
+    ];
+    var rows = [];
+    var used = 0;
+    shares.forEach(function (share) {
+      var amount = Math.round(t.price * share[0]);
+      used += amount;
+      rows.push({ label: share[1], amount: amount });
+    });
+    rows.push({ label: "Breakfasts and listed dinners", amount: t.price - used });
+    return rows;
+  }
+
+  function tripMarkup(t) {
+    var on = saved.indexOf(t.id) !== -1;
+    var saveLabel = (on ? "Remove " + t.name + " from saved" : "Save " + t.name);
+    var thumbs = t.gallery.map(function (caption, i) {
+      return '<button class="gthumb" type="button" data-thumb="' + i + '" aria-pressed="' + (i === 0 ? "true" : "false") +
+        '" aria-label="Show image: ' + caption + '">' + artHtml(t, GALLERY_VARIANTS[i]) + "</button>";
+    }).join("");
+
+    var days = t.days.map(function (day, i) {
+      var open = i === 0;
+      return '<div class="day">' +
+        '<button class="day__btn" type="button" aria-expanded="' + open + '" aria-controls="dayPanel' + i + '">' +
+        '<span class="day__num">Day ' + (i + 1) + '</span>' +
+        '<span class="day__name">' + day.t + "</span>" +
+        '<svg class="day__chev icon icon--line" aria-hidden="true"><use href="#i-chev"/></svg></button>' +
+        '<div class="day__panel" id="dayPanel' + i + '" aria-hidden="' + (!open) + '"><div class="day__in"><p>' + day.x + "</p></div></div></div>";
+    }).join("");
+
+    var included = t.included.map(function (item) {
+      return '<li><svg class="icon icon--line" aria-hidden="true"><use href="#i-check"/></svg><span>' + item + "</span></li>";
+    }).join("");
+    var excluded = t.excluded.map(function (item) {
+      return '<li><svg class="icon icon--line" aria-hidden="true"><use href="#i-minus"/></svg><span>' + item + "</span></li>";
+    }).join("");
+
+    var rows = priceSplit(t).map(function (row) {
+      return '<tr><th scope="row">' + row.label + "</th><td>" + money(row.amount) + "</td></tr>";
+    }).join("");
+
+    var split = t.about.map(function (p) { return "<p>" + p + "</p>"; }).join("");
+
+    return '<header class="dlg-head">' +
+      '<div class="gallery">' +
+      '<div class="gframe" id="gframe">' + artHtml(t) + "</div>" +
+      '<p class="gcap" id="gcap">' + t.gallery[0] + "</p>" +
+      '<div class="gthumbs" role="group" aria-label="Gallery images">' + thumbs + "</div></div>" +
+      '<div class="dlg-intro">' +
+      '<p class="eyebrow">' + t.region + " · " + t.nights + ' nights · max six</p>' +
+      '<h2 class="dlg-title" id="dlgTitle">' + t.name + "</h2>" +
+      '<p class="dlg-sum">' + t.summary + "</p>" +
+      '<ul class="dlg-facts">' +
+      '<li><span class="dlg-facts__k">Rating</span>' + starsHtml(t.rating) + '<strong>' + t.rating.toFixed(1) + "</strong><span>(" + t.reviews + ' reviews)</span></li>' +
+      '<li><span class="dlg-facts__k">Walking</span><span><strong>' + t.walk + ' km</strong> per day · ' + t.seasons.map(seasonLabel).join(" · ").toLowerCase() + "</span></li>" +
+      '<li><span class="dlg-facts__k">Best in</span><span>' + bestHtml(t) + "</span></li>" +
+      '<li><span class="dlg-facts__k">Group</span><span>Six travellers, one local guide</span></li>' +
+      "</ul>" +
+      '<p class="dlg-price"><span>from</span> <strong>' + money(t.price) + '</strong><span>per person, twin share</span></p>' +
+      '<div class="dlg-actions">' +
+      '<button class="btn btn--primary" type="button" data-scroll="tripCalc">Build the price</button>' +
+      '<button class="btn btn--ghost btn--save" type="button" data-save="' + t.id + '" aria-pressed="' + on + '" aria-label="' + saveLabel + '">' +
+      '<svg class="icon" aria-hidden="true"><use href="#i-heart"/></svg><span data-save-label>' + (on ? "Saved" : "Save route") + "</span></button>" +
+      "</div></div></header>" +
+      '<section class="dlg-sec"><h3 class="dlg-h3">The route</h3><div class="dlg-prose">' + split + "</div></section>" +
+      '<section class="dlg-sec"><h3 class="dlg-h3">Day by day</h3><div class="days">' + days + "</div></section>" +
+      '<section class="dlg-sec dlg-cols">' +
+      '<div><h3 class="dlg-h3">What is included</h3><ul class="ticks">' + included + "</ul></div>" +
+      '<div><h3 class="dlg-h3">Not included</h3><ul class="ticks ticks--no">' + excluded + "</ul></div></section>" +
+      '<section class="dlg-sec"><h3 class="dlg-h3">What it costs</h3>' +
+      '<table class="brk"><caption class="sr-only">Price breakdown per person, from</caption><tbody>' + rows +
+      '<tr><th scope="row">From, per person</th><td>' + money(t.price) + "</td></tr></tbody></table>" +
+      '<p class="note-line">Prices are in euro, per person in twin share. Flights and travel insurance are not included. A single-room supplement applies if you travel alone.</p></section>' +
+      '<section class="dlg-sec" id="tripCalc"><h3 class="dlg-h3">Build your price</h3>' +
+      '<div class="calc"><div class="calc__fields">' +
+      '<div class="field"><label for="calcTrav">Travellers <output id="travOut" for="calcTrav">2</output></label>' +
+      '<input class="range" id="calcTrav" data-range="travellers" type="range" min="1" max="6" step="1" value="2" aria-describedby="travHint">' +
+      '<div class="range__scale" aria-hidden="true"><span>1</span><span>6</span></div>' +
+      '<p class="hint" id="travHint">One to six people. Groups of four or more get a group rate.</p></div>' +
+      '<div class="field"><label for="calcNights">Nights <output id="nightsOut" for="calcNights">' + t.nights + "</output></label>" +
+      '<input class="range" id="calcNights" data-range="nights" type="range" min="4" max="12" step="1" value="' + t.nights + '" aria-describedby="nightsHint">' +
+      '<div class="range__scale" aria-hidden="true"><span>4</span><span>12</span></div>' +
+      '<p class="hint" id="nightsHint">The base route is ' + t.nights + " nights. Extra nights add free days and the same nightly rate.</p></div></div>" +
+      '<div class="calc__out" aria-live="polite"><p class="calc__label" id="calcLabel">Total, 2 travellers</p>' +
+      '<p class="calc__total" id="calcTotal">' + money(t.price * 2) + "</p>" +
+      '<p class="calc__pp" id="calcPp">' + money(t.price) + " per person · " + t.nights + '</p>' +
+      '<p class="calc__note" id="calcNote">Twin-share rate for two. No extras.</p></div></div></section>' +
+      '<section class="dlg-sec"><h3 class="dlg-h3">Request this itinerary</h3>' +
+      '<p class="note-line">We reply within two working days with dates, a guide name and a final price. No deposit until you say yes.</p>' +
+      '<form class="req" data-req-form novalidate>' +
+      '<div class="field"><label for="reqEmail">Email</label>' +
+      '<input class="input" id="reqEmail" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="reqHint reqErr">' +
+      '<p class="hint" id="reqHint">One reply, from a guide. No mailing list.</p>' +
+      '<p class="err" id="reqErr" hidden><svg class="icon icon--line" aria-hidden="true"><use href="#i-alert"/></svg>Enter an email address like you@example.com.</p></div>' +
+      '<button class="btn btn--primary" type="submit">Request this itinerary</button></form></section>';
+  }
+
+  function setRangeFill(el) {
+    if (!el) { return; }
+    var min = parseFloat(el.min) || 0;
+    var max = parseFloat(el.max) || 100;
+    var value = parseFloat(el.value) || 0;
+    var pct = max === min ? 0 : ((value - min) / (max - min)) * 100;
+    el.style.setProperty("--p", pct + "%");
+  }
+
+  function updateCalc(t) {
+    if (!t || !dlgBody) { return; }
+    var travellersEl = doc.getElementById("calcTrav");
+    var nightsEl = doc.getElementById("calcNights");
+    if (!travellersEl || !nightsEl) { return; }
+    var travellers = parseInt(travellersEl.value, 10) || 2;
+    var nights = parseInt(nightsEl.value, 10) || t.nights;
+    var mul = GROUP_MUL[travellers] || 1;
+    var perPerson = Math.round(t.price * (nights / t.nights) * mul);
+    var total = perPerson * travellers;
+    doc.getElementById("travOut").textContent = String(travellers);
+    doc.getElementById("nightsOut").textContent = String(nights);
+    doc.getElementById("calcTotal").textContent = money(total);
+    doc.getElementById("calcPp").textContent = money(perPerson) + " per person · " + nights + " nights";
+    var label = doc.getElementById("calcLabel");
+    if (label) { label.textContent = "Total, " + travellers + (travellers === 1 ? " traveller" : " travellers"); }
+    var note;
+    if (travellers === 1) {
+      note = "Includes the 25% single supplement.";
+    } else if (travellers === 2) {
+      note = "Twin-share rate, no extras.";
+    } else {
+      note = "Group rate: " + Math.round((1 - mul) * 100) + "% off per person.";
+    }
+    if (nights !== t.nights) { note += " Extra nights at the same nightly rate."; }
+    doc.getElementById("calcNote").textContent = note;
+    setRangeFill(travellersEl);
+    setRangeFill(nightsEl);
+  }
+
+  function selectFrame(btn) {
+    if (!currentTrip) { return; }
+    var index = parseInt(btn.getAttribute("data-thumb"), 10) || 0;
+    var frame = doc.getElementById("gframe");
+    if (frame) { frame.innerHTML = artHtml(currentTrip, GALLERY_VARIANTS[index]); }
+    var caption = doc.getElementById("gcap");
+    if (caption) { caption.textContent = currentTrip.gallery[index]; }
+    $$(".gthumb", dlgBody).forEach(function (b) {
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+  }
+
+  function toggleDay(btn) {
+    var open = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", String(!open));
+    var panel = doc.getElementById(btn.getAttribute("aria-controls"));
+    if (panel) { panel.setAttribute("aria-hidden", String(open)); }
+  }
+
+  function scrollDialogTo(id) {
+    var target = doc.getElementById(id);
+    if (!target || !dlgScroll) { return; }
+    var top = target.getBoundingClientRect().top - dlgScroll.getBoundingClientRect().top + dlgScroll.scrollTop - 16;
+    try { dlgScroll.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? "auto" : "smooth" }); }
+    catch (e) { dlgScroll.scrollTop = Math.max(0, top); }
+  }
+
+  function openTrip(trip, internal) {
+    if (!trip) { return; }
+    if (planOpen) { closePlan(); }
+    if (!tripOpen) {
+      lastFocus = doc.activeElement;
+      tripOverlay.hidden = false;
+      lockScroll();
+      tripOpen = true;
+      dialogOpenedInternal = !!internal;
+      requestAnimationFrame(function () { tripOverlay.classList.add("is-open"); });
+      refreshInert();
+      focusEl(doc.getElementById("tripClose"));
+    } else {
+      dialogOpenedInternal = !!internal;
+    }
+    currentTrip = trip;
+    dlgBody.innerHTML = tripMarkup(trip);
+    dlgScroll.scrollTop = 0;
+    updateCalc(trip);
+    doc.title = trip.name + " — Northbound";
+  }
+
+  function closeTripUI(restoreFocus) {
+    if (!tripOpen) { return; }
+    tripOpen = false;
+    currentTrip = null;
+    tripOverlay.classList.remove("is-open");
+    window.setTimeout(function () { if (!tripOpen) { tripOverlay.hidden = true; } }, 200);
+    unlockScroll();
+    refreshInert();
+    doc.title = currentView === "saved" ? "Saved destinations — Northbound" : HOME_TITLE;
+    var focusBack = lastFocus;
+    lastFocus = null;
+    if (restoreFocus !== false && focusBack && doc.contains(focusBack)) { focusEl(focusBack); }
+  }
+
+  function requestTripClose() {
+    if (!tripOpen) { return; }
+    if (dialogOpenedInternal && window.history.length > 1) {
+      window.history.back();
+    } else {
+      var target = currentView === "saved" ? "#/saved" : "#/";
+      try { window.location.replace(target); }
+      catch (e) { window.location.hash = target; }
+    }
+  }
+
+  /* ---------------- plan dialog ---------------- */
+  function openPlan() {
+    if (planOpen) { return; }
+    if (navOpen) { setNav(false); }
+    lastPlanFocus = doc.activeElement;
+    planOverlay.hidden = false;
+    lockScroll();
+    planOpen = true;
+    requestAnimationFrame(function () { planOverlay.classList.add("is-open"); });
+    refreshInert();
+    setFieldError(planName, planNameErr, false);
+    setFieldError(planEmail, planEmailErr, false);
+    focusEl(doc.getElementById("planClose"));
+    doc.title = "Plan a trip — Northbound";
+  }
+
+  function closePlan() {
+    if (!planOpen) { return; }
+    planOpen = false;
+    planOverlay.classList.remove("is-open");
+    window.setTimeout(function () { if (!planOpen) { planOverlay.hidden = true; } }, 200);
+    unlockScroll();
+    refreshInert();
+    doc.title = currentView === "saved" ? "Saved destinations — Northbound" : HOME_TITLE;
+    var focusBack = lastPlanFocus;
+    lastPlanFocus = null;
+    if (focusBack && doc.contains(focusBack)) { focusEl(focusBack); }
+  }
+
+  function setFieldError(input, errorEl, on) {
+    if (input) {
+      if (on) { input.setAttribute("aria-invalid", "true"); }
+      else { input.removeAttribute("aria-invalid"); }
+    }
+    if (errorEl) { errorEl.hidden = !on; }
+  }
+
+  /* ---------------- views + routing ---------------- */
+  function showSaved(announce) {
+    currentView = "saved";
+    homeView.hidden = true;
+    savedView.hidden = false;
+    hero.classList.add("hero--compact");
+    titleHome.hidden = true;
+    titleSaved.hidden = false;
+    savedLink.setAttribute("aria-current", "page");
+    doc.title = "Saved destinations — Northbound";
+    renderSaved();
+    window.scrollTo(0, 0);
+    if (announce) { focusEl(heroTitle); }
+  }
+
+  function showHome(restoreScroll, announce) {
+    var wasSaved = currentView === "saved";
+    currentView = "home";
+    homeView.hidden = false;
+    savedView.hidden = true;
+    hero.classList.remove("hero--compact");
+    titleHome.hidden = false;
+    titleSaved.hidden = true;
+    savedLink.removeAttribute("aria-current");
+    doc.title = HOME_TITLE;
+    if (restoreScroll && wasSaved) { window.scrollTo(0, homeScroll); }
+    if (announce) { focusEl(heroTitle); }
+  }
+
+  var SECTIONS = { "#/destinations": "destinations", "#/itineraries": "itineraries", "#/guides": "guides", "#/journal": "journal", "#/faq": "faq" };
+
+  function route() {
+    var hash = window.location.hash || "#/";
+    var match = hash.match(/^#\/d\/([a-z0-9-]+)$/);
+    if (match) {
+      var trip = tripById(match[1]);
+      if (trip) {
+        var internal = !!(lastHash && lastHash.indexOf("#/") === 0 && lastHash !== hash);
+        openTrip(trip, internal);
+        lastHash = hash;
+        booted = true;
+        return;
+      }
+    }
+    if (tripOpen) { closeTripUI(true); }
+    var wasSaved = currentView === "saved";
+    if (hash === "#/saved") {
+      if (!wasSaved) { homeScroll = window.pageYOffset || 0; }
+      showSaved(booted);
+    } else if (SECTIONS[hash]) {
+      showHome(false, false);
+      var targetId = SECTIONS[hash];
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { scrollToId(targetId); });
+      });
+    } else {
+      showHome(true, booted && wasSaved);
+    }
+    lastHash = hash;
+    booted = true;
+  }
+
+  /* ---------------- nav ---------------- */
+  function setNav(open) {
+    navOpen = open;
+    nav.classList.toggle("is-open", open);
+    burger.setAttribute("aria-expanded", open ? "true" : "false");
+    burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+  }
+
+  /* ---------------- listeners ---------------- */
+  if (qInput) {
+    qInput.addEventListener("input", function () {
+      state.q = qInput.value;
+      applyFilters();
+    });
+  }
+  if (searchForm) {
+    searchForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      scrollToId("destinations");
+    });
+  }
+  if (qClear) {
+    qClear.addEventListener("click", function () {
+      state.q = "";
+      qInput.value = "";
+      applyFilters();
+      qInput.focus();
+    });
+  }
+
+  doc.addEventListener("click", function (e) {
+    var target = e.target;
+    if (!target || !target.closest) { return; }
+    var el;
+
+    el = target.closest("[data-save]");
+    if (el) { e.preventDefault(); toggleSave(el.getAttribute("data-save"), el); return; }
+
+    el = target.closest("[data-filter]");
+    if (el) {
+      e.preventDefault();
+      setFilter(el.getAttribute("data-filter"), el.getAttribute("data-value"));
+      var jump = el.getAttribute("data-jump");
+      if (jump) { scrollToId(jump); }
+      return;
+    }
+
+    el = target.closest("[data-open-plan]");
+    if (el) { e.preventDefault(); openPlan(); return; }
+
+    el = target.closest("[data-reset]");
+    if (el) { e.preventDefault(); resetAll(); return; }
+
+    el = target.closest("[data-cookie]");
+    if (el) { e.preventDefault(); chooseCookies(el.getAttribute("data-cookie")); return; }
+
+    el = target.closest(".faq__btn");
+    if (el) {
+      var faqOpen = el.getAttribute("aria-expanded") === "true";
+      el.setAttribute("aria-expanded", String(!faqOpen));
+      var faqPanel = doc.getElementById(el.getAttribute("aria-controls"));
+      if (faqPanel) { faqPanel.setAttribute("aria-hidden", String(faqOpen)); }
+      return;
+    }
+
+    if (dlgBody && dlgBody.contains(target)) {
+      el = target.closest("[data-thumb]");
+      if (el) { selectFrame(el); return; }
+      el = target.closest(".day__btn");
+      if (el) { toggleDay(el); return; }
+      el = target.closest("[data-scroll]");
+      if (el) { scrollDialogTo(el.getAttribute("data-scroll")); return; }
+    }
+
+    if (target.closest("#tripClose")) { requestTripClose(); return; }
+    if (target.closest("#planClose")) { closePlan(); return; }
+
+    if (navOpen) {
+      if (target.closest("#nav")) {
+        if (target.closest("a")) { setNav(false); }
+        return;
+      }
+      if (target.closest("#burger")) { return; }
+      setNav(false);
+    }
+  });
+
+  if (burger) {
+    burger.addEventListener("click", function () { setNav(!navOpen); });
+  }
+
+  window.addEventListener("resize", function () {
+    if (navOpen && window.innerWidth > 980) { setNav(false); }
+  });
+
+  doc.addEventListener("keydown", function (e) {
+    var key = e.key;
+    if (key !== "Escape" && key !== "Esc" && e.keyCode !== 27) { return; }
+    if (tripOpen) { e.preventDefault(); requestTripClose(); return; }
+    if (planOpen) { e.preventDefault(); closePlan(); return; }
+    if (navOpen) { setNav(false); focusEl(burger); }
+  });
+
+  function trapTab(e, overlay) {
+    if (e.key !== "Tab" || !overlay || overlay.hidden) { return; }
+    var nodes = $$('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])', overlay)
+      .filter(function (node) { return node.getClientRects().length > 0; });
+    if (!nodes.length) { return; }
+    var first = nodes[0];
+    var last = nodes[nodes.length - 1];
+    if (e.shiftKey) {
+      if (doc.activeElement === first || !overlay.contains(doc.activeElement)) { e.preventDefault(); last.focus(); }
+    } else if (doc.activeElement === last || !overlay.contains(doc.activeElement)) {
+      e.preventDefault(); first.focus();
+    }
+  }
+
+  if (tripOverlay) {
+    tripOverlay.addEventListener("keydown", function (e) { trapTab(e, tripOverlay); });
+    tripOverlay.addEventListener("click", function (e) { if (e.target === tripOverlay) { requestTripClose(); } });
+  }
+  if (planOverlay) {
+    planOverlay.addEventListener("keydown", function (e) { trapTab(e, planOverlay); });
+    planOverlay.addEventListener("click", function (e) { if (e.target === planOverlay) { closePlan(); } });
+  }
+
+  doc.addEventListener("input", function (e) {
+    var target = e.target;
+    if (!target || !target.matches) { return; }
+    if (target.id === "reqEmail") {
+      target.removeAttribute("aria-invalid");
+      var err = doc.getElementById("reqErr");
+      if (err) { err.hidden = true; }
+    }
+    if (target.matches("[data-range]") && tripOpen) { updateCalc(currentTrip); }
+  });
+
+  doc.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (!form || !form.matches || !form.matches("[data-req-form]")) { return; }
+    e.preventDefault();
+    var email = form.querySelector("#reqEmail");
+    var error = form.querySelector("#reqErr");
+    if (!email || !validEmail(email.value)) {
+      if (email) { email.setAttribute("aria-invalid", "true"); email.focus(); }
+      if (error) { error.hidden = false; }
+      return;
+    }
+    if (error) { error.hidden = true; }
+    email.removeAttribute("aria-invalid");
+    var btn = form.querySelector('button[type="submit"]');
+    if (!btn || btn.disabled) { return; }
+    var tripName = currentTrip ? currentTrip.name : "this route";
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    window.setTimeout(function () {
+      if (!doc.contains(btn)) { return; }
+      btn.disabled = false;
+      btn.textContent = "Request this itinerary";
+      form.reset();
+      if (currentTrip) {
+        toast("Request sent for “" + tripName + "”. We hold the route for five days and reply within two working days.");
+      }
+    }, 700);
+  });
+
+  if (planName) {
+    planName.addEventListener("input", function () { setFieldError(planName, planNameErr, false); });
+  }
+  if (planEmail) {
+    planEmail.addEventListener("input", function () { setFieldError(planEmail, planEmailErr, false); });
+  }
+
+  if (planForm) {
+    planForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var nameOk = planName.value.trim().length >= 2;
+      var emailOk = validEmail(planEmail.value);
+      setFieldError(planName, planNameErr, !nameOk);
+      setFieldError(planEmail, planEmailErr, !emailOk);
+      if (!nameOk) { planName.focus(); return; }
+      if (!emailOk) { planEmail.focus(); return; }
+      var btn = planForm.querySelector('button[type="submit"]');
+      if (!btn || btn.disabled) { return; }
+      var first = planName.value.trim().split(/\s+/)[0];
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+      window.setTimeout(function () {
+        if (!doc.contains(btn)) { return; }
+        btn.disabled = false;
+        btn.textContent = "Send request";
+        planForm.reset();
+        closePlan();
+        toast("Thanks, " + first + ". Your request is with a guide — expect a reply within two working days.");
+      }, 700);
+    });
+  }
+
+  window.addEventListener("hashchange", route);
+
+  /* ---------------- init ---------------- */
+  setupReveals();
+  fillStats();
+  applyFilters();
+  syncSavedUI();
+  initCookie();
+  route();
+})();
+</script>
 </body>
 </html>

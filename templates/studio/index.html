@@ -1,0 +1,3002 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Цех — независимая дизайн-студия в Москве</title>
+<meta name="description" content="«Цех» — независимая дизайн-студия в Москве: сайты и лендинги, дизайн-системы, продуктовый дизайн. 18 проектов с 2020 года, средняя оценка 4,9 на Яндексе.">
+<meta name="theme-color" content="#f4f1ea">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%23f4f1ea'/%3E%3Cpath%20d='M9%208v13h11V8M20%2021v4'%20fill='none'%20stroke='%2314130f'%20stroke-width='2.4'%20stroke-linecap='square'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Цех">
+<meta property="og:title" content="Цех — дизайн-студия в Москве">
+<meta property="og:description" content="Сайты, которые продают без крика. Дизайн-системы и продуктовый дизайн для производителей, клиник, финтеха и школ. 18 проектов с 2020 года.">
+<style>
+/* ============================================================
+   1. Токены
+   ============================================================ */
+:root{
+  --bg:#f4f1ea;
+  --ink:#14130f;
+  --accent:#2b47ff;
+  --muted:#6a665c;
+  --line:#ddd8cc;
+  --dark:#14130f;
+
+  --ink-soft:rgba(20,19,15,.74);
+  --ink-faint:rgba(20,19,15,.52);
+  --on-dark:#f4f1ea;
+  --on-dark-soft:rgba(244,241,234,.7);
+  --on-dark-faint:rgba(244,241,234,.6);
+  --line-dark:rgba(244,241,234,.18);
+  --fill:rgba(20,19,15,.035);
+  --fill-2:rgba(20,19,15,.06);
+  --accent-fill:rgba(43,71,255,.09);
+  --accent-line:rgba(43,71,255,.3);
+  --accent-ring:rgba(43,71,255,.16);
+
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
+
+  --r-s:10px; --r-m:12px; --r-l:14px;
+
+  --sh-1:0 1px 2px rgba(20,19,15,.06), 0 1px 1px rgba(20,19,15,.04);
+  --sh-2:0 24px 60px -28px rgba(20,19,15,.38), 0 4px 14px -8px rgba(20,19,15,.16);
+
+  --font-display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --font-body:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SFMono-Regular","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+
+  --ease:cubic-bezier(.22,.61,.24,1);
+  --d1:120ms; --d2:180ms; --d3:240ms;
+
+  --container:1280px;
+  --gutter:24px;
+  --header-h:64px;
+}
+@media (min-width:768px){
+  :root{--gutter:32px;--header-h:72px}
+}
+@media (min-width:1100px){
+  :root{--gutter:48px}
+}
+
+/* ============================================================
+   2. База
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light;-webkit-text-size-adjust:100%;scroll-behavior:auto}
+html.is-locked{overflow:hidden}
+body{
+  margin:0;min-width:320px;background:var(--bg);color:var(--ink);
+  font-family:var(--font-body);font-size:16px;line-height:1.62;
+  font-weight:400;letter-spacing:-.004em;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+img,svg{max-width:100%}
+svg{display:block}
+h1,h2,h3,h4,p,ul,ol,figure,blockquote{margin:0}
+ul,ol{padding:0;list-style:none}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+::selection{background:var(--accent);color:var(--bg)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.footer :focus-visible,.guarantee :focus-visible,.poster :focus-visible{outline-color:var(--bg)}
+
+.wrap{width:100%;max-width:var(--container);margin:0 auto;padding-inline:var(--gutter)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ============================================================
+   3. Типографика
+   ============================================================ */
+.h1{
+  font-family:var(--font-display);font-weight:400;
+  font-size:clamp(2.15rem,9.4vw,5.15rem);
+  line-height:.99;letter-spacing:-.028em;
+  text-wrap:balance;
+}
+.h1 em{
+  font-style:italic;
+  text-decoration:underline;
+  text-decoration-color:var(--accent);
+  text-decoration-thickness:.055em;
+  text-underline-offset:.13em;
+}
+.h1--page{font-size:clamp(2rem,5.4vw,4.1rem);line-height:1.02;letter-spacing:-.025em}
+.h2{
+  font-family:var(--font-display);font-weight:400;
+  font-size:clamp(1.75rem,3.7vw,2.85rem);
+  line-height:1.08;letter-spacing:-.022em;
+  text-wrap:balance;
+}
+.h3{
+  font-family:var(--font-body);font-weight:600;
+  font-size:clamp(1.02rem,1.25vw,1.18rem);
+  line-height:1.36;letter-spacing:-.012em;
+}
+.lead{
+  font-size:clamp(1rem,1.15vw,1.125rem);
+  line-height:1.62;color:var(--ink-soft);max-width:60ch;
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  font-family:var(--font-mono);font-size:11px;line-height:1;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.eyebrow::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none}
+.eyebrow--plain::before{display:none}
+.mono{font-family:var(--font-mono);font-size:11px;line-height:1.4;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+.link{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  min-height:44px;padding-block:8px;
+  text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:4px;text-decoration-color:var(--line);
+  font-weight:600;font-size:.9375rem;letter-spacing:-.01em;
+  transition:color var(--d2) var(--ease),text-decoration-color var(--d2) var(--ease);
+}
+.link:hover{color:var(--accent);text-decoration-color:var(--accent-line)}
+.link svg{transition:transform var(--d2) var(--ease)}
+.link:hover svg{transform:translateX(3px)}
+
+/* ============================================================
+   4. Кнопки, чипы
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
+  min-height:48px;padding:0 20px;
+  border:1px solid transparent;border-radius:var(--r-m);
+  font-family:var(--font-body);font-size:.9375rem;font-weight:600;letter-spacing:-.012em;
+  cursor:pointer;text-align:center;
+  transition:background-color var(--d2) var(--ease),color var(--d2) var(--ease),border-color var(--d2) var(--ease),box-shadow var(--d2) var(--ease);
+}
+.btn svg{flex:none;transition:transform var(--d2) var(--ease)}
+.btn--primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.btn--primary:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn--primary:hover svg{transform:translateX(3px)}
+.btn--ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn--ghost:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn--ghost:hover svg{transform:translateX(3px)}
+.btn--quiet{background:var(--fill);border-color:transparent;color:var(--ink)}
+.btn--quiet:hover{background:var(--fill-2)}
+.btn--on-dark{background:transparent;border-color:var(--line-dark);color:var(--on-dark)}
+.btn--on-dark:hover{background:var(--bg);border-color:var(--bg);color:var(--ink)}
+.btn[disabled],.btn:disabled{opacity:.42;cursor:not-allowed;background:var(--fill);border-color:var(--line);color:var(--muted)}
+.btn[disabled]:hover{background:var(--fill);border-color:var(--line);color:var(--muted)}
+.btn:active{transform:translateY(1px)}
+.btn--wide{width:100%}
+
+.chip{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:var(--r-m);
+  background:transparent;color:var(--ink-soft);font-size:.875rem;font-weight:500;
+  cursor:pointer;transition:background-color var(--d2) var(--ease),color var(--d2) var(--ease),border-color var(--d2) var(--ease);
+}
+.chip:hover{border-color:var(--ink-faint);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip__n{font-family:var(--font-mono);font-size:11px;opacity:.6}
+
+.hint{font-size:.8125rem;line-height:1.45;color:var(--muted)}
+
+/* ============================================================
+   5. Верхняя плашка и шапка
+   ============================================================ */
+.topbar{background:var(--dark);color:var(--on-dark);font-size:12.5px}
+.topbar__in{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--s3) var(--s5);flex-wrap:wrap;min-height:44px;padding-block:4px;
+}
+.topbar__status{display:inline-flex;align-items:center;gap:var(--s2);font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--on-dark)}
+.topbar__dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none;box-shadow:0 0 0 3px rgba(43,71,255,.28)}
+.topbar__right{display:flex;align-items:center;gap:var(--s5)}
+.topbar__hours{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--on-dark-faint)}
+.topbar__phone{
+  display:inline-flex;align-items:center;gap:var(--s2);min-height:44px;
+  padding:0;background:none;border:0;color:var(--on-dark);cursor:pointer;
+  font-size:12.5px;font-weight:500;letter-spacing:.01em;
+  transition:color var(--d2) var(--ease);
+}
+.topbar__phone:hover{color:var(--accent)}
+.topbar__phone svg{color:var(--on-dark-faint);transition:color var(--d2) var(--ease)}
+.topbar__phone:hover svg{color:currentColor}
+@media (max-width:520px){
+  .topbar__hours{display:none}
+  .topbar{font-size:12px}
+}
+
+.header{
+  position:sticky;top:0;z-index:60;
+  background:rgba(244,241,234,.9);
+  -webkit-backdrop-filter:blur(14px) saturate(1.1);
+  backdrop-filter:blur(14px) saturate(1.1);
+  border-bottom:1px solid var(--line);
+  transition:box-shadow var(--d3) var(--ease);
+}
+.header.is-stuck{box-shadow:var(--sh-1)}
+.header__in{display:flex;align-items:center;gap:var(--s4);min-height:var(--header-h)}
+.logo{
+  display:inline-flex;align-items:center;gap:var(--s2);flex:none;
+  min-height:44px;color:var(--ink);
+  font-family:var(--font-display);font-size:1.4rem;letter-spacing:.005em;
+}
+.logo__mark{color:var(--accent);transition:color var(--d2) var(--ease)}
+.logo:hover .logo__mark{color:var(--ink)}
+.logo__word{line-height:1}
+.nav{display:none;align-items:center;gap:var(--s1);margin-left:auto}
+.nav a{
+  position:relative;display:inline-flex;align-items:center;
+  min-height:44px;padding:0 12px;border-radius:var(--r-s);
+  color:var(--muted);font-size:.9375rem;font-weight:500;letter-spacing:-.01em;
+  transition:color var(--d2) var(--ease),background-color var(--d2) var(--ease);
+}
+.nav a::after{
+  content:"";position:absolute;left:12px;right:12px;bottom:9px;height:1.5px;
+  background:var(--accent);transform:scaleX(0);transform-origin:left;
+  transition:transform var(--d2) var(--ease);
+}
+.nav a:hover{color:var(--ink);background:var(--fill)}
+.nav a:hover::after,.nav a[aria-current="page"]::after{transform:scaleX(1)}
+.nav a[aria-current="page"]{color:var(--ink)}
+.header__cta{display:none;margin-left:var(--s2);min-height:44px}
+.burger{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;margin-left:auto;padding:0;
+  border:1px solid var(--line);border-radius:var(--r-s);background:transparent;
+  color:var(--ink);cursor:pointer;
+  transition:background-color var(--d2) var(--ease),border-color var(--d2) var(--ease);
+}
+.burger:hover{background:var(--fill);border-color:var(--ink-faint)}
+.burger svg{overflow:visible}
+.burger path{transition:transform var(--d2) var(--ease);transform-box:fill-box;transform-origin:center}
+.burger[aria-expanded="true"] path:nth-child(1){transform:translateY(4px) rotate(45deg)}
+.burger[aria-expanded="true"] path:nth-child(2){transform:translateY(-4px) rotate(-45deg)}
+@media (min-width:1000px){
+  .nav{display:flex}
+  .header__cta{display:inline-flex}
+  .burger{display:none}
+  .mnav{display:none}
+}
+
+.skip:focus{
+  position:fixed;left:var(--s4);top:var(--s4);z-index:200;
+  width:auto;height:auto;margin:0;padding:12px 18px;clip:auto;overflow:visible;
+  background:var(--ink);color:var(--bg);border-radius:var(--r-m);
+  font-size:.875rem;font-weight:600;box-shadow:var(--sh-2);
+}
+.link-inline{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;transition:color var(--d2) var(--ease),text-decoration-color var(--d2) var(--ease);display:inline-flex;align-items:center;min-height:44px}
+.link-inline:hover{color:var(--accent);text-decoration-color:var(--accent-line)}
+
+.mnav{
+  position:absolute;top:100%;left:0;right:0;z-index:59;
+  background:var(--bg);border-bottom:1px solid var(--line);
+  box-shadow:var(--sh-2);
+  max-height:0;overflow:hidden;
+  transition:max-height var(--d3) var(--ease);
+}
+.mnav.is-open{max-height:min(78vh,560px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.mnav__in{padding:var(--s3) var(--gutter) var(--s5)}
+.mnav a.mnav__link{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s4);
+  min-height:56px;border-bottom:1px solid var(--line);
+  font-family:var(--font-display);font-size:1.25rem;color:var(--ink);
+  transition:color var(--d2) var(--ease);
+}
+.mnav a.mnav__link:hover{color:var(--accent)}
+.mnav a.mnav__link .mono{color:var(--muted)}
+.mnav__cta{display:flex;flex-direction:column;gap:var(--s3);padding-top:var(--s4)}
+.mnav__meta{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);padding-top:var(--s3)}
+
+/* ============================================================
+   6. Страницы и секции
+   ============================================================ */
+.page{animation:pageIn var(--d3) var(--ease) both}
+@keyframes pageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding-block:clamp(48px,7vw,96px);border-top:1px solid var(--line);scroll-margin-top:calc(var(--header-h) + 16px)}
+.section--tight{padding-block:clamp(32px,4.5vw,56px)}
+.section--flush{border-top:0}
+.section__head{display:grid;gap:var(--s4);margin-bottom:var(--s7)}
+@media (min-width:900px){
+  .section__head{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);align-items:end;gap:var(--s6);margin-bottom:var(--s8)}
+}
+.section__aside{display:grid;gap:var(--s3);justify-items:start}
+.section__aside p{color:var(--ink-soft);font-size:.9375rem;line-height:1.6;max-width:42ch}
+.section__title{margin-top:var(--s3)}
+.page-head{padding-block:clamp(32px,4.6vw,56px) clamp(24px,3.4vw,40px);border-top:0}
+.page-head .eyebrow{margin-bottom:var(--s3)}
+.page-head .lead{margin-top:var(--s4)}
+
+/* Reveal */
+html.js [data-reveal]{
+  opacity:0;transform:translateY(12px);
+  transition:opacity var(--d3) var(--ease),transform var(--d3) var(--ease);
+  transition-delay:var(--d,0ms);
+}
+html.js [data-reveal].is-in{opacity:1;transform:none}
+html.js [data-reveal].instant{transition:none}
+
+/* ============================================================
+   7. Hero
+   ============================================================ */
+.hero{padding-block:clamp(28px,4.2vw,56px) clamp(32px,4.6vw,64px)}
+.hero__in{display:grid;gap:var(--s7)}
+@media (min-width:1024px){
+  .hero__in{grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);align-items:center;gap:clamp(32px,5vw,64px)}
+}
+.hero__kicker{margin-bottom:var(--s5)}
+.hero__title{max-width:15ch}
+.hero__lead{margin-top:var(--s5);max-width:46ch;font-size:clamp(1rem,1.25vw,1.1875rem);color:var(--ink-soft)}
+.hero__actions{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s6)}
+.hero__note{
+  margin-top:var(--s4);font-size:.875rem;color:var(--muted);
+  display:flex;align-items:center;gap:var(--s2);
+}
+.hero__note::before{content:"";width:18px;height:1px;background:var(--line);flex:none}
+
+.metrics{
+  display:grid;grid-template-columns:1fr;gap:0;
+  margin-top:var(--s6);border-top:1px solid var(--line);
+}
+.metric{padding-block:var(--s3);border-bottom:1px solid var(--line)}
+.metric b{
+  display:block;font-family:var(--font-display);font-weight:400;
+  font-size:clamp(1.5rem,2.4vw,2rem);line-height:1;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+}
+.metric span{display:block;margin-top:var(--s1);font-size:.8125rem;line-height:1.45;color:var(--muted)}
+@media (min-width:560px){
+  .metrics{grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--line)}
+  .metric{border-bottom:0;padding:var(--s4) var(--s4) 0 0}
+  .metric + .metric{border-left:1px solid var(--line);padding-left:var(--s4)}
+}
+
+/* Постер-обложка */
+.hero__art{display:flex;justify-content:flex-start}
+@media (min-width:1024px){.hero__art{justify-content:flex-end}}
+.poster{
+  position:relative;width:100%;max-width:420px;aspect-ratio:4/3;
+  border-radius:var(--r-l);overflow:hidden;background:var(--dark);
+  box-shadow:var(--sh-2);isolation:isolate;
+}
+@media (min-width:1024px){.poster{max-width:none;aspect-ratio:4/4.6}}
+.poster__grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(90deg,rgba(244,241,234,.09) 1px,transparent 1px),
+    linear-gradient(0deg,rgba(244,241,234,.09) 1px,transparent 1px);
+  background-size:calc(100%/6) calc(100%/6);
+}
+.poster__disc{
+  position:absolute;top:9%;right:-14%;width:64%;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,rgba(244,241,234,.22),transparent 58%),var(--accent);
+}
+.poster__ring{
+  position:absolute;left:-26%;bottom:-20%;width:82%;aspect-ratio:1;border-radius:50%;
+  border:1px solid rgba(244,241,234,.34);
+}
+.poster__mark{position:absolute;top:var(--s5);left:var(--s5);color:var(--on-dark);opacity:.85}
+.poster__word{
+  position:absolute;left:var(--s5);bottom:calc(var(--s5) + 34px);
+  font-family:var(--font-display);font-size:clamp(3rem,7.4vw,4.5rem);line-height:.82;
+  letter-spacing:-.035em;color:var(--on-dark);
+}
+.poster__rule{position:absolute;left:var(--s5);right:var(--s5);bottom:calc(var(--s5) + 22px);height:1px;background:rgba(244,241,234,.22)}
+.poster__meta{
+  position:absolute;left:var(--s5);bottom:var(--s5);
+  display:flex;gap:var(--s4);font-family:var(--font-mono);font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--on-dark-faint);
+}
+.poster__side{
+  position:absolute;right:calc(var(--s4) + 2px);top:50%;
+  writing-mode:vertical-rl;transform:translateY(-50%) rotate(180deg);
+  font-family:var(--font-mono);font-size:9.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--on-dark-faint);white-space:nowrap;
+}
+.poster--sm{aspect-ratio:4/4.2;max-width:320px}
+@media (prefers-reduced-motion:reduce){
+  .page{animation:none}
+}
+
+/* ============================================================
+   8. Бегущая строка
+   ============================================================ */
+.marquee{
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  overflow:hidden;padding-block:var(--s4);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
+}
+.marquee__track{display:flex;width:max-content;animation:marquee 46s linear infinite;will-change:transform}
+.marquee:hover .marquee__track{animation-play-state:paused}
+.marquee__set{display:flex;align-items:center}
+.marquee__set span{
+  display:inline-flex;align-items:center;gap:var(--s5);padding-inline:var(--s5);
+  font-family:var(--font-display);font-size:clamp(1rem,1.7vw,1.3rem);
+  color:var(--ink-soft);white-space:nowrap;letter-spacing:-.01em;
+}
+.marquee__set span::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.65;flex:none}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){
+  .marquee{-webkit-mask-image:none;mask-image:none;overflow-x:auto}
+  .marquee__track{animation:none}
+}
+
+/* ============================================================
+   9. Услуги
+   ============================================================ */
+.services{display:grid;gap:var(--s3)}
+@media (min-width:700px){.services{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4)}}
+.svc{
+  position:relative;display:flex;flex-direction:column;gap:var(--s3);
+  padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-l);
+  background:transparent;overflow:hidden;
+  transition:background-color var(--d3) var(--ease),border-color var(--d3) var(--ease),box-shadow var(--d3) var(--ease);
+}
+.svc::after{
+  content:"";position:absolute;left:var(--s5);right:var(--s5);bottom:0;height:2px;
+  background:var(--accent);transform:scaleX(0);transform-origin:left;
+  transition:transform var(--d3) var(--ease);
+}
+.svc:hover{background:var(--fill);border-color:rgba(20,19,15,.16);box-shadow:var(--sh-1)}
+.svc:hover::after{transform:scaleX(1)}
+.svc__no{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--muted)}
+.svc__title{margin-top:var(--s1)}
+.svc__text{color:var(--ink-soft);font-size:.9375rem;line-height:1.58;max-width:40ch}
+.svc__foot{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  margin-top:auto;padding-top:var(--s4);border-top:1px solid var(--line);
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+}
+.svc__foot svg{color:var(--ink);transition:transform var(--d2) var(--ease)}
+.svc:hover .svc__foot svg{transform:translateX(3px);color:var(--accent)}
+
+/* ============================================================
+   10. Работы и обложки
+   ============================================================ */
+.cases{display:grid;gap:var(--s6) var(--s5)}
+@media (min-width:640px){.cases{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1080px){.cases{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s7) var(--s5)}}
+.cases--wide{grid-template-columns:1fr}
+@media (min-width:900px){.cases--wide{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s7) var(--s6)}}
+
+.case{display:grid;gap:var(--s3);align-content:start}
+.case__cover{
+  position:relative;display:block;overflow:hidden;
+  aspect-ratio:4/3;border-radius:var(--r-l);border:1px solid var(--line);
+  background:var(--bg);container-type:inline-size;
+  transition:border-color var(--d3) var(--ease),box-shadow var(--d3) var(--ease);
+}
+.case--wide .case__cover{aspect-ratio:16/10}
+.case:hover .case__cover{border-color:rgba(20,19,15,.22);box-shadow:var(--sh-1)}
+.case__badge{
+  position:absolute;right:var(--s3);top:var(--s3);z-index:3;
+  display:grid;place-items:center;width:38px;height:38px;
+  border-radius:50%;border:1px solid var(--line);background:rgba(244,241,234,.9);
+  color:var(--ink);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  opacity:0;transform:translateY(4px);
+  transition:opacity var(--d2) var(--ease),transform var(--d2) var(--ease),background-color var(--d2) var(--ease),color var(--d2) var(--ease);
+}
+.case:hover .case__badge,.case:focus-visible .case__badge{opacity:1;transform:none;background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.case__no{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--muted)}
+.case__meta{display:flex;align-items:center;gap:var(--s3);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.case__meta .case__year{margin-left:auto;color:var(--ink-faint)}
+.case__title{
+  display:block;margin-top:var(--s2);
+  font-family:var(--font-body);font-weight:600;font-size:1rem;line-height:1.35;letter-spacing:-.012em;
+  text-wrap:pretty;transition:color var(--d2) var(--ease);
+}
+.case:hover .case__title{color:var(--accent)}
+.case__metric{display:block;margin-top:var(--s1);font-size:.8125rem;color:var(--muted)}
+
+/* Обложки: общее */
+.cv{position:absolute;inset:0;transition:transform var(--d4,320ms) var(--ease);transform-origin:center}
+.case:hover .cv{transform:scale(1.025)}
+.cv__kicker{
+  position:absolute;left:6%;top:6%;
+  font-family:var(--font-mono);font-size:9.5px;line-height:1.4;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);max-width:62%;
+}
+.cv__word{
+  position:absolute;left:6%;bottom:8%;
+  font-family:var(--font-display);font-size:clamp(.95rem,9.5cqw,1.9rem);
+  line-height:.94;letter-spacing:-.03em;color:var(--ink);
+}
+.cv__foot{
+  position:absolute;right:6%;bottom:8%;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
+}
+
+/* 01 Северный дом */
+.cv--severny-dom{background:linear-gradient(160deg,#f4f1ea 0%,#efe9dd 100%)}
+.cv--severny-dom .cv__arch{
+  position:absolute;left:8%;bottom:0;width:44%;height:74%;
+  border-radius:200px 200px 0 0;border:1px solid rgba(20,19,15,.16);
+  background:linear-gradient(180deg,rgba(43,71,255,.14),rgba(43,71,255,.02));
+}
+.cv--severny-dom .cv__arch--2{
+  left:38%;width:26%;height:50%;
+  border-radius:140px 140px 0 0;
+  background:rgba(20,19,15,.05);border-color:rgba(20,19,15,.1);
+}
+.cv--severny-dom .cv__rules{
+  position:absolute;right:6%;top:18%;bottom:16%;width:26%;
+  background-image:repeating-linear-gradient(0deg,rgba(20,19,15,.12) 0 1px,transparent 1px 12px);
+}
+.cv--severny-dom .cv__word{font-size:clamp(1rem,10.5cqw,2.05rem);bottom:24%}
+
+/* 02 Трибуна */
+.cv--tribuna{background:linear-gradient(200deg,#f4f1ea 42%,#ebe5d8 100%)}
+.cv--tribuna .cv__bars{
+  position:absolute;left:8%;right:8%;bottom:12%;height:44%;
+  display:flex;align-items:flex-end;gap:3.2%;
+}
+.cv--tribuna .cv__bars i{
+  display:block;flex:1;border-radius:2px 2px 0 0;background:var(--accent);
+  opacity:.9;
+}
+.cv--tribuna .cv__bars i:nth-child(1){height:28%;opacity:.42}
+.cv--tribuna .cv__bars i:nth-child(2){height:44%;opacity:.55}
+.cv--tribuna .cv__bars i:nth-child(3){height:36%;opacity:.48}
+.cv--tribuna .cv__bars i:nth-child(4){height:64%;opacity:.7}
+.cv--tribuna .cv__bars i:nth-child(5){height:52%;opacity:.6}
+.cv--tribuna .cv__bars i:nth-child(6){height:100%;opacity:1}
+.cv--tribuna .cv__axis{position:absolute;left:8%;right:8%;bottom:calc(12% - 1px);height:1px;background:rgba(20,19,15,.22)}
+.cv--tribuna .cv__word{bottom:62%;color:var(--ink)}
+.cv--tribuna .cv__foot{top:6%;right:6%;bottom:auto;left:auto}
+
+/* 03 Октябрь */
+.cv--oktyabr{background:radial-gradient(120% 100% at 78% 18%,#232118 0%,#14130f 62%)}
+.cv--oktyabr .cv__kicker{color:var(--on-dark-faint)}
+.cv--oktyabr .cv__film{
+  position:absolute;left:0;right:0;height:9px;
+  background-image:repeating-linear-gradient(90deg,rgba(244,241,234,.55) 0 7px,transparent 7px 20px);
+}
+.cv--oktyabr .cv__film--t{top:0;border-bottom:1px solid rgba(244,241,234,.16)}
+.cv--oktyabr .cv__film--b{bottom:0;border-top:1px solid rgba(244,241,234,.16)}
+.cv--oktyabr .cv__word{color:var(--on-dark);bottom:16%;font-size:clamp(1.15rem,12cqw,2.6rem);letter-spacing:-.04em}
+.cv--oktyabr .cv__foot{color:var(--on-dark-faint);bottom:15%}
+.cv--oktyabr .cv__dot{position:absolute;right:9%;top:22%;width:34px;height:34px;border-radius:50%;background:var(--accent)}
+
+/* 04 Медлайн */
+.cv--medline{background:linear-gradient(120deg,#f4f1ea,#eee7da)}
+.cv--medline .cv__rings{
+  position:absolute;right:-8%;top:-14%;width:66%;aspect-ratio:1;border-radius:50%;
+  background-image:repeating-radial-gradient(circle at 50% 50%,rgba(20,19,15,.13) 0 1px,transparent 1px 14px);
+}
+.cv--medline .cv__plus{position:absolute;right:18%;top:26%;width:44px;height:44px}
+.cv--medline .cv__plus i{position:absolute;display:block;background:var(--accent);border-radius:3px}
+.cv--medline .cv__plus i:first-child{left:50%;top:0;bottom:0;width:5px;transform:translateX(-50%)}
+.cv--medline .cv__plus i:last-child{top:50%;left:0;right:0;height:5px;transform:translateY(-50%)}
+.cv--medline .cv__big{
+  position:absolute;left:6%;bottom:34%;
+  font-family:var(--font-mono);font-size:clamp(1.1rem,11cqw,2.1rem);letter-spacing:-.02em;color:var(--ink);
+}
+.cv--medline .cv__word{bottom:8%;font-size:clamp(1rem,9cqw,1.75rem)}
+.cv--medline .cv__foot{left:auto}
+
+/* 05 Среда */
+.cv--sreda{background:linear-gradient(215deg,rgba(43,71,255,.13),rgba(43,71,255,.02) 58%,transparent)}
+.cv--sreda .cv__hatch{
+  position:absolute;right:0;bottom:0;width:46%;height:64%;
+  background-image:repeating-linear-gradient(45deg,rgba(20,19,15,.14) 0 1px,transparent 1px 10px);
+}
+.cv--sreda .cv__word{
+  font-size:clamp(1.35rem,14cqw,3rem);font-style:italic;
+  transform:rotate(-4deg);transform-origin:left bottom;
+}
+.cv--sreda .cv__list{position:absolute;right:7%;top:10%;display:grid;gap:6px;text-align:right}
+.cv--sreda .cv__list span{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;color:var(--ink-faint)}
+.cv--sreda .cv__discout{position:absolute;left:6%;top:16%;width:26px;height:26px;border-radius:50%;border:1px solid var(--accent)}
+
+/* 06 Рельеф */
+.cv--relef{
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(rgba(20,19,15,.075) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(20,19,15,.075) 1px,transparent 1px);
+  background-size:34px 34px;
+}
+.cv--relef .cv__plan{
+  position:absolute;right:12%;top:22%;width:34%;height:44%;
+  border:1px solid var(--ink);transform:rotate(-7deg);
+  background:rgba(244,241,234,.72);
+}
+.cv--relef .cv__plan::before{
+  content:"";position:absolute;left:0;top:38%;right:0;height:1px;background:rgba(20,19,15,.5);
+}
+.cv--relef .cv__plan::after{
+  content:"";position:absolute;left:52%;top:0;bottom:0;width:1px;background:rgba(20,19,15,.5);
+}
+.cv--relef .cv__plan--2{right:26%;top:38%;width:20%;height:26%;transform:rotate(5deg);border-color:var(--accent);background:rgba(43,71,255,.08)}
+.cv--relef .cv__plan--2::before,.cv--relef .cv__plan--2::after{background:rgba(43,71,255,.55)}
+.cv--relef .cv__word{font-size:clamp(1.2rem,12cqw,2.4rem);bottom:26%}
+.cv--relef .cv__foot{left:6%;right:auto;bottom:8%}
+.cv--relef .cv__kv{position:absolute;left:6%;top:6%;width:12px;height:12px;border-left:1px solid var(--ink);border-top:1px solid var(--ink)}
+
+/* ============================================================
+   11. Подход (шаги)
+   ============================================================ */
+.steps{border-top:1px solid var(--line)}
+.step{
+  display:grid;gap:var(--s2) var(--s4);
+  padding-block:var(--s5);border-bottom:1px solid var(--line);
+}
+@media (min-width:900px){
+  .step{grid-template-columns:76px minmax(0,.85fr) minmax(0,1.15fr) 130px;align-items:start;gap:var(--s5)}
+}
+.step__no{
+  font-family:var(--font-display);font-size:clamp(1.7rem,3.1vw,2.5rem);
+  line-height:.9;letter-spacing:-.04em;color:rgba(20,19,15,.24);
+  padding-top:2px;transition:color var(--d3) var(--ease);
+}
+.step:hover .step__no{color:var(--accent)}
+.step__title{font-family:var(--font-display);font-weight:400;font-size:clamp(1.35rem,2.2vw,1.75rem);line-height:1.15;letter-spacing:-.02em}
+.step__text{color:var(--ink-soft);font-size:.9375rem;line-height:1.6;max-width:48ch}
+.step__time{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);padding-top:8px;white-space:nowrap;
+}
+@media (min-width:900px){.step__time{text-align:right}}
+
+/* ============================================================
+   12. Команда
+   ============================================================ */
+.team{display:grid;gap:var(--s5)}
+@media (min-width:560px){.team{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s6)}}
+@media (min-width:1000px){.team{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.member{border-top:1px solid var(--line);padding-top:var(--s4)}
+.avatar{
+  display:grid;place-items:center;width:60px;height:60px;border-radius:50%;
+  font-family:var(--font-display);font-size:1.15rem;letter-spacing:.02em;
+  border:1px solid rgba(20,19,15,.12);color:var(--ink);
+  transition:border-color var(--d2) var(--ease),transform var(--d2) var(--ease);
+}
+.member:hover .avatar{border-color:var(--accent);transform:translateY(-2px)}
+.avatar--1{background:rgba(43,71,255,.1)}
+.avatar--2{background:rgba(20,19,15,.07)}
+.avatar--3{background:linear-gradient(140deg,rgba(43,71,255,.16),rgba(20,19,15,.05))}
+.avatar--4{background:rgba(106,102,92,.14)}
+.avatar--sm{width:44px;height:44px;font-size:.9rem}
+.member__name{margin-top:var(--s3);font-weight:600;font-size:1rem;letter-spacing:-.01em}
+.member__role{margin-top:2px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.member__text{margin-top:var(--s3);font-size:.9rem;line-height:1.58;color:var(--ink-soft)}
+
+/* ============================================================
+   13. Отзывы
+   ============================================================ */
+.reviews{display:grid;gap:var(--s4)}
+@media (min-width:900px){.reviews{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.review{
+  display:flex;flex-direction:column;gap:var(--s4);
+  padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-l);
+  background:linear-gradient(180deg,rgba(20,19,15,.028),rgba(20,19,15,0) 60%);
+  transition:border-color var(--d3) var(--ease),box-shadow var(--d3) var(--ease);
+}
+.review:hover{border-color:rgba(20,19,15,.18);box-shadow:var(--sh-1)}
+.review__top{display:flex;align-items:center;gap:var(--s3)}
+.review__name{font-weight:600;font-size:.9375rem;letter-spacing:-.01em}
+.review__role{font-size:.8125rem;color:var(--muted);margin-top:1px;line-height:1.4}
+.review__text{margin:0;font-size:.9375rem;line-height:1.62;color:var(--ink-soft);text-wrap:pretty}
+.review__foot{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  margin-top:auto;padding-top:var(--s3);border-top:1px solid var(--line);
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+}
+.review__score{color:var(--ink)}
+.review__score b{font-weight:600}
+
+/* ============================================================
+   14. Контакты и форма
+   ============================================================ */
+.contacts{display:grid;gap:var(--s7)}
+@media (min-width:960px){.contacts{grid-template-columns:minmax(0,1fr) minmax(0,1.04fr);gap:clamp(32px,5vw,64px);align-items:start}}
+.contacts__lead{margin-top:var(--s4);max-width:44ch}
+.cd{margin-top:var(--s6);border-top:1px solid var(--line)}
+.cd__row{
+  display:grid;grid-template-columns:84px minmax(0,1fr) auto;gap:var(--s3);
+  align-items:center;min-height:56px;padding-block:6px;border-bottom:1px solid var(--line);
+}
+@media (max-width:420px){.cd__row{grid-template-columns:1fr auto}.cd__label{grid-column:1/-1;padding-top:var(--s2)}}
+.cd__label{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.cd__value{font-size:.9375rem;line-height:1.45;color:var(--ink)}
+.cd__note{margin-top:var(--s4);font-size:.875rem;color:var(--muted);line-height:1.55;max-width:44ch}
+.icon-btn{
+  display:grid;place-items:center;width:44px;height:44px;flex:none;
+  border:1px solid var(--line);border-radius:var(--r-s);background:transparent;
+  color:var(--muted);cursor:pointer;
+  transition:color var(--d2) var(--ease),border-color var(--d2) var(--ease),background-color var(--d2) var(--ease);
+}
+.icon-btn:hover{color:var(--ink);border-color:var(--ink-faint);background:var(--fill)}
+.icon-btn:active{background:var(--fill-2)}
+
+.formcard{
+  border:1px solid var(--line);border-radius:var(--r-l);
+  padding:clamp(20px,3vw,32px);
+  background:linear-gradient(180deg,rgba(20,19,15,.03),rgba(20,19,15,0) 40%);
+  box-shadow:var(--sh-1);
+}
+.formcard__head{display:grid;gap:var(--s2);margin-bottom:var(--s5)}
+.formcard__head p{font-size:.875rem;color:var(--muted)}
+.form{display:grid;gap:var(--s4)}
+.field{display:grid;gap:6px}
+.label{
+  display:flex;align-items:baseline;gap:6px;
+  font-size:.8125rem;font-weight:600;letter-spacing:-.005em;color:var(--ink);
+}
+.label small{font-weight:400;color:var(--muted);font-size:.75rem}
+.req{color:var(--accent);line-height:1}
+.input,.textarea,.select{
+  width:100%;min-height:48px;padding:12px 14px;
+  border:1px solid var(--line);border-radius:var(--r-s);
+  background:rgba(244,241,234,.55);color:var(--ink);
+  font-family:inherit;font-size:.9375rem;line-height:1.5;
+  transition:border-color var(--d2) var(--ease),box-shadow var(--d2) var(--ease),background-color var(--d2) var(--ease);
+}
+.input::placeholder,.textarea::placeholder{color:rgba(106,102,92,.75)}
+.input:hover,.textarea:hover,.select:hover{border-color:var(--ink-faint)}
+.input:focus,.textarea:focus,.select:focus{
+  outline:none;border-color:var(--accent);background:var(--bg);
+  box-shadow:0 0 0 3px var(--accent-ring);
+}
+.textarea{min-height:118px;resize:vertical;padding-top:12px}
+.select-wrap{position:relative}
+.select{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:pointer}
+.select:invalid{color:var(--muted)}
+.select-wrap svg{position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
+.field.is-invalid .input,.field.is-invalid .textarea,.field.is-invalid .select{
+  border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);
+}
+.field.is-invalid .label{color:var(--ink)}
+.err{
+  display:flex;align-items:flex-start;gap:6px;
+  font-size:.8125rem;line-height:1.45;color:var(--ink);
+}
+.err svg{flex:none;margin-top:2px;color:var(--accent)}
+.field__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+.counter{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;color:var(--ink-faint)}
+.counter.is-limit{color:var(--accent)}
+
+.check{
+  display:flex;align-items:flex-start;gap:var(--s3);
+  padding-block:var(--s2);min-height:44px;cursor:pointer;
+}
+.check input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.check__box{
+  position:relative;flex:none;width:22px;height:22px;margin-top:1px;
+  border:1px solid var(--line);border-radius:6px;background:rgba(244,241,234,.6);
+  display:grid;place-items:center;color:var(--bg);
+  transition:background-color var(--d2) var(--ease),border-color var(--d2) var(--ease),box-shadow var(--d2) var(--ease);
+}
+.check__box svg{opacity:0;transform:scale(.7);transition:opacity var(--d2) var(--ease),transform var(--d2) var(--ease)}
+.check:hover .check__box{border-color:var(--ink-faint)}
+.check input:checked + .check__box{background:var(--accent);border-color:var(--accent)}
+.check input:checked + .check__box svg{opacity:1;transform:none}
+.check input:focus + .check__box{outline:2px solid var(--accent);outline-offset:2px}
+.field.is-invalid .check__box{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.check__text{font-size:.875rem;line-height:1.5;color:var(--ink-soft)}
+.check__text a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;transition:color var(--d2) var(--ease),text-decoration-color var(--d2) var(--ease)}
+.check__text a:hover{color:var(--accent);text-decoration-color:var(--accent-line)}
+.fine{font-size:.75rem;line-height:1.5;color:var(--muted);margin-top:calc(var(--s2) * -1)}
+.consent-note{margin-top:calc(var(--s2) * -1);font-size:.75rem;line-height:1.5;color:var(--muted)}
+.consent-note .link-inline{min-height:32px;font-size:.75rem}
+.form__actions{display:grid;gap:var(--s3);margin-top:var(--s2)}
+.form__actions .btn{width:100%}
+.form__note{display:flex;align-items:flex-start;gap:var(--s2);font-size:.75rem;line-height:1.5;color:var(--muted)}
+.form__note svg{flex:none;margin-top:2px;color:var(--ink-faint)}
+@media (min-width:560px){
+  .form__actions{grid-template-columns:auto minmax(0,1fr);align-items:center}
+  .form__actions .btn{width:auto;padding-inline:26px}
+}
+.btn__spin{display:none;width:20px;height:20px;flex:none}
+.btn.is-loading .btn__spin{display:block;animation:spin 900ms linear infinite}
+.btn.is-loading{pointer-events:none}
+.btn.is-loading .btn__arrow{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.btn.is-loading .btn__spin{animation:none}}
+
+.form-ok{display:grid;gap:var(--s3);justify-items:start;outline:none}
+.form-ok__icon{
+  display:grid;place-items:center;width:52px;height:52px;border-radius:50%;
+  background:var(--accent-fill);border:1px solid var(--accent-line);color:var(--accent);
+}
+.form-ok__title{font-family:var(--font-display);font-weight:400;font-size:clamp(1.25rem,2.2vw,1.6rem);line-height:1.2;letter-spacing:-.02em}
+.form-ok__text{font-size:.9375rem;line-height:1.6;color:var(--ink-soft);max-width:44ch}
+.form-ok__num{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;color:var(--ink);background:var(--fill);border:1px dashed var(--line);border-radius:var(--r-s);padding:8px 10px}
+.form-ok__actions{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s2)}
+
+/* ============================================================
+   15. Страница работ, услуги, подход, политика
+   ============================================================ */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin-bottom:var(--s5)}
+.filters{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.count{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--s5)}
+.nda{
+  margin-top:var(--s7);padding:clamp(20px,3.4vw,32px);
+  border:1px dashed var(--line);border-radius:var(--r-l);
+  display:grid;gap:var(--s3);justify-items:start;
+}
+.nda h2{font-family:var(--font-display);font-weight:400;font-size:1.5rem;letter-spacing:-.02em;line-height:1.2}
+.nda p{color:var(--ink-soft);font-size:.9375rem;max-width:60ch}
+.works-foot{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3) var(--s4);margin-top:var(--s6)}
+.works-foot .hint{max-width:34ch}
+
+.svc-list{border-top:1px solid var(--line);margin-top:var(--s6)}
+.svc-row{display:grid;gap:var(--s4);padding-block:var(--s6);border-bottom:1px solid var(--line)}
+@media (min-width:900px){
+  .svc-row{grid-template-columns:minmax(0,.72fr) minmax(0,1.1fr) minmax(0,.9fr);gap:var(--s6);align-items:start}
+}
+.svc-row__no{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--muted)}
+.svc-row__title{font-family:var(--font-display);font-weight:400;font-size:clamp(1.4rem,2.6vw,2rem);line-height:1.1;letter-spacing:-.022em;margin-top:var(--s2)}
+.svc-row__desc{color:var(--ink-soft);font-size:.9375rem;line-height:1.6;margin-top:var(--s3);max-width:44ch}
+.svc-row__meta{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);margin-top:var(--s4);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.svc-row__meta b{color:var(--ink);font-weight:600}
+.incl{display:grid;gap:var(--s2)}
+.incl__title{font-family:var(--font-mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--s2)}
+.incl li{display:flex;gap:var(--s2);align-items:flex-start;font-size:.9rem;line-height:1.5;color:var(--ink-soft)}
+.incl svg{flex:none;margin-top:3px;color:var(--accent)}
+
+.packs{display:grid;gap:var(--s4);margin-top:var(--s7)}
+@media (min-width:860px){.packs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.pack{
+  display:flex;flex-direction:column;gap:var(--s3);
+  padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-l);
+  background:transparent;
+}
+.pack--featured{border-color:var(--ink);background:linear-gradient(180deg,rgba(43,71,255,.05),transparent 70%)}
+.pack__top{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+.pack__flag{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.pack__price{margin-top:var(--s2);font-family:var(--font-display);font-weight:400;font-size:1.75rem;letter-spacing:-.02em;line-height:1}
+.pack__time{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:var(--s1)}
+.pack ul{display:grid;gap:var(--s2);margin-top:var(--s2)}
+.pack li{display:flex;gap:var(--s2);align-items:flex-start;font-size:.875rem;line-height:1.5;color:var(--ink-soft)}
+.pack li svg{flex:none;margin-top:3px;color:var(--accent)}
+.pack .btn{margin-top:var(--s4);width:100%}
+.pay-note{
+  display:grid;gap:var(--s1);margin-top:var(--s5);padding:var(--s4);
+  border:1px solid var(--line);border-radius:var(--r-m);background:var(--fill);
+  font-size:.875rem;line-height:1.55;color:var(--ink-soft);
+}
+.pay-note b{color:var(--ink)}
+
+.stage{display:grid;gap:var(--s4);padding-block:var(--s6);border-top:1px solid var(--line)}
+@media (min-width:900px){.stage{grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);gap:var(--s7);align-items:start}}
+.stage__left{display:grid;gap:var(--s2);justify-items:start}
+.stage__num{
+  font-family:var(--font-display);font-weight:400;font-size:clamp(2.6rem,6vw,4.4rem);
+  line-height:.8;letter-spacing:-.05em;color:rgba(20,19,15,.16);
+}
+.stage__title{font-family:var(--font-display);font-weight:400;font-size:clamp(1.5rem,2.6vw,2rem);line-height:1.08;letter-spacing:-.022em;margin-top:var(--s2)}
+.stage__time{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:var(--s2)}
+.stage__desc{color:var(--ink-soft);font-size:.9375rem;line-height:1.62;max-width:52ch}
+.stage__cols{display:grid;gap:var(--s4);margin-top:var(--s4)}
+@media (min-width:600px){.stage__cols{grid-template-columns:1fr 1fr}}
+.stage__cols h3{font-family:var(--font-mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--s2);font-weight:500}
+.stage__cols li{display:flex;gap:var(--s2);align-items:flex-start;font-size:.9rem;line-height:1.5;color:var(--ink-soft);margin-bottom:6px}
+.stage__cols li::before{content:"";flex:none;width:5px;height:5px;margin-top:8px;border-radius:50%;background:var(--accent)}
+
+.principles{display:grid;gap:var(--s5);margin-top:var(--s6)}
+@media (min-width:700px){.principles{grid-template-columns:1fr 1fr}}
+@media (min-width:1100px){.principles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.principle{border-top:1px solid var(--line);padding-top:var(--s4)}
+.principle h3{font-family:var(--font-display);font-weight:400;font-size:1.2rem;line-height:1.2;letter-spacing:-.015em}
+.principle p{margin-top:var(--s2);font-size:.9rem;line-height:1.58;color:var(--ink-soft)}
+
+.guarantee{
+  margin-top:var(--s7);background:var(--dark);color:var(--on-dark);
+  border-radius:var(--r-l);padding:clamp(24px,4vw,48px);
+  display:grid;gap:var(--s5);
+  background-image:radial-gradient(120% 160% at 100% 0%,rgba(43,71,255,.34),transparent 56%);
+}
+@media (min-width:860px){.guarantee{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);align-items:center;gap:var(--s7)}}
+.guarantee h2{font-family:var(--font-display);font-weight:400;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.1;letter-spacing:-.022em}
+.guarantee p{margin-top:var(--s3);color:var(--on-dark-soft);font-size:.9375rem;line-height:1.6;max-width:52ch}
+.guarantee__side{display:grid;gap:var(--s3);justify-items:start}
+
+.faq{border-top:1px solid var(--line);margin-top:var(--s6)}
+.faq__item{border-bottom:1px solid var(--line)}
+.faq__q{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s4);
+  width:100%;min-height:64px;padding:var(--s3) 0;
+  background:none;border:0;text-align:left;cursor:pointer;
+  font-size:1.0625rem;font-weight:600;letter-spacing:-.012em;color:var(--ink);
+  transition:color var(--d2) var(--ease);
+}
+.faq__q:hover{color:var(--accent)}
+.faq__pm{position:relative;flex:none;width:24px;height:24px;color:var(--muted)}
+.faq__pm svg{position:absolute;inset:0}
+.faq__pm .v{transition:transform var(--d2) var(--ease);transform-box:fill-box;transform-origin:center}
+.faq__item.is-open .faq__pm .v{transform:scaleY(0)}
+.faq__a{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--d3) var(--ease)}
+.faq__item.is-open .faq__a{grid-template-rows:1fr}
+.faq__a > div{overflow:hidden}
+.faq__a p{padding-bottom:var(--s4);max-width:68ch;color:var(--ink-soft);font-size:.9375rem;line-height:1.62}
+
+.cta-band{border-top:1px solid var(--line);padding-block:clamp(40px,6vw,72px)}
+.cta-band__in{display:grid;gap:var(--s4)}
+@media (min-width:800px){.cta-band__in{grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:var(--s6)}}
+.cta-band h2{max-width:22ch}
+.cta-band p{margin-top:var(--s3);color:var(--ink-soft);max-width:52ch;font-size:.9375rem}
+
+.policy{max-width:74ch}
+.policy h2{font-family:var(--font-display);font-weight:400;font-size:1.35rem;letter-spacing:-.02em;margin-top:var(--s6)}
+.policy p{margin-top:var(--s2);color:var(--ink-soft);font-size:.95rem;line-height:1.66}
+.policy ul{display:grid;gap:var(--s2);margin-top:var(--s3)}
+.policy li{display:flex;gap:var(--s2);color:var(--ink-soft);font-size:.95rem;line-height:1.6}
+.policy li::before{content:"";flex:none;width:5px;height:5px;margin-top:10px;border-radius:50%;background:var(--accent)}
+.policy__date{display:flex;align-items:center;gap:var(--s2);margin-top:var(--s4);font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* ============================================================
+   16. Футер
+   ============================================================ */
+.footer{background:var(--dark);color:var(--on-dark);padding-block:clamp(40px,6vw,72px) var(--s5)}
+.footer__grid{display:grid;gap:var(--s6)}
+@media (min-width:720px){.footer__grid{grid-template-columns:1.5fr 1fr 1.1fr;gap:var(--s6)}}
+@media (min-width:1040px){.footer__grid{grid-template-columns:1.6fr .8fr 1.1fr .9fr}}
+.logo--footer{color:var(--on-dark);font-size:1.5rem}
+.logo--footer .logo__mark{color:var(--on-dark)}
+.logo--footer:hover .logo__mark{color:var(--accent)}
+.footer__brand-text{margin-top:var(--s3);font-size:.9rem;line-height:1.6;color:var(--on-dark-soft);max-width:34ch}
+.footer__brand-note{margin-top:var(--s4);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--on-dark-faint);line-height:1.6}
+.footer__title{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-dark-faint);font-weight:500;margin-bottom:var(--s2)}
+.footer__list{display:grid}
+.footer__list a,.footer__list button{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  min-height:44px;padding:0;background:none;border:0;cursor:pointer;
+  color:var(--on-dark-soft);font-size:.9375rem;text-align:left;
+  transition:color var(--d2) var(--ease);
+}
+.footer__list a:hover,.footer__list button:hover{color:var(--on-dark)}
+.footer__list svg{color:var(--on-dark-faint);transition:color var(--d2) var(--ease),transform var(--d2) var(--ease)}
+.footer__list a:hover svg,.footer__list button:hover svg{color:var(--accent)}
+.footer__list a:hover svg{transform:translateX(2px)}
+.footer__addr{font-size:.9rem;line-height:1.6;color:var(--on-dark-soft);max-width:26ch}
+.footer__addr span{display:block;color:var(--on-dark-faint);margin-top:var(--s2);font-size:.8125rem}
+.footer__bottom{
+  display:grid;gap:var(--s3) var(--s5);
+  margin-top:var(--s7);padding-top:var(--s4);border-top:1px solid var(--line-dark);
+  font-family:var(--font-mono);font-size:10.5px;line-height:1.6;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--on-dark-faint);
+}
+@media (min-width:800px){.footer__bottom{grid-template-columns:auto auto 1fr auto;align-items:center}.footer__top{justify-self:end}}
+.footer__bottom a{text-decoration:underline;text-decoration-color:var(--line-dark);text-underline-offset:3px;transition:color var(--d2) var(--ease)}
+.footer__bottom a:hover{color:var(--on-dark)}
+.footer__legal{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s5)}
+.footer__top{
+  display:inline-flex;align-items:center;gap:var(--s2);justify-self:start;
+  min-height:44px;padding:0;background:none;border:0;cursor:pointer;
+  color:var(--on-dark-soft);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  transition:color var(--d2) var(--ease);
+}
+.footer__top:hover{color:var(--on-dark)}
+.footer__top svg{transition:transform var(--d2) var(--ease)}
+.footer__top:hover svg{transform:translateY(-2px)}
+
+/* ============================================================
+   17. Диалог кейса и тосты
+   ============================================================ */
+.dlg{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:var(--s5)}
+.dlg__scrim{position:absolute;inset:0;background:rgba(20,19,15,.58);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:fadeIn var(--d2) var(--ease)}
+.dlg__panel{
+  position:relative;width:min(920px,100%);max-height:min(90vh,940px);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--r-l);
+  box-shadow:var(--sh-2);animation:panelIn var(--d3) var(--ease);
+}
+.dlg__close{
+  position:absolute;right:var(--s4);top:var(--s4);z-index:4;
+  display:grid;place-items:center;width:44px;height:44px;
+  border:1px solid var(--line);border-radius:50%;
+  background:rgba(244,241,234,.92);color:var(--ink);cursor:pointer;
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  transition:background-color var(--d2) var(--ease),color var(--d2) var(--ease),border-color var(--d2) var(--ease);
+}
+.dlg__close:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.dlg__scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.dlg__cover{position:relative;aspect-ratio:16/6;container-type:inline-size;overflow:hidden;border-bottom:1px solid var(--line)}
+.dlg__cover .cv__foot{display:none}
+.dlg__in{padding:clamp(20px,3.6vw,40px)}
+.dlg__title{font-family:var(--font-display);font-weight:400;font-size:clamp(1.6rem,3.2vw,2.4rem);line-height:1.06;letter-spacing:-.025em;margin-top:var(--s2)}
+.dlg__sub{color:var(--ink-soft);font-size:.9375rem;line-height:1.5;margin-top:var(--s2)}
+.dlg__grid{display:grid;gap:var(--s5);margin-top:var(--s6)}
+@media (min-width:760px){.dlg__grid{grid-template-columns:1fr 1fr;gap:var(--s6)}}
+.dlg__block h3,.dlg__row h3{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;margin-bottom:var(--s2);
+}
+.dlg__block p{font-size:.9375rem;line-height:1.62;color:var(--ink-soft)}
+.dlg__results{
+  display:grid;gap:var(--s3);margin-top:var(--s6);
+  padding:var(--s4) 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+@media (min-width:600px){.dlg__results{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4)}}
+.dlg__res b{
+  display:block;font-family:var(--font-display);font-weight:400;
+  font-size:clamp(1.35rem,2.4vw,1.8rem);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+}
+.dlg__res span{display:block;margin-top:var(--s1);font-size:.8125rem;line-height:1.4;color:var(--muted)}
+.dlg__row{display:grid;gap:var(--s2);margin-top:var(--s6)}
+.tags{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.tag{
+  display:inline-flex;align-items:center;min-height:28px;padding:0 10px;
+  border:1px solid var(--line);border-radius:var(--r-s);
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted);
+}
+.dlg__quote{
+  margin:var(--s6) 0 0;padding:var(--s4) 0 0;border-top:1px solid var(--line);
+  display:grid;gap:var(--s2);
+}
+.dlg__quote p{
+  font-family:var(--font-display);font-size:clamp(1.05rem,1.8vw,1.3rem);
+  line-height:1.4;letter-spacing:-.01em;color:var(--ink);
+}
+.dlg__quote footer{font-size:.8125rem;color:var(--muted);line-height:1.5}
+.dlg__actions{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s6);padding-top:var(--s5);border-top:1px solid var(--line)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes panelIn{from{opacity:0;transform:translateY(10px) scale(.995)}to{opacity:1;transform:none}}
+@media (max-width:640px){
+  .dlg{padding:var(--s3)}
+  .dlg__panel{max-height:calc(100dvh - 24px)}
+  .dlg__cover{aspect-ratio:16/9}
+}
+@media (prefers-reduced-motion:reduce){
+  .dlg__scrim,.dlg__panel{animation:none}
+}
+
+.toasts{
+  position:fixed;left:50%;bottom:calc(var(--s5) + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%);z-index:120;
+  display:flex;flex-direction:column;gap:var(--s2);align-items:center;
+  width:max-content;max-width:min(92vw,440px);pointer-events:none;
+}
+.toast{
+  display:flex;align-items:flex-start;gap:var(--s2);
+  padding:12px 16px;border-radius:var(--r-m);
+  background:var(--dark);color:var(--on-dark);box-shadow:var(--sh-2);
+  font-size:.875rem;line-height:1.45;
+  animation:toastIn var(--d2) var(--ease) both;
+}
+.toast.is-out{animation:toastOut var(--d2) var(--ease) both}
+.toast svg{flex:none;margin-top:1px;color:var(--accent)}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes toastOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(6px)}}
+@media (max-width:520px){
+  .toasts{width:calc(100vw - 32px);align-items:stretch}
+  .toast{width:100%}
+}
+
+/* ============================================================
+   18. Reduce motion
+   ============================================================ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+    scroll-behavior:auto!important;
+  }
+  html.js [data-reveal]{opacity:1!important;transform:none!important;transition:none!important}
+  .case:hover .cv{transform:none}
+}
+
+/* Утилиты */
+.mt-0{margin-top:0}
+.nowrap{white-space:nowrap}
+.br-desk{display:none}
+@media (min-width:900px){.br-desk{display:inline}}
+</style>
+</head>
+<body>
+<a class="skip sr-only" href="#main">Перейти к содержимому</a>
+
+<!-- Верхняя плашка -->
+<div class="topbar">
+  <div class="wrap topbar__in">
+    <p class="topbar__status"><span class="topbar__dot" aria-hidden="true"></span>Свободны с января · 2 слота</p>
+    <div class="topbar__right">
+      <p class="topbar__hours">Пн–Пт, 10:00–19:00</p>
+      <button class="topbar__phone" type="button" data-copy="+7 495 120-45-70" data-copy-msg="Телефон скопирован: +7 495 120-45-70">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M6.5 3.5h-1a2 2 0 0 0-2 2v1A14.5 14.5 0 0 0 17.5 20.5h1a2 2 0 0 0 2-2v-1a1 1 0 0 0-.75-.97l-3.2-.94a1 1 0 0 0-1.1.42l-.9 1.3a11.5 11.5 0 0 1-5.76-5.76l1.3-.9a1 1 0 0 0 .42-1.1l-.94-3.2a1 1 0 0 0-.97-.75z"/></svg>
+        <span>+7 495 120-45-70</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Шапка -->
+<header class="header" id="site-header">
+  <div class="wrap header__in">
+    <a class="logo" href="#/" aria-label="Цех — на главную">
+      <svg class="logo__mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5.5 4v12.5H18V4"/><path d="M18 16.5V20"/></svg>
+      <span class="logo__word">цех</span>
+    </a>
+
+    <nav class="nav" aria-label="Основная навигация">
+      <a href="#/raboty" data-nav="works">Работы</a>
+      <a href="#/uslugi" data-nav="services">Услуги</a>
+      <a href="#/podhod" data-nav="approach">Подход</a>
+      <a href="#/kontakty" data-nav="contacts">Контакты</a>
+    </nav>
+
+    <a class="btn btn--primary header__cta" href="#/kontakty">
+      Обсудить проект
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+    </a>
+
+    <button class="burger" type="button" id="burger" aria-expanded="false" aria-controls="mnav" aria-label="Открыть меню">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M4 8.5h16"/><path d="M4 15.5h16"/></svg>
+    </button>
+  </div>
+
+  <div class="mnav" id="mnav">
+    <div class="mnav__in">
+      <nav aria-label="Мобильная навигация">
+        <a class="mnav__link" href="#/raboty" data-nav="works"><span>Работы</span><span class="mono">06</span></a>
+        <a class="mnav__link" href="#/uslugi" data-nav="services"><span>Услуги</span><span class="mono">04</span></a>
+        <a class="mnav__link" href="#/podhod" data-nav="approach"><span>Подход</span><span class="mono">04</span></a>
+        <a class="mnav__link" href="#/kontakty" data-nav="contacts"><span>Контакты</span><span class="mono">Москва</span></a>
+      </nav>
+      <div class="mnav__cta">
+        <a class="btn btn--primary btn--wide" href="#/kontakty">Обсудить проект</a>
+        <button class="btn btn--quiet btn--wide" type="button" data-copy="+7 495 120-45-70" data-copy-msg="Телефон скопирован: +7 495 120-45-70">Скопировать телефон</button>
+        <div class="mnav__meta">
+          <span class="mono">Свободны с января</span>
+          <span class="mono">Пн–Пт, 10:00–19:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ==================== ГЛАВНАЯ ==================== -->
+<div class="page" data-page="home">
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero__in">
+      <div class="hero__body">
+        <p class="eyebrow hero__kicker">дизайн-студия · Москва</p>
+        <h1 class="h1 hero__title" id="hero-title">Сайты, которые продают <em>без крика</em></h1>
+        <p class="hero__lead">Четыре человека, которые проектируют сайты и интерфейсы для производителей, клиник, финтеха и школ. Сначала разбираемся в продукте и цифрах, потом рисуем — без стоковых улыбок, каруселей и обещаний «в три клика».</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#/raboty">
+            Смотреть работы
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn--ghost" href="#/podhod">Как мы работаем</a>
+        </div>
+        <p class="hero__note">Ближайшие слоты — январь и март · бриф занимает 40 минут</p>
+
+        <div class="metrics">
+          <div class="metric"><b>18</b><span>проектов сдано с 2020 года</span></div>
+          <div class="metric"><b>6</b><span>лет студии в Москве</span></div>
+          <div class="metric"><b>4,9</b><span>средняя оценка на Яндексе, 38 отзывов</span></div>
+        </div>
+      </div>
+
+      <div class="hero__art">
+        <div class="poster" role="img" aria-label="Знак студии «Цех»: кобальтовый круг, сетка и слово «цех» на тёмной плашке">
+          <span class="poster__grid" aria-hidden="true"></span>
+          <span class="poster__disc" aria-hidden="true"></span>
+          <span class="poster__ring" aria-hidden="true"></span>
+          <span class="poster__mark" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5.5 4v12.5H18V4"/><path d="M18 16.5V20"/></svg>
+          </span>
+          <span class="poster__word">цех</span>
+          <span class="poster__rule" aria-hidden="true"></span>
+          <span class="poster__meta"><span>Москва</span><span>с 2020</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee" aria-label="Клиенты студии">
+    <div class="marquee__track">
+      <div class="marquee__set">
+        <span>Северный дом</span><span>Трибуна</span><span>Медлайн</span><span>Рельеф</span><span>Среда</span><span>Октябрь</span><span>Полярный</span><span>Обойма</span><span>Тихий двор</span>
+      </div>
+      <div class="marquee__set" aria-hidden="true">
+        <span>Северный дом</span><span>Трибуна</span><span>Медлайн</span><span>Рельеф</span><span>Среда</span><span>Октябрь</span><span>Полярный</span><span>Обойма</span><span>Тихий двор</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Услуги -->
+  <section class="section" aria-labelledby="services-title">
+    <div class="wrap">
+      <div class="section__head" data-reveal>
+        <div>
+          <p class="eyebrow">01 · услуги</p>
+          <h2 class="h2 section__title" id="services-title">Что мы делаем</h2>
+        </div>
+        <div class="section__aside">
+          <p>Берём проект целиком или подключаемся к вашей команде. Работаем параллельно не больше чем над двумя проектами — поэтому не пропадаем на неделю.</p>
+          <a class="link" href="#/uslugi">
+            Все услуги и цены
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="services">
+        <a class="svc" href="#/uslugi" data-reveal>
+          <span class="svc__no">01</span>
+          <h3 class="h3 svc__title">Сайты и лендинги</h3>
+          <p class="svc__text">Корпоративные сайты, промо-страницы и лендинги с заявкой: структура, тексты, дизайн, вёрстка и аналитика в одном договоре.</p>
+          <span class="svc__foot">
+            <span>от 280 000 ₽ · 3–6 недель</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </span>
+        </a>
+        <a class="svc" href="#/uslugi" data-reveal style="--d:60ms">
+          <span class="svc__no">02</span>
+          <h3 class="h3 svc__title">Дизайн-системы</h3>
+          <p class="svc__text">Библиотека компонентов и токенов, документация и обучение команды. Чтобы новый экран собирался за вечер, а не за неделю согласований.</p>
+          <span class="svc__foot">
+            <span>от 420 000 ₽ · 6–10 недель</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </span>
+        </a>
+        <a class="svc" href="#/uslugi" data-reveal>
+          <span class="svc__no">03</span>
+          <h3 class="h3 svc__title">Продуктовый дизайн</h3>
+          <p class="svc__text">Исследования, сценарии и интерфейсы личных кабинетов, дашбордов и мобильных приложений — от прототипа до релиза и первых метрик.</p>
+          <span class="svc__foot">
+            <span>от 190 000 ₽ за спринт</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </span>
+        </a>
+        <a class="svc" href="#/uslugi" data-reveal style="--d:60ms">
+          <span class="svc__no">04</span>
+          <h3 class="h3 svc__title">Поддержка и развитие</h3>
+          <p class="svc__text">Доработки, новые страницы, A/B-тесты и ежемесячное дизайн-ревью. Отвечаем в течение рабочего дня, а не через неделю.</p>
+          <span class="svc__foot">
+            <span>от 60 000 ₽ в месяц</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Работы -->
+  <section class="section" aria-labelledby="works-title">
+    <div class="wrap">
+      <div class="section__head" data-reveal>
+        <div>
+          <p class="eyebrow">02 · работы</p>
+          <h2 class="h2 section__title" id="works-title">Шесть проектов,<br class="br-desk"> которые можно показать</h2>
+        </div>
+        <div class="section__aside">
+          <p>В карточке — задача, решение и цифры после запуска. Остальные 12 проектов покажем на встрече: банки и промышленность просят не публиковать работы.</p>
+          <a class="link" href="#/raboty">
+            Все работы
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="cases" id="home-cases"></div>
+    </div>
+  </section>
+
+  <!-- Подход -->
+  <section class="section" aria-labelledby="approach-title">
+    <div class="wrap">
+      <div class="section__head" data-reveal>
+        <div>
+          <p class="eyebrow">03 · подход</p>
+          <h2 class="h2 section__title" id="approach-title">Четыре этапа<br class="br-desk"> и ни одного сюрприза</h2>
+        </div>
+        <div class="section__aside">
+          <p>Каждую пятницу показываем, что сделано, и получаем комментарии. Правки не копятся к финалу, а смета не растёт по дороге.</p>
+          <a class="link" href="#/podhod">
+            Подробно о процессе
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step" data-reveal>
+          <p class="step__no">01</p>
+          <h3 class="step__title">Бриф и аудит</h3>
+          <p class="step__text">Два дня интервью с командой и клиентами, смотрим аналитику и конкурентов. На выходе — документ со списком проблем и приоритетов.</p>
+          <p class="step__time">3–5 дней</p>
+        </div>
+        <div class="step" data-reveal>
+          <p class="step__no">02</p>
+          <h3 class="step__title">Концепция</h3>
+          <p class="step__text">Две визуальные гипотезы с прототипом главной и текстами. Проверяем на живых людях, а не на вкус заказчика.</p>
+          <p class="step__time">1–2 недели</p>
+        </div>
+        <div class="step" data-reveal>
+          <p class="step__no">03</p>
+          <h3 class="step__title">Дизайн</h3>
+          <p class="step__text">Все экраны, состояния, адаптив и дизайн-система. Показываем каждую пятницу и правим на лету, отдаём в вёрстку частями.</p>
+          <p class="step__time">3–6 недель</p>
+        </div>
+        <div class="step" data-reveal>
+          <p class="step__no">04</p>
+          <h3 class="step__title">Запуск</h3>
+          <p class="step__text">Вёрстка, перенос контента, тесты в браузерах, доступность и аналитика. Первый месяц поддержки — бесплатно.</p>
+          <p class="step__time">2–3 недели</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Команда -->
+  <section class="section" aria-labelledby="team-title">
+    <div class="wrap">
+      <div class="section__head" data-reveal>
+        <div>
+          <p class="eyebrow">04 · команда</p>
+          <h2 class="h2 section__title" id="team-title">Четыре человека,<br class="br-desk"> которые всё делают</h2>
+        </div>
+        <div class="section__aside">
+          <p>Никаких менеджеров-посредников: с вами говорит тот, кто рисует и верстает. Фотографа и переводчика привлекаем отдельно и оплачиваем из сметы.</p>
+          <a class="link" href="#/kontakty">
+            Познакомиться
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <ul class="team">
+        <li class="member" data-reveal>
+          <span class="avatar avatar--1" aria-hidden="true">МС</span>
+          <p class="member__name">Марина Соколова</p>
+          <p class="member__role">основательница, арт-директор</p>
+          <p class="member__text">12 лет в продуктовом дизайне. Ведёт проект от брифа до сдачи, отвечает за смысл, типографику и отношения с клиентом.</p>
+        </li>
+        <li class="member" data-reveal style="--d:60ms">
+          <span class="avatar avatar--2" aria-hidden="true">ДХ</span>
+          <p class="member__name">Дина Хайрутдинова</p>
+          <p class="member__role">ведущий дизайнер</p>
+          <p class="member__text">Интерфейсы для финтеха и медицины. Автор системы «Трибуны»: 214 компонентов, тёмная тема и ни одного лишнего экрана.</p>
+        </li>
+        <li class="member" data-reveal style="--d:120ms">
+          <span class="avatar avatar--3" aria-hidden="true">АБ</span>
+          <p class="member__name">Артём Белов</p>
+          <p class="member__role">фронтенд-инженер</p>
+          <p class="member__text">Отвечает за скорость и доступность: LCP ниже 2,5 с, контраст по WCAG AA и вёрстка без сюрпризов на 390 пикселях.</p>
+        </li>
+        <li class="member" data-reveal style="--d:180ms">
+          <span class="avatar avatar--4" aria-hidden="true">НЕ</span>
+          <p class="member__name">Никита Ерёмин</p>
+          <p class="member__role">дизайнер-исследователь</p>
+          <p class="member__text">Интервью, тесты и аналитика. Провёл 62 интервью за прошлый год и не выпустил ни одного проекта без проверки на людях.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Отзывы -->
+  <section class="section" aria-labelledby="reviews-title">
+    <div class="wrap">
+      <div class="section__head" data-reveal>
+        <div>
+          <p class="eyebrow">05 · отзывы</p>
+          <h2 class="h2 section__title" id="reviews-title">Что говорят<br class="br-desk"> после сдачи</h2>
+        </div>
+        <div class="section__aside">
+          <p>38 отзывов на Яндексе и в почте, часть публикуем здесь. Средняя оценка — 4,9. На каждую цитату можно посмотреть проект.</p>
+        </div>
+      </div>
+
+      <ul class="reviews">
+        <li class="review" data-reveal>
+          <div class="review__top">
+            <span class="avatar avatar--sm avatar--1" aria-hidden="true">ЕШ</span>
+            <div>
+              <p class="review__name">Елена Шипилова</p>
+              <p class="review__role">директор по маркетингу, «Северный дом»</p>
+            </div>
+          </div>
+          <blockquote class="review__text">«Пришли с просьбой перекрасить кнопки, а ушли с новым каталогом и конверсией в заказ 38%. Сроки не сдвинулись ни разу — для нас это дороже дизайна.»</blockquote>
+          <div class="review__foot"><span class="review__score"><b>5,0</b> · проект</span><time datetime="2025-06-18">18 июня 2025</time></div>
+        </li>
+        <li class="review" data-reveal style="--d:60ms">
+          <div class="review__top">
+            <span class="avatar avatar--sm avatar--2" aria-hidden="true">РД</span>
+            <div>
+              <p class="review__name">Роман Дорохов</p>
+              <p class="review__role">CPO, «Трибуна»</p>
+            </div>
+          </div>
+          <blockquote class="review__text">«Дизайн-система, которую команда правда использует: 214 компонентов, документация и человек на связи. Через месяц после сдачи новый экран собирали за день.»</blockquote>
+          <div class="review__foot"><span class="review__score"><b>5,0</b> · проект</span><time datetime="2026-03-05">5 марта 2026</time></div>
+        </li>
+        <li class="review" data-reveal style="--d:120ms">
+          <div class="review__top">
+            <span class="avatar avatar--sm avatar--3" aria-hidden="true">ОК</span>
+            <div>
+              <p class="review__name">Ольга Красина</p>
+              <p class="review__role">медицинский директор, сеть «Медлайн»</p>
+            </div>
+          </div>
+          <blockquote class="review__text">«Пациенты старше 60 бросали запись на втором шаге. После переделки отказов стало меньше на четверть, а записей — на 27% больше.»</blockquote>
+          <div class="review__foot"><span class="review__score"><b>4,9</b> · проект</span><time datetime="2026-09-24">24 сентября 2026</time></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Контакты -->
+  <section class="section" id="contacts" aria-labelledby="contacts-title">
+    <div class="wrap contacts">
+      <div>
+        <p class="eyebrow">06 · контакты</p>
+        <h2 class="h2 section__title" id="contacts-title" tabindex="-1">Расскажите, что хотите сделать</h2>
+        <p class="lead contacts__lead">Ответим в течение рабочего дня. Обычно это письмо на 4–6 предложений: что поняли, что уточним и сколько это будет стоить. Первая встреча — 40 минут, без презентаций и разговоров про KPI.</p>
+
+        <div class="cd">
+          <div class="cd__row">
+            <span class="cd__label">Адрес</span>
+            <span class="cd__value">Москва, Нижняя Сыромятническая, 10, стр. 9</span>
+            <button class="icon-btn" type="button" data-copy="Москва, Нижняя Сыромятническая, 10, стр. 9" data-copy-msg="Адрес скопирован" aria-label="Скопировать адрес">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 3h-7A2.5 2.5 0 0 0 3 5.5v7A2.5 2.5 0 0 0 5.5 15"/></svg>
+            </button>
+          </div>
+          <div class="cd__row">
+            <span class="cd__label">Телефон</span>
+            <span class="cd__value nowrap">+7 495 120-45-70</span>
+            <button class="icon-btn" type="button" data-copy="+7 495 120-45-70" data-copy-msg="Телефон скопирован: +7 495 120-45-70" aria-label="Скопировать телефон">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 3h-7A2.5 2.5 0 0 0 3 5.5v7A2.5 2.5 0 0 0 5.5 15"/></svg>
+            </button>
+          </div>
+          <div class="cd__row">
+            <span class="cd__label">Почта</span>
+            <span class="cd__value">hello@tsekh.studio</span>
+            <button class="icon-btn" type="button" data-copy="hello@tsekh.studio" data-copy-msg="Почта скопирована: hello@tsekh.studio" aria-label="Скопировать почту">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 3h-7A2.5 2.5 0 0 0 3 5.5v7A2.5 2.5 0 0 0 5.5 15"/></svg>
+            </button>
+          </div>
+          <div class="cd__row">
+            <span class="cd__label">Часы</span>
+            <span class="cd__value">Пн–Пт, 10:00–19:00 (Мск)</span>
+            <span aria-hidden="true"></span>
+          </div>
+        </div>
+        <p class="cd__note">7 минут пешком от метро «Курская», вход со двора, второй этаж, звонок у двери. Приезжайте с ноутбуком — покажем прототипы на большом экране.</p>
+      </div>
+
+      <div class="formcard">
+        <div id="form-wrap">
+          <div class="formcard__head">
+            <h3 class="h3">Заявка на проект</h3>
+            <p>Поля со звёздочкой обязательны. Черновик сохраняется в этом браузере.</p>
+          </div>
+
+          <form class="form" id="lead-form" novalidate>
+            <div class="field" data-field="name">
+              <label class="label" for="f-name">Имя <span class="req" aria-hidden="true">*</span></label>
+              <input class="input" id="f-name" name="name" type="text" autocomplete="name" required placeholder="Марина Соколова" aria-describedby="e-name">
+              <p class="err" id="e-name" role="alert" hidden></p>
+            </div>
+
+            <div class="field" data-field="contact">
+              <label class="label" for="f-contact">Email или телефон <span class="req" aria-hidden="true">*</span></label>
+              <input class="input" id="f-contact" name="contact" type="text" autocomplete="email" inputmode="email" required placeholder="marina@company.ru или +7 916 240-18-30" aria-describedby="e-contact">
+              <p class="err" id="e-contact" role="alert" hidden></p>
+            </div>
+
+            <div class="field" data-field="budget">
+              <label class="label" for="f-budget">Бюджет <span class="req" aria-hidden="true">*</span></label>
+              <div class="select-wrap">
+                <select class="select" id="f-budget" name="budget" required aria-describedby="e-budget">
+                  <option value="">Выберите диапазон</option>
+                  <option value="up300">до 300 тыс ₽</option>
+                  <option value="300-700">300–700 тыс ₽</option>
+                  <option value="700+">больше 700 тыс ₽</option>
+                </select>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <p class="err" id="e-budget" role="alert" hidden></p>
+            </div>
+
+            <div class="field" data-field="task">
+              <label class="label" for="f-task">Задача <span class="req" aria-hidden="true">*</span></label>
+              <textarea class="textarea" id="f-task" name="task" rows="4" maxlength="600" required placeholder="Например: нужен новый сайт для сети клиник — запись к врачу, 11 400 пациентов в месяц, старый сайт открывается 8 секунд." aria-describedby="e-task f-task-count"></textarea>
+              <div class="field__foot">
+                <p class="hint">Достаточно двух предложений</p>
+                <span class="counter" id="f-task-count">0 / 600</span>
+              </div>
+              <p class="err" id="e-task" role="alert" hidden></p>
+            </div>
+
+            <div class="field" data-field="consent">
+              <label class="check" for="f-consent">
+                <input id="f-consent" name="consent" type="checkbox" required aria-describedby="e-consent">
+                <span class="check__box" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>
+                </span>
+                <span class="check__text">Согласен на обработку персональных данных и получение ответа по заявке.</span>
+              </label>
+              <p class="consent-note"><a class="link-inline" href="#/politika">Политика обработки персональных данных</a></p>
+              <p class="err" id="e-consent" role="alert" hidden></p>
+            </div>
+
+            <div class="form__actions">
+              <button class="btn btn--primary" type="submit" id="submit-btn">
+                <span class="btn__spin" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" stroke-opacity=".3"/><path d="M20.5 12a8.5 8.5 0 0 0-8.5-8.5"/></svg>
+                </span>
+                <span class="btn__label">Отправить заявку</span>
+                <svg class="btn__arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+              </button>
+              <p class="form__note">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+                Не передаём контакты третьим лицам и не звоним без предупреждения.
+              </p>
+            </div>
+          </form>
+        </div>
+
+        <div class="form-ok" id="form-ok" hidden tabindex="-1" role="status">
+          <span class="form-ok__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>
+          </span>
+          <h3 class="form-ok__title">Заявка отправлена — ответим в течение рабочего дня</h3>
+          <p class="form-ok__text">Мы прочитаем её сегодня до конца дня и напишем на указанный контакт. Если задача срочная — позвоните: <span class="nowrap">+7 495 120-45-70</span>.</p>
+          <p class="form-ok__num" id="form-ok-num">Номер заявки: ЦЕХ-2026-0847</p>
+          <div class="form-ok__actions">
+            <button class="btn btn--ghost" type="button" id="again-btn">Отправить ещё одну</button>
+            <a class="btn btn--quiet" href="#/raboty">Пока посмотреть работы</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== РАБОТЫ ==================== -->
+<div class="page" data-page="works" hidden>
+  <section class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">архив · 2023–2026</p>
+      <h1 class="h1 h1--page">Работы</h1>
+      <p class="lead">Шесть проектов, которые можно показать целиком: от каталога мебели до дизайн-системы на 214 компонентов. Остальные 12 — под NDA, покажем подборку под вашу отрасль.</p>
+
+      <div class="toolbar" style="margin-top:var(--s6)">
+        <div class="filters" role="group" aria-label="Фильтр проектов по жанру">
+          <button class="chip" type="button" data-filter="all" aria-pressed="true">Все <span class="chip__n">6</span></button>
+          <button class="chip" type="button" data-filter="ecom" aria-pressed="false">E-commerce <span class="chip__n">1</span></button>
+          <button class="chip" type="button" data-filter="system" aria-pressed="false">Дизайн-системы <span class="chip__n">1</span></button>
+          <button class="chip" type="button" data-filter="product" aria-pressed="false">Продукт <span class="chip__n">1</span></button>
+          <button class="chip" type="button" data-filter="landing" aria-pressed="false">Лендинги <span class="chip__n">1</span></button>
+          <button class="chip" type="button" data-filter="site" aria-pressed="false">Сайты <span class="chip__n">2</span></button>
+        </div>
+      </div>
+      <p class="count" id="works-count" role="status" aria-live="polite">Показано 6 из 6</p>
+
+      <div class="cases cases--wide" id="works-cases"></div>
+
+      <div class="nda" id="nda-panel" hidden>
+        <p class="eyebrow">12 проектов под NDA</p>
+        <h2>Покажем подборку под вашу отрасль</h2>
+        <p>Банк, две промышленные компании, клиника в Казани, сервис доставки и школа — эти работы нельзя публиковать по договору. На встрече разберём 3–4 кейса, близких к вашей задаче, с цифрами до и после.</p>
+        <a class="btn btn--primary" href="#/kontakty">Обсудить проект</a>
+      </div>
+
+      <div class="works-foot">
+        <button class="btn btn--ghost" type="button" id="show-rest" aria-expanded="false" aria-controls="nda-panel">Показать остальные 12 проектов</button>
+        <button class="btn" type="button" disabled aria-describedby="pdf-note">Портфолио PDF, 12 МБ</button>
+        <p class="hint" id="pdf-note">Портфолио обновляем до 1 декабря — прошлая версия недоступна.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap cta-band__in">
+      <div>
+        <h2 class="h2">Похоже на вашу задачу?</h2>
+        <p>Напишите в двух предложениях, что происходит сейчас и чего хотите через полгода. Ответим с оценкой и планом на первый месяц.</p>
+      </div>
+      <a class="btn btn--primary" href="#/kontakty">
+        Обсудить проект
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </a>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== УСЛУГИ ==================== -->
+<div class="page" data-page="services" hidden>
+  <section class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">услуги · 2026</p>
+      <h1 class="h1 h1--page">Услуги и цены</h1>
+      <p class="lead">Цены стартовые: итог зависит от объёма и контента. Смету считаем после бесплатного брифа за два-три дня и не меняем в процессе — если объём вырос, сначала присылаем новую смету, а не счёт.</p>
+    </div>
+  </section>
+
+  <section class="section section--flush">
+    <div class="wrap">
+      <div class="svc-list">
+        <div class="svc-row">
+          <div>
+            <p class="svc-row__no">01</p>
+            <h2 class="svc-row__title">Сайты и лендинги</h2>
+            <div class="svc-row__meta"><span>от <b>280 000 ₽</b></span><span>3–6 недель</span></div>
+          </div>
+          <div>
+            <p class="svc-row__desc">Корпоративный сайт, лендинг под кампанию или промо-страница продукта. Собираем структуру, пишем тексты вместе с редактором, проектируем в Figma, верстаем и подключаем аналитику.</p>
+            <p class="svc-row__desc">Один договор на весь цикл: не нужно искать редактора, верстальщика и подрядчика по аналитике отдельно.</p>
+          </div>
+          <ul class="incl">
+            <li class="incl__title">Что входит</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Структура и прототип в Figma</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Дизайн 5–12 экранов и адаптив</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Тексты и редактура</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Вёрстка, CMS, цели в аналитике</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Две недели правок после запуска</li>
+          </ul>
+        </div>
+
+        <div class="svc-row">
+          <div>
+            <p class="svc-row__no">02</p>
+            <h2 class="svc-row__title">Дизайн-системы</h2>
+            <div class="svc-row__meta"><span>от <b>420 000 ₽</b></span><span>6–10 недель</span></div>
+          </div>
+          <div>
+            <p class="svc-row__desc">Библиотека компонентов, токены и правила, по которым команда собирает интерфейсы без дизайнера. Начинаем с аудита того, что уже есть, — половину компонентов обычно можно не рисовать заново.</p>
+            <p class="svc-row__desc">Документация живёт в Storybook и обновляется вместе с кодом: разработчик видит актуальный компонент, а не макет трёхлетней давности.</p>
+          </div>
+          <ul class="incl">
+            <li class="incl__title">Что входит</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Аудит текущих интерфейсов</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Токены: цвет, шрифт, отступы</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>80–200 компонентов и состояний</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Документация и обучение команды</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Тёмная тема, если нужна</li>
+          </ul>
+        </div>
+
+        <div class="svc-row">
+          <div>
+            <p class="svc-row__no">03</p>
+            <h2 class="svc-row__title">Продуктовый дизайн</h2>
+            <div class="svc-row__meta"><span>от <b>190 000 ₽</b> за спринт</span><span>2 недели</span></div>
+          </div>
+          <div>
+            <p class="svc-row__desc">Личные кабинеты, дашборды, мобильные приложения. Работаем двухнедельными спринтами: исследование, сценарии, прототип, интерфейсы, передача в разработку.</p>
+            <p class="svc-row__desc">В каждом спринте есть человек со стороны клиента и одна метрика, которую мы вместе двигаем: время записи, доля дошедших до оплаты, число ошибок в отчёте.</p>
+          </div>
+          <ul class="incl">
+            <li class="incl__title">Что входит</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Интервью и тесты на людях</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Карта сценариев и прототип</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Все состояния и пустые экраны</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Передача в разработку и ревью</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Замер метрики до и после</li>
+          </ul>
+        </div>
+
+        <div class="svc-row">
+          <div>
+            <p class="svc-row__no">04</p>
+            <h2 class="svc-row__title">Поддержка и развитие</h2>
+            <div class="svc-row__meta"><span>от <b>60 000 ₽</b> в месяц</span><span>по договору</span></div>
+          </div>
+          <div>
+            <p class="svc-row__desc">Сайт не заканчивается релизом: новые страницы, акции, вакансии, разделы каталога. Берём до 20 часов работы в месяц и отвечаем в течение рабочего дня.</p>
+            <p class="svc-row__desc">Раз в месяц присылаем короткий отчёт: что сделали, что предлагаем дальше, где просели метрики. Без отчёта — не выставляем счёт.</p>
+          </div>
+          <ul class="incl">
+            <li class="incl__title">Что входит</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Доработки до 20 часов в месяц</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Новые страницы и разделы</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>A/B-тесты и правки по данным</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Мониторинг скорости и доступности</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Ежемесячный отчёт и план</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">пакеты</p>
+          <h2 class="h2 section__title">Три способа начать</h2>
+        </div>
+        <div class="section__aside">
+          <p>Пакет — это не «всё включено», а понятная стартовая точка. Если задача не помещается в него, соберём смету по частям.</p>
+        </div>
+      </div>
+
+      <div class="packs">
+        <div class="pack">
+          <div class="pack__top"><span class="mono">Старт</span></div>
+          <p class="pack__price">280 000 ₽</p>
+          <p class="pack__time">3 недели · лендинг</p>
+          <ul>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Промо-страница с заявкой</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>4–6 экранов и адаптив</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Тексты и вёрстка</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Цели в аналитике</li>
+          </ul>
+          <a class="btn btn--ghost" href="#/kontakty">Обсудить старт</a>
+        </div>
+
+        <div class="pack pack--featured">
+          <div class="pack__top"><span class="mono">Компания</span><span class="pack__flag">выбирают 6 из 10</span></div>
+          <p class="pack__price">680 000 ₽</p>
+          <p class="pack__time">7 недель · корпоративный сайт</p>
+          <ul>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>10–14 экранов, каталог услуг</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Редактор и структура контента</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>CMS и обучение редактора</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Доступность и скорость</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Месяц поддержки в подарок</li>
+          </ul>
+          <a class="btn btn--primary" href="#/kontakty">Обсудить проект</a>
+        </div>
+
+        <div class="pack">
+          <div class="pack__top"><span class="mono">Система</span></div>
+          <p class="pack__price">1 200 000 ₽</p>
+          <p class="pack__time">12 недель · сайт и дизайн-система</p>
+          <ul>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Сайт и библиотека компонентов</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Токены и документация</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Обучение двух команд</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Тёмная тема</li>
+            <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Поддержка 3 месяца</li>
+          </ul>
+          <a class="btn btn--ghost" href="#/kontakty">Обсудить систему</a>
+        </div>
+      </div>
+
+      <div class="pay-note">
+        <p><b>Оплата в три этапа:</b> 40% — на старте, 40% — после утверждения дизайна, 20% — после запуска. Договор, счёт и акт входят в стоимость.</p>
+        <p>Для агентств и продуктовых команд работаем по своей смете на человека-неделю — 95 000 ₽ без НДС.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap cta-band__in">
+      <div>
+        <h2 class="h2">Не знаете, что нужно?</h2>
+        <p>С этого начинают почти все. Приходите на 40-минутный бриф — разберёмся вместе и скажем, какой этап можно пропустить.</p>
+      </div>
+      <a class="btn btn--primary" href="#/kontakty">
+        Записаться на бриф
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </a>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== ПОДХОД ==================== -->
+<div class="page" data-page="approach" hidden>
+  <section class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">подход · 4 этапа</p>
+      <h1 class="h1 h1--page">Процесс, в котором<br class="br-desk"> всё видно</h1>
+      <p class="lead">Показываем работу каждую пятницу, считаем смету один раз и фиксируем сроки в договоре. Ниже — что происходит на каждом этапе и что понадобится от вас.</p>
+    </div>
+  </section>
+
+  <section class="section section--flush">
+    <div class="wrap">
+      <div class="stage">
+        <div class="stage__left">
+          <p class="stage__num">01</p>
+          <h2 class="stage__title">Бриф и аудит</h2>
+          <p class="stage__time">3–5 дней</p>
+        </div>
+        <div>
+          <p class="stage__desc">Два дня интервью: с командой, с отделом продаж и с тремя-пятью клиентами. Смотрим аналитику за год, записываем пять минут реального использования старого сайта, разбираем конкурентов. На выходе — документ на 8–12 страниц: что мешает продажам, что чинить первым и сколько это стоит.</p>
+          <div class="stage__cols">
+            <div>
+              <h3>Что получаете</h3>
+              <ul>
+                <li>Аудит сайта и конкурентов</li>
+                <li>Карта пользователей и возражений</li>
+                <li>Смета и план работ по неделям</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Что нужно от вас</h3>
+              <ul>
+                <li>Два человека на интервью</li>
+                <li>Доступ к аналитике за полгода</li>
+                <li>Три-пять контактов клиентов</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage__left">
+          <p class="stage__num">02</p>
+          <h2 class="stage__title">Концепция</h2>
+          <p class="stage__time">1–2 недели</p>
+        </div>
+        <div>
+          <p class="stage__desc">Две визуальные гипотезы: прототип главной, три-четыре ключевых экрана и настоящие тексты — не рыба, а то, что будет на сайте. Показываем обе на тестах людям из вашей аудитории и выбираем не по вкусу, а по тому, где быстрее находят нужное.</p>
+          <div class="stage__cols">
+            <div>
+              <h3>Что получаете</h3>
+              <ul>
+                <li>Два направления с прототипами</li>
+                <li>Результаты тестов и аргументы</li>
+                <li>Финальный выбор без «а можно как у конкурента»</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Что нужно от вас</h3>
+              <ul>
+                <li>Один человек, принимающий решения</li>
+                <li>Ответ в течение трёх дней</li>
+                <li>Доступ к фото и логотипам</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage__left">
+          <p class="stage__num">03</p>
+          <h2 class="stage__title">Дизайн</h2>
+          <p class="stage__time">3–6 недель</p>
+        </div>
+        <div>
+          <p class="stage__desc">Все экраны, состояния, пустые страницы, ошибки и адаптив на 390, 768 и 1440 пикселях. Крупные разделы отдаём по частям — пока дизайнер рисует следующий, предыдущий уже верстается. Дизайн-система появляется по ходу, а не отдельным проектом после.</p>
+          <div class="stage__cols">
+            <div>
+              <h3>Что получаете</h3>
+              <ul>
+                <li>Все экраны и состояния</li>
+                <li>Адаптив и правила сетки</li>
+                <li>Дизайн-систему и компоненты</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Что нужно от вас</h3>
+              <ul>
+                <li>Комментарии к пятничной демо</li>
+                <li>Контент и фотографии</li>
+                <li>Доступ к стейджингу, если есть</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="stage__left">
+          <p class="stage__num">04</p>
+          <h2 class="stage__title">Запуск</h2>
+          <p class="stage__time">2–3 недели</p>
+        </div>
+        <div>
+          <p class="stage__desc">Вёрстка, перенос контента, проверка в пяти браузерах, доступность по WCAG AA, скорость и аналитика. За три дня до релиза присылаем чек-лист приёмки и проводим демонстрацию. Первый месяц поддержки — бесплатно: правки, обучение редактора, наблюдение за метриками.</p>
+          <div class="stage__cols">
+            <div>
+              <h3>Что получаете</h3>
+              <ul>
+                <li>Работающий сайт и доступы</li>
+                <li>Цели, отчёты, дашборд</li>
+                <li>Месяц поддержки и инструкции</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Что нужно от вас</h3>
+              <ul>
+                <li>Дата запуска и доступы к хостингу</li>
+                <li>Ответственный за приёмку</li>
+                <li>30 минут на обучение редактора</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="principles">
+        <div class="principle">
+          <h3>Сначала смысл</h3>
+          <p>Если на сайте непонятно, что вы продаёте, никакая типографика не спасёт. Начинаем с сообщения, а не с цвета.</p>
+        </div>
+        <div class="principle">
+          <h3>Пятница — день демо</h3>
+          <p>Каждую неделю вы видите, что сделано, а не ждёте финала. Так проект не может уйти не туда на месяц.</p>
+        </div>
+        <div class="principle">
+          <h3>Тексты — часть дизайна</h3>
+          <p>Редактор в команде с первого дня. Заголовки пишем до макета, а не вставляем после сдачи.</p>
+        </div>
+        <div class="principle">
+          <h3>Сдаём не макеты</h3>
+          <p>Сдаём работающий сайт: с аналитикой, доступностью и инструкцией. Макеты — это промежуточный шаг, а не результат.</p>
+        </div>
+      </div>
+
+      <div class="guarantee">
+        <div>
+          <h2>Срываем срок — снимаем 10% со счёта</h2>
+          <p>За шесть лет мы не сорвали ни одного дедлайна, и зафиксировали это в договоре: за каждую неделю просрочки по нашей вине снимаем 10% от суммы этапа. Дедлайн считаем от последней правки с вашей стороны.</p>
+        </div>
+        <div class="guarantee__side">
+          <a class="btn btn--on-dark" href="#/kontakty">Обсудить проект</a>
+          <p class="mono" style="color:var(--on-dark-faint);margin-top:0">Москва · 4 человека · 18 проектов</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">вопросы</p>
+          <h2 class="h2 section__title">Что спрашивают<br class="br-desk"> до договора</h2>
+        </div>
+        <div class="section__aside">
+          <p>Если вашего вопроса здесь нет — напишите, ответим лично. Не ставим на паузу на неделю, чтобы «подумать».</p>
+          <a class="link" href="#/kontakty">Задать вопрос</a>
+        </div>
+      </div>
+
+      <div class="faq">
+        <div class="faq__item">
+          <button class="faq__q" type="button" aria-expanded="false" aria-controls="faq-a1" id="faq-q1">
+            Сколько стоит сайт и от чего зависит цена?
+            <span class="faq__pm" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path class="v" d="M12 5v14"/></svg>
+            </span>
+          </button>
+          <div class="faq__a" id="faq-a1" role="region" aria-labelledby="faq-q1">
+            <div><p>Лендинг — от 280 000 ₽, корпоративный сайт — от 680 000 ₽, дизайн-система — от 420 000 ₽. Цена растёт от количества уникальных экранов, объёма контента и глубины исследования. Точную смету даём через два-три дня после брифа, и дальше она не меняется.</p></div>
+          </div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__q" type="button" aria-expanded="false" aria-controls="faq-a2" id="faq-q2">
+            Кто пишет тексты?
+            <span class="faq__pm" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path class="v" d="M12 5v14"/></svg>
+            </span>
+          </button>
+          <div class="faq__a" id="faq-a2" role="region" aria-labelledby="faq-q2">
+            <div><p>Редактор в команде с первого дня — тексты входят в проект, отдельно платить за них не нужно. Если у вас есть свой редактор, работаем вместе: наши черновики — ему на вычитку и уточнение фактов.</p></div>
+          </div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__q" type="button" aria-expanded="false" aria-controls="faq-a3" id="faq-q3">
+            Можно ли доработать существующий сайт, а не делать новый?
+            <span class="faq__pm" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path class="v" d="M12 5v14"/></svg>
+            </span>
+          </button>
+          <div class="faq__a" id="faq-a3" role="region" aria-labelledby="faq-q3">
+            <div><p>Да. Начинаем с аудита: смотрим аналитику, тестируем три-пять сценариев и присылаем список — что починить за две недели, а что дешевле переделать. В половине случаев хватает локальных правок и новой главной.</p></div>
+          </div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__q" type="button" aria-expanded="false" aria-controls="faq-a4" id="faq-q4">
+            Что с правами на дизайн и код?
+            <span class="faq__pm" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path class="v" d="M12 5v14"/></svg>
+            </span>
+          </button>
+          <div class="faq__a" id="faq-a4" role="region" aria-labelledby="faq-q4">
+            <div><p>Все права передаются вам по акту после финальной оплаты: исходники в Figma, код, шрифты с лицензиями и доступы к хостингу. Мы оставляем за собой право показать проект в портфолио — если вы не против, это отдельный пункт договора.</p></div>
+          </div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__q" type="button" aria-expanded="false" aria-controls="faq-a5" id="faq-q5">
+            Как проходит оплата и что с документами?
+            <span class="faq__pm" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path class="v" d="M12 5v14"/></svg>
+            </span>
+          </button>
+          <div class="faq__a" id="faq-a5" role="region" aria-labelledby="faq-q5">
+            <div><p>Три платежа: 40% на старте, 40% после утверждения дизайна, 20% после запуска. Работаем по договору с ООО, даём счёт, акт и закрывающие документы. Для крупных проектов возможна оплата по этапам раз в месяц.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap cta-band__in">
+      <div>
+        <h2 class="h2">Проверим ваш сайт за два дня</h2>
+        <p>Бесплатный короткий аудит: пришлём пять пунктов, которые мешают заявкам, и скажем, что исправить в первую очередь.</p>
+      </div>
+      <a class="btn btn--primary" href="#/kontakty">
+        Запросить аудит
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </a>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== ПОЛИТИКА ==================== -->
+<div class="page" data-page="policy" hidden>
+  <section class="section section--flush">
+    <div class="wrap">
+      <p class="eyebrow">документы</p>
+      <h1 class="h1 h1--page" style="margin-top:var(--s3)">Политика обработки<br class="br-desk"> персональных данных</h1>
+      <p class="policy__date"><span class="topbar__dot" aria-hidden="true" style="box-shadow:none"></span>Редакция от <time datetime="2026-02-01">1 февраля 2026 года</time></p>
+
+      <div class="policy">
+        <h2>1. Оператор</h2>
+        <p>ООО «Цех», ИНН 7720432168, ОГРН 1207700412345, адрес: 105120, Москва, Нижняя Сыромятническая улица, 10, стр. 9. Почта для вопросов об обработке данных: hello@tsekh.studio.</p>
+
+        <h2>2. Какие данные собираем</h2>
+        <ul>
+          <li>имя, которое вы указали в форме;</li>
+          <li>email или номер телефона для ответа;</li>
+          <li>бюджет и описание задачи, если вы их заполнили;</li>
+          <li>технические данные: тип браузера и обезличенная статистика посещений.</li>
+        </ul>
+
+        <h2>3. Зачем они нужны</h2>
+        <p>Только чтобы ответить на заявку, согласовать встречу и подготовить смету. Мы не добавляем контакты в рассылки без отдельного согласия, не продаём и не передаём данные третьим лицам, за исключением случаев, прямо предусмотренных законом.</p>
+
+        <h2>4. Сколько храним</h2>
+        <p>Данные заявки — 12 месяцев с момента последнего обращения. Если заключили договор, срок хранения определяется требованиями бухгалтерского учёта. По вашему запросу удаляем данные раньше.</p>
+
+        <h2>5. Ваши права</h2>
+        <p>Вы можете запросить, какие данные о вас есть, потребовать их исправления или удаления, а также отозвать согласие на обработку. Достаточно написать на hello@tsekh.studio — отвечаем в течение трёх рабочих дней.</p>
+
+        <h2>6. Cookies и локальное хранилище</h2>
+        <p>Сайт использует cookie только для базовой аналитики и сохранения черновика заявки в вашем браузере. Черновик хранится локально, на сервер не отправляется, и вы можете удалить его, очистив данные сайта. Отключить cookie можно в настройках браузера — на работу сайта это почти не влияет.</p>
+
+        <h2>7. Изменения</h2>
+        <p>Если политика меняется, публикуем новую редакцию на этой странице и указываем дату. Существенные изменения дополнительно анонсируем в ответах на действующие заявки.</p>
+      </div>
+
+      <p style="margin-top:var(--s7)">
+        <a class="link" href="#/">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
+          На главную
+        </a>
+      </p>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<!-- Футер -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <a class="logo logo--footer" href="#/" aria-label="Цех — на главную">
+          <svg class="logo__mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5.5 4v12.5H18V4"/><path d="M18 16.5V20"/></svg>
+          <span class="logo__word">цех</span>
+        </a>
+        <p class="footer__brand-text">Независимая дизайн-студия в Москве. Сайты, дизайн-системы и продуктовый дизайн для компаний, которым есть что сказать.</p>
+        <p class="footer__brand-note">С 2020 года · 4 человека · 2 слота на январь</p>
+      </div>
+
+      <div>
+        <h2 class="footer__title">Студия</h2>
+        <ul class="footer__list">
+          <li><a href="#/raboty">Работы</a></li>
+          <li><a href="#/uslugi">Услуги и цены</a></li>
+          <li><a href="#/podhod">Подход</a></li>
+          <li><a href="#/kontakty">Контакты</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="footer__title">Адрес и связь</h2>
+        <p class="footer__addr">Москва, Нижняя Сыромятническая, 10, стр. 9<span>Вход со двора, 2-й этаж · Пн–Пт, 10:00–19:00</span></p>
+        <ul class="footer__list" style="margin-top:var(--s2)">
+          <li><button type="button" data-copy="+7 495 120-45-70" data-copy-msg="Телефон скопирован: +7 495 120-45-70">+7 495 120-45-70</button></li>
+          <li><button type="button" data-copy="hello@tsekh.studio" data-copy-msg="Почта скопирована: hello@tsekh.studio">hello@tsekh.studio</button></li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="footer__title">Соцсети</h2>
+        <ul class="footer__list">
+          <li><a href="#" data-demo="Профиль в Telegram — покажем на встрече">Telegram <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a></li>
+          <li><a href="#" data-demo="Портфолио на Behance — покажем на встрече">Behance <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a></li>
+          <li><a href="#" data-demo="Профиль на Dprofile — покажем на встрече">Dprofile <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a></li>
+          <li><a href="#/politika">Политика данных</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <p>© 2026 ООО «Цех»</p>
+      <p class="footer__legal"><span>ИНН 7720432168</span><span>ОГРН 1207700412345</span></p>
+      <p>Сделано в «Цехе» — этот сайт мы делали сами</p>
+      <button class="footer__top" type="button" data-top>
+        Наверх
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></svg>
+      </button>
+    </div>
+  </div>
+</footer>
+
+<!-- Диалог кейса -->
+<div class="dlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title" hidden>
+  <div class="dlg__scrim" data-close></div>
+  <div class="dlg__panel">
+    <button class="dlg__close" type="button" data-close aria-label="Закрыть кейс">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>
+    </button>
+    <div class="dlg__scroll" id="dlg-body"></div>
+  </div>
+</div>
+
+<!-- Тосты -->
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+(function(){
+'use strict';
+
+var doc = document, root = doc.documentElement, body = doc.body;
+root.classList.add('js');
+
+var reduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+
+function $(sel, ctx){ return (ctx || doc).querySelector(sel); }
+function $$(sel, ctx){ return Array.prototype.slice.call((ctx || doc).querySelectorAll(sel)); }
+function on(el, type, fn, opts){ if (el) el.addEventListener(type, fn, opts || false); }
+function esc(s){
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function focusEl(el){
+  if (!el || !el.focus) return;
+  try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
+}
+function num(n){ return String(n); }
+
+var ICON = {
+  arrow: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>',
+  alert: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M12 4.8 20.8 20H3.2z"/><path d="M12 10v4.2"/><path d="M12 17.2v.1"/></svg>',
+  check: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7"/></svg>'
+};
+
+/* ---------------------------------------------------------
+   Данные кейсов
+   --------------------------------------------------------- */
+var CASES = [
+  {
+    id: 'severny-dom',
+    no: '01',
+    client: 'Северный дом',
+    kind: 'E-commerce',
+    kindKey: 'ecom',
+    year: '2025',
+    city: 'Архангельск, каталог мебели',
+    title: 'Каталог на 1 190 позиций, который не тормозит',
+    metric: '+38% заказов · 2,1 с загрузка',
+    art: '<span class="cv__kicker">Архангельск · каталог</span><span class="cv__arch"></span><span class="cv__arch cv__arch--2"></span><span class="cv__rules"></span><span class="cv__word">Северный дом</span><span class="cv__foot">1 190 SKU</span>',
+    task: 'Производитель мебели из Архангельска: 1 190 позиций, три языка, старый сайт грузился девять секунд. Половина заказов приходила в WhatsApp — менеджеры вручную переписывали состав и не успевали отвечать вечером.',
+    solution: 'Собрали каталог на дизайн-системе из 46 карточек: конфигуратор кухонь, честные сроки доставки, оплата картой и счёт для юридических лиц. Фотографировали в цеху на своих объектах — ни одного стокового кадра.',
+    results: [
+      { v: '+38%', l: 'конверсия в заказ за полгода' },
+      { v: '2,1 с', l: 'LCP на мобильных вместо 9 с' },
+      { v: '1 190', l: 'позиций в новом каталоге' }
+    ],
+    stack: ['Figma', 'Next.js', 'Strapi', 'ЮKassa'],
+    tags: ['e-commerce', 'каталог', 'производитель'],
+    quote: {
+      text: 'За полгода доля заказов без звонка менеджеру выросла с 12% до 46%. Мы перестали терять вечерние заявки — раньше они просто оставались в переписке.',
+      author: 'Елена Шипилова',
+      role: 'директор по маркетингу «Северного дома»'
+    }
+  },
+  {
+    id: 'tribuna',
+    no: '02',
+    client: 'Трибуна',
+    kind: 'Дизайн-система',
+    kindKey: 'system',
+    year: '2026',
+    city: 'Москва, B2B-аналитика',
+    title: 'Дизайн-система, по которой собирают за неделю',
+    metric: '214 компонентов · −41% времени',
+    art: '<span class="cv__kicker">тендерная аналитика</span><span class="cv__bars"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="cv__axis"></span><span class="cv__word">Трибуна</span><span class="cv__foot">214 компонентов</span>',
+    task: 'B2B-сервис тендерной аналитики: 16 продуктовых команд, девять оттенков синего, четыре вида таблиц. Релиз раз в месяц, половина времени уходила на согласование макетов между командами.',
+    solution: 'Собрали 214 компонентов и 28 токенов, описали правила адаптива и тёмную тему, перевели старые экраны партиями по две недели. Документация живёт в Storybook и обновляется вместе с кодом — рядовой экран теперь не требует дизайнера.',
+    results: [
+      { v: '−41%', l: 'времени на макет и согласование' },
+      { v: '214', l: 'компонентов с состояниями' },
+      { v: '9', l: 'команд работают по системе' }
+    ],
+    stack: ['Figma', 'React', 'Storybook', 'CSS-переменные'],
+    tags: ['дизайн-система', 'B2B', 'финтех'],
+    quote: {
+      text: 'Раньше новый экран согласовывали две недели. Теперь команда собирает его за день и показывает на демо — без дизайнера и без споров о синем.',
+      author: 'Роман Дорохов',
+      role: 'CPO «Трибуны»'
+    }
+  },
+  {
+    id: 'oktyabr',
+    no: '03',
+    client: 'Октябрь',
+    kind: 'Сайт',
+    kindKey: 'site',
+    year: '2025',
+    city: 'Москва, фестиваль документального кино',
+    title: 'Афиша на 46 000 гостей без расписания в PDF',
+    metric: '46 000 гостей · 3:10 на сайте',
+    art: '<span class="cv__film cv__film--t"></span><span class="cv__film cv__film--b"></span><span class="cv__dot"></span><span class="cv__kicker">документальное кино</span><span class="cv__word">Октябрь</span><span class="cv__foot">9 дней · 124 сеанса</span>',
+    task: 'Фестиваль документального кино: девять дней, 124 сеанса, три площадки. Расписание менялось каждый день, а билеты продавались через три разные формы — зрители путались и писали в поддержку ночью.',
+    solution: 'Свели афишу к одному справочнику: фильтры по площадке, дате и жанру, личное расписание с напоминанием в календарь, одна форма оплаты. Типографику афиши перенесли в печать и на экраны в залах — она стала фирменным приёмом фестиваля.',
+    results: [
+      { v: '46 000', l: 'гостей за девять дней' },
+      { v: '3:10', l: 'среднее время на сайте' },
+      { v: '78%', l: 'билетов куплено онлайн' }
+    ],
+    stack: ['Figma', 'Astro', 'Directus', 'ЮKassa'],
+    tags: ['культура', 'афиша', 'событие'],
+    quote: {
+      text: 'Впервые за пять лет не пришлось держать отдельную страницу «расписание PDF» — зрители находят сеанс за два клика и не звонят в кассу.',
+      author: 'Анна Литвинова',
+      role: 'программный директор фестиваля «Октябрь»'
+    }
+  },
+  {
+    id: 'medline',
+    no: '04',
+    client: 'Медлайн',
+    kind: 'Продукт',
+    kindKey: 'product',
+    year: '2026',
+    city: 'Москва и Екатеринбург, сеть клиник',
+    title: 'Запись к врачу в три экрана вместо шести',
+    metric: '+27% записей · −23% отказов',
+    art: '<span class="cv__rings"></span><span class="cv__plus"><i></i><i></i></span><span class="cv__kicker">сеть клиник</span><span class="cv__big">11 400</span><span class="cv__word">Медлайн</span><span class="cv__foot">записей в месяц</span>',
+    task: 'Сеть клиник в Москве и Екатеринбурге: 11 400 записей в месяц, но половина пациентов старше шестидесяти бросали запись на втором шаге. Администраторы и колл-центр работали в разных системах.',
+    solution: 'Провели 14 интервью с пациентами и администраторами. Свели запись к трём экранам: врач, время, подтверждение. Крупные подписи, проверка контраста, напоминание за день, оплата после визита. Написали 40 коротких инструкций для администраторов.',
+    results: [
+      { v: '+27%', l: 'записей в первом квартале' },
+      { v: '−23%', l: 'отказов на выборе времени' },
+      { v: '4,8', l: 'оценка сервиса вместо 4,6' }
+    ],
+    stack: ['Figma', 'React', 'Django', 'Maze'],
+    tags: ['медицина', 'продукт', 'исследования'],
+    quote: {
+      text: 'Самый спорный экран — выбор врача. Дизайнеры настояли на тестах, и они показали 23% больше записей. Спорить с цифрами мы не стали.',
+      author: 'Ольга Красина',
+      role: 'медицинский директор сети «Медлайн»'
+    }
+  },
+  {
+    id: 'sreda',
+    no: '05',
+    client: 'Среда',
+    kind: 'Лендинг',
+    kindKey: 'landing',
+    year: '2024',
+    city: 'Санкт-Петербург, школа аналитики',
+    title: 'Лендинг школы, который продаёт курсы без вебинаров',
+    metric: '6,4% заявок · ×2,3 регистраций',
+    art: '<span class="cv__hatch"></span><span class="cv__discout"></span><span class="cv__list"><span>01 исследование</span><span>02 программа</span><span>03 заявка</span></span><span class="cv__kicker">школа аналитики</span><span class="cv__word">Среда</span>',
+    task: 'Школа аналитики для взрослых: 12 потоков в год, дорогие курсы. Лендинг писали маркетологи, у каждого потока была своя страница с конверсией 1,8%. Программу приходилось объяснять в переписке.',
+    solution: 'Собрали один лендинг на блоках: программа, преподаватели, цена и рассрочка, отзывы выпускников с названиями компаний. Добавили калькулятор рассрочки и запись на бесплатный разбор. Тексты писали вместе с методистами школы.',
+    results: [
+      { v: '6,4%', l: 'конверсия в заявку вместо 1,8%' },
+      { v: '×2,3', l: 'регистраций на первый поток' },
+      { v: '0', l: 'правок лендинга после двух потоков' }
+    ],
+    stack: ['Figma', 'Next.js', 'Strapi', 'Roistat'],
+    tags: ['образование', 'лендинг', 'конверсия'],
+    quote: {
+      text: 'Второй поток мы запускали уже без дизайнера — поменяли даты и тексты про преподавателей. Раньше на это уходила неделя и отдельный бюджет.',
+      author: 'Игорь Мельник',
+      role: 'основатель школы «Среда»'
+    }
+  },
+  {
+    id: 'relef',
+    no: '06',
+    client: 'Рельеф',
+    kind: 'Сайт',
+    kindKey: 'site',
+    year: '2023',
+    city: 'Москва, архитектурное бюро',
+    title: 'Портфолио архитекторов без каруселей и слайдеров',
+    metric: '14 объектов · +64% в раздел',
+    art: '<span class="cv__plan"></span><span class="cv__plan cv__plan--2"></span><span class="cv__kv"></span><span class="cv__kicker">архитектурное бюро</span><span class="cv__word">Рельеф</span><span class="cv__foot">14 объектов</span>',
+    task: 'Архитектурное бюро с 14 проектами полгода собирало портфолио в PDF и рассылало вручную. Сайт 2013 года открывался на телефоне хуже, чем на ноутбуке, и не показывал чертежи крупно.',
+    solution: 'Сделали проектную страницу как альбом: чертежи, фотографии, короткий текст на 400 слов и список работ без каруселей. Добавили фильтр по типу объекта и заявку на консультацию. Цвет и типографику взяли из собственных альбомов бюро.',
+    results: [
+      { v: '+64%', l: 'переходов в раздел проектов' },
+      { v: '3,8×', l: 'скачиваний портфолио' },
+      { v: '9', l: 'новых заявок в месяц' }
+    ],
+    stack: ['Figma', 'Astro', 'Sanity', 'Plausible'],
+    tags: ['архитектура', 'портфолио', 'сайт'],
+    quote: {
+      text: 'Теперь в переписке присылаем ссылку, а не PDF на 40 мегабайт. Клиенты открывают её с телефона и сразу видят планировки — экономит нам два-три дня на каждом тендере.',
+      author: 'Пётр Качкин',
+      role: 'партнёр бюро «Рельеф»'
+    }
+  }
+];
+
+/* ---------------------------------------------------------
+   Тосты
+   --------------------------------------------------------- */
+var toastWrap = $('#toasts');
+function toast(msg){
+  if (!toastWrap) return;
+  var t = doc.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = ICON.check + '<span></span>';
+  t.lastChild.textContent = msg;
+  toastWrap.appendChild(t);
+  while (toastWrap.children.length > 3) toastWrap.removeChild(toastWrap.firstChild);
+  window.setTimeout(function(){
+    t.classList.add('is-out');
+    window.setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 220);
+  }, 3800);
+}
+
+/* ---------------------------------------------------------
+   Копирование
+   --------------------------------------------------------- */
+function legacyCopy(text){
+  try {
+    var ta = doc.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', 'readonly');
+    ta.style.position = 'fixed';
+    ta.style.top = '-2000px';
+    ta.style.left = '-2000px';
+    doc.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = doc.execCommand('copy'); } catch (e) { ok = false; }
+    doc.body.removeChild(ta);
+    return !!ok;
+  } catch (e) { return false; }
+}
+function copyText(text, okMsg){
+  var success = function(){ toast(okMsg || 'Скопировано'); };
+  var fallback = function(){
+    if (legacyCopy(text)) success();
+    else toast('Не удалось скопировать — наберите вручную: ' + text);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(success, fallback);
+  } else {
+    fallback();
+  }
+}
+
+/* ---------------------------------------------------------
+   Кейсы: разметка
+   --------------------------------------------------------- */
+function caseCard(c, wide){
+  return '<a class="case' + (wide ? ' case--wide' : '') + '" href="#/key/' + c.id + '" data-kind="' + c.kindKey + '" data-reveal>'
+    + '<span class="case__cover"><span class="cv cv--' + c.id + '">' + c.art + '</span><span class="case__badge">' + ICON.arrow + '</span></span>'
+    + '<span class="case__meta"><span class="case__no">' + c.no + '</span><span>' + esc(c.kind) + '</span><time class="case__year" datetime="' + c.year + '">' + c.year + '</time></span>'
+    + '<span class="case__title">' + esc(c.title) + '</span>'
+    + '<span class="case__metric">' + esc(c.metric) + '</span>'
+    + '</a>';
+}
+function indexOfCase(id){
+  for (var i = 0; i < CASES.length; i++) { if (CASES[i].id === id) return i; }
+  return -1;
+}
+function renderCases(){
+  var home = $('#home-cases'), works = $('#works-cases'), i;
+  var homeHtml = '', worksHtml = '';
+  for (i = 0; i < CASES.length; i++) {
+    homeHtml += caseCard(CASES[i], false);
+    worksHtml += caseCard(CASES[i], true);
+  }
+  if (home) home.innerHTML = homeHtml;
+  if (works) works.innerHTML = worksHtml;
+}
+function dlgHtml(c){
+  var i = indexOfCase(c.id);
+  var next = CASES[(i + 1) % CASES.length];
+  var res = '', j;
+  for (j = 0; j < c.results.length; j++) {
+    res += '<div class="dlg__res"><b>' + esc(c.results[j].v) + '</b><span>' + esc(c.results[j].l) + '</span></div>';
+  }
+  var stack = '', tags = '';
+  for (j = 0; j < c.stack.length; j++) stack += '<li class="tag">' + esc(c.stack[j]) + '</li>';
+  for (j = 0; j < c.tags.length; j++) tags += '<li class="tag">' + esc(c.tags[j]) + '</li>';
+
+  return '<div class="dlg__cover"><span class="cv cv--' + c.id + '">' + c.art + '</span></div>'
+    + '<div class="dlg__in">'
+      + '<p class="eyebrow">кейс ' + c.no + ' из 06 · ' + esc(c.kind) + ' · ' + c.year + '</p>'
+      + '<h2 class="dlg__title" id="dlg-title">' + esc(c.client) + '</h2>'
+      + '<p class="dlg__sub">' + esc(c.city) + ' — ' + esc(c.title) + '</p>'
+      + '<div class="dlg__grid">'
+        + '<div class="dlg__block"><h3>Задача</h3><p>' + esc(c.task) + '</p></div>'
+        + '<div class="dlg__block"><h3>Решение</h3><p>' + esc(c.solution) + '</p></div>'
+      + '</div>'
+      + '<div class="dlg__results">' + res + '</div>'
+      + '<div class="dlg__row"><h3>Стек</h3><ul class="tags">' + stack + '</ul></div>'
+      + '<div class="dlg__row"><h3>Темы</h3><ul class="tags">' + tags + '</ul></div>'
+      + '<blockquote class="dlg__quote"><p>«' + esc(c.quote.text) + '»</p>'
+        + '<footer>' + esc(c.quote.author) + ' — ' + esc(c.quote.role) + '</footer></blockquote>'
+      + '<div class="dlg__actions">'
+        + '<a class="btn btn--primary" href="#" data-demo="Демо закрыто — покажем на встрече">Открыть сайт' + ICON.arrow + '</a>'
+        + '<button class="btn btn--ghost" type="button" data-next="' + next.id + '">Следующий кейс' + ICON.arrow + '</button>'
+        + '<a class="btn btn--quiet" href="#/kontakty">Похожий проект</a>'
+      + '</div>'
+    + '</div>';
+}
+
+/* ---------------------------------------------------------
+   Роутер и страницы
+   --------------------------------------------------------- */
+var pages = {};
+$$('[data-page]').forEach(function(p){ pages[p.getAttribute('data-page')] = p; });
+
+var PAGE_TITLES = {
+  home: 'Цех — независимая дизайн-студия в Москве',
+  works: 'Работы — студия «Цех»',
+  services: 'Услуги и цены — студия «Цех»',
+  approach: 'Подход и процесс — студия «Цех»',
+  policy: 'Политика обработки данных — студия «Цех»'
+};
+
+var currentPage = 'home';
+function pageHeading(name){
+  var page = pages[name];
+  if (!page) return null;
+  return page.querySelector('h1');
+}
+function showPage(name, isInitial){
+  if (!pages[name]) name = 'home';
+  var changed = name !== currentPage;
+  Object.keys(pages).forEach(function(key){
+    if (key === name) pages[key].removeAttribute('hidden');
+    else pages[key].setAttribute('hidden', '');
+  });
+  currentPage = name;
+  doc.title = PAGE_TITLES[name] || PAGE_TITLES.home;
+  updateNav(name);
+  closeMenu();
+  if (changed) {
+    window.scrollTo(0, 0);
+    if (!isInitial) {
+      var h = pageHeading(name);
+      if (h) { h.setAttribute('tabindex', '-1'); focusEl(h); }
+    }
+    initReveal(pages[name]);
+  }
+}
+function updateNav(name){
+  $$('[data-nav]').forEach(function(a){
+    if (a.getAttribute('data-nav') === name) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+}
+function scrollToContacts(){
+  var el = doc.getElementById('contacts');
+  if (!el) return;
+  try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch (e) { el.scrollIntoView(); }
+  var h = doc.getElementById('contacts-title');
+  if (h) focusEl(h);
+}
+
+/* ---------------------------------------------------------
+   Диалог кейса
+   --------------------------------------------------------- */
+var dlg = $('#dlg'), dlgBody = $('#dlg-body');
+var dlgOpen = false, dlgFromNav = false, lastFocus = null;
+
+function lockScroll(lock){
+  if (lock) {
+    var sbw = window.innerWidth - root.clientWidth;
+    root.classList.add('is-locked');
+    if (sbw > 0) body.style.paddingRight = sbw + 'px';
+  } else {
+    root.classList.remove('is-locked');
+    body.style.paddingRight = '';
+  }
+}
+function hideDialog(){
+  if (!dlgOpen) return;
+  dlgOpen = false;
+  dlg.hidden = true;
+  dlgBody.innerHTML = '';
+  lockScroll(false);
+  var back = lastFocus;
+  lastFocus = null;
+  if (back && back.focus && back.isConnected !== false) {
+    var visible = true;
+    if (typeof back.offsetParent !== 'undefined') visible = back.offsetParent !== null;
+    if (visible) focusEl(back);
+  }
+  if (PAGE_TITLES[currentPage]) doc.title = PAGE_TITLES[currentPage];
+}
+function openCaseById(id, isInitial){
+  var c = CASES[indexOfCase(id)];
+  if (!c) {
+    toast('Кейс не найден — открыли все работы');
+    showPage('works', isInitial);
+    try { history.replaceState(null, '', '#/raboty'); } catch (e) {}
+    return;
+  }
+  dlgBody.innerHTML = dlgHtml(c);
+  dlgBody.scrollTop = 0;
+  initReveal(dlgBody);
+  if (!dlgOpen) {
+    lastFocus = doc.activeElement;
+    dlg.hidden = false;
+    dlgOpen = true;
+    lockScroll(true);
+    var closeBtn = dlg.querySelector('.dlg__close');
+    focusEl(closeBtn);
+  }
+  if (isInitial) dlgFromNav = false;
+  else dlgFromNav = true;
+  doc.title = c.client + ' — кейс студии «Цех»';
+}
+function dismissDialog(){
+  if (!dlgOpen) return;
+  var fromNav = dlgFromNav;
+  dlgFromNav = false;
+  hideDialog();
+  if (fromNav) {
+    try { history.back(); return; } catch (e) {}
+  }
+  try { history.replaceState(null, '', '#/'); } catch (e) {}
+}
+
+/* ---------------------------------------------------------
+   Маршрутизация
+   --------------------------------------------------------- */
+function route(isInitial){
+  var h = location.hash;
+  if (h && h.indexOf('#/') !== 0) return;
+
+  var path = h ? h.slice(2) : '';
+  var parts = path.split('/');
+  var seg = (parts[0] || '').toLowerCase();
+  var arg = parts[1] || '';
+
+  if (seg !== 'key') hideDialog();
+
+  if (seg === '' || seg === 'index' || seg === 'home') { showPage('home', isInitial); return; }
+  if (seg === 'raboty' || seg === 'works') { showPage('works', isInitial); return; }
+  if (seg === 'uslugi' || seg === 'services') { showPage('services', isInitial); return; }
+  if (seg === 'podhod' || seg === 'approach') { showPage('approach', isInitial); return; }
+  if (seg === 'politika' || seg === 'policy') { showPage('policy', isInitial); return; }
+  if (seg === 'kontakty' || seg === 'contacts') {
+    showPage('home', isInitial);
+    updateNav('contacts');
+    doc.title = 'Контакты — студия «Цех»';
+    scrollToContacts();
+    return;
+  }
+  if (seg === 'key') { openCaseById(arg, isInitial); return; }
+
+  showPage('home', isInitial);
+  try { history.replaceState(null, '', '#/'); } catch (e) {}
+  toast('Такой страницы нет — вернули на главную');
+}
+
+on(window, 'hashchange', function(){ route(false); });
+
+/* ---------------------------------------------------------
+   Мобильное меню
+   --------------------------------------------------------- */
+var burger = $('#burger'), mnav = $('#mnav'), mnavOpen = false;
+function openMenu(){
+  if (!mnav) return;
+  mnavOpen = true;
+  mnav.classList.add('is-open');
+  if (burger) {
+    burger.setAttribute('aria-expanded', 'true');
+    burger.setAttribute('aria-label', 'Закрыть меню');
+  }
+}
+function closeMenu(){
+  if (!mnavOpen || !mnav) return;
+  mnavOpen = false;
+  mnav.classList.remove('is-open');
+  if (burger) {
+    burger.setAttribute('aria-expanded', 'false');
+    burger.setAttribute('aria-label', 'Открыть меню');
+  }
+}
+on(burger, 'click', function(){ if (mnavOpen) closeMenu(); else openMenu(); });
+$$('#mnav a').forEach(function(a){ on(a, 'click', closeMenu); });
+on(window, 'resize', function(){ if (window.innerWidth >= 1000) closeMenu(); }, { passive: true });
+
+/* ---------------------------------------------------------
+   Шапка при скролле
+   --------------------------------------------------------- */
+var header = $('#site-header'), scrollTick = false;
+function onScroll(){
+  if (scrollTick) return;
+  scrollTick = true;
+  window.requestAnimationFrame(function(){
+    if (header) header.classList.toggle('is-stuck', (window.pageYOffset || window.scrollY || 0) > 6);
+    scrollTick = false;
+  });
+}
+on(window, 'scroll', onScroll, { passive: true });
+
+/* ---------------------------------------------------------
+   Появление при скролле
+   --------------------------------------------------------- */
+var io = null;
+if (!reduce.matches && typeof window.IntersectionObserver === 'function') {
+  io = new window.IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting) {
+        en.target.classList.add('is-in');
+        io.unobserve(en.target);
+      }
+    });
+  }, { root: null, rootMargin: '0px 0px -6% 0px', threshold: 0.06 });
+}
+function initReveal(scope){
+  var nodes = $$('[data-reveal]', scope || doc);
+  nodes.forEach(function(el){
+    if (el.__revealInit) return;
+    el.__revealInit = true;
+    if (!io) { el.classList.add('is-in'); return; }
+    var r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight * 0.94 && r.bottom > 0) {
+      el.classList.add('is-in');
+      return;
+    }
+    io.observe(el);
+  });
+}
+
+/* ---------------------------------------------------------
+   Фильтр работ и «остальные проекты»
+   --------------------------------------------------------- */
+var worksGrid = $('#works-cases'), worksCount = $('#works-count'), filterBtns = $$('[data-filter]');
+filterBtns.forEach(function(btn){
+  on(btn, 'click', function(){
+    var f = btn.getAttribute('data-filter');
+    filterBtns.forEach(function(b){ b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+    if (!worksGrid) return;
+    var shown = 0;
+    $$('.case', worksGrid).forEach(function(card){
+      var ok = f === 'all' || card.getAttribute('data-kind') === f;
+      if (ok) { card.removeAttribute('hidden'); shown++; initReveal(card.parentNode); }
+      else card.setAttribute('hidden', '');
+    });
+    initReveal(worksGrid);
+    if (worksCount) worksCount.textContent = 'Показано ' + shown + ' из ' + CASES.length;
+  });
+});
+
+var showRest = $('#show-rest'), ndaPanel = $('#nda-panel');
+if (showRest && ndaPanel) {
+  on(showRest, 'click', function(){
+    var open = showRest.getAttribute('aria-expanded') === 'true';
+    showRest.setAttribute('aria-expanded', open ? 'false' : 'true');
+    ndaPanel.hidden = open;
+    showRest.textContent = open ? 'Показать остальные 12 проектов' : 'Свернуть подборку';
+    if (!open) {
+      initReveal(ndaPanel);
+      try { ndaPanel.scrollIntoView({ block: 'nearest', behavior: 'auto' }); } catch (e) {}
+      toast('12 проектов под NDA — расскажем о них на встрече');
+    }
+  });
+}
+
+/* ---------------------------------------------------------
+   FAQ-аккордеон
+   --------------------------------------------------------- */
+$$('.faq__item').forEach(function(item){
+  var btn = $('.faq__q', item);
+  if (!btn) return;
+  on(btn, 'click', function(){
+    var open = btn.getAttribute('aria-expanded') === 'true';
+    $$('.faq__item').forEach(function(other){
+      if (other === item) return;
+      var b = $('.faq__q', other);
+      if (b) { b.setAttribute('aria-expanded', 'false'); other.classList.remove('is-open'); }
+    });
+    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    item.classList.toggle('is-open', !open);
+  });
+});
+
+/* ---------------------------------------------------------
+   Форма заявки
+   --------------------------------------------------------- */
+var form = $('#lead-form');
+if (form) {
+  var formWrap = $('#form-wrap'), okPanel = $('#form-ok'), okNum = $('#form-ok-num');
+  var submitBtn = $('#submit-btn');
+  var submitLabel = $('.btn__label', submitBtn);
+  var DRAFT_KEY = 'tsekh.lead.draft.v1';
+
+  var fields = [
+    {
+      key: 'name',
+      input: $('#f-name'),
+      err: $('#e-name'),
+      wrap: $('#f-name') ? $('#f-name').closest('.field') : null,
+      check: function(){
+        var v = this.input.value.replace(/\s+/g, ' ').trim();
+        if (v.length < 2) return 'Напишите имя — хотя бы две буквы.';
+        if (v.length > 60) return 'Слишком длинное имя: хватит 60 символов.';
+        return '';
+      }
+    },
+    {
+      key: 'contact',
+      input: $('#f-contact'),
+      err: $('#e-contact'),
+      wrap: $('#f-contact') ? $('#f-contact').closest('.field') : null,
+      check: function(){
+        var v = this.input.value.trim();
+        if (!v) return 'Укажите email или телефон — нам нужно, куда ответить.';
+        var isEmail = /^[^\s@]+@[^\s@]+\.[a-zа-яё]{2,}$/i.test(v);
+        var digits = v.replace(/\D/g, '');
+        var isPhone = digits.length >= 10 && digits.length <= 12;
+        if (!isEmail && !isPhone) return 'Похоже на опечатку: нужен email вида name@mail.ru или телефон из 10–11 цифр.';
+        return '';
+      }
+    },
+    {
+      key: 'budget',
+      input: $('#f-budget'),
+      err: $('#e-budget'),
+      wrap: $('#f-budget') ? $('#f-budget').closest('.field') : null,
+      check: function(){
+        if (!this.input.value) return 'Выберите бюджет — подскажем, что реально сделать в этих рамках.';
+        return '';
+      }
+    },
+    {
+      key: 'task',
+      input: $('#f-task'),
+      err: $('#e-task'),
+      wrap: $('#f-task') ? $('#f-task').closest('.field') : null,
+      check: function(){
+        var v = this.input.value.trim();
+        if (v.length < 12) return 'Пара предложений о задаче — этого хватит, чтобы мы начали.';
+        return '';
+      }
+    },
+    {
+      key: 'consent',
+      input: $('#f-consent'),
+      err: $('#e-consent'),
+      wrap: $('#f-consent') ? $('#f-consent').closest('.field') : null,
+      check: function(){
+        if (!this.input.checked) return 'Без согласия не можем обработать заявку — поставьте галочку.';
+        return '';
+      }
+    }
+  ];
+
+  fields = fields.filter(function(f){ return f.input && f.err && f.wrap; });
+
+  function setError(field, msg){
+    if (msg) {
+      field.wrap.classList.add('is-invalid');
+      field.err.innerHTML = ICON.alert + '<span></span>';
+      field.err.lastChild.textContent = msg;
+      field.err.hidden = false;
+      field.input.setAttribute('aria-invalid', 'true');
+    } else {
+      field.wrap.classList.remove('is-invalid');
+      field.err.hidden = true;
+      field.err.innerHTML = '';
+      field.input.removeAttribute('aria-invalid');
+    }
+  }
+  function validateField(field){
+    var msg = field.check();
+    setError(field, msg);
+    return msg ? field : null;
+  }
+  function validateAll(){
+    var first = null, i, bad;
+    for (i = 0; i < fields.length; i++) {
+      bad = validateField(fields[i]);
+      if (bad && !first) first = bad;
+    }
+    return first;
+  }
+
+  var taskInput = $('#f-task'), counter = $('#f-task-count');
+  function updateCounter(){
+    if (!taskInput || !counter) return;
+    var n = taskInput.value.length;
+    counter.textContent = n + ' / 600';
+    counter.classList.toggle('is-limit', n > 560);
+  }
+  on(taskInput, 'input', updateCounter);
+
+  fields.forEach(function(field){
+    on(field.input, 'input', function(){
+      if (field.wrap.classList.contains('is-invalid')) validateField(field);
+      writeDraft();
+    });
+    on(field.input, 'change', function(){
+      if (field.wrap.classList.contains('is-invalid')) validateField(field);
+      writeDraft();
+    });
+    on(field.input, 'blur', function(){
+      if (field.input.value || field.wrap.classList.contains('is-invalid')) validateField(field);
+    });
+  });
+
+  function readDraft(){
+    try {
+      var raw = window.localStorage.getItem(DRAFT_KEY);
+      if (!raw) return null;
+      var data = JSON.parse(raw);
+      return (data && typeof data === 'object') ? data : null;
+    } catch (e) { return null; }
+  }
+  function writeDraft(){
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        name: $('#f-name') ? $('#f-name').value : '',
+        contact: $('#f-contact') ? $('#f-contact').value : '',
+        budget: $('#f-budget') ? $('#f-budget').value : '',
+        task: $('#f-task') ? $('#f-task').value : ''
+      }));
+    } catch (e) {}
+  }
+  function clearDraft(){
+    try { window.localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+  }
+
+  (function restoreDraft(){
+    var d = readDraft();
+    if (!d) return;
+    if (d.name && $('#f-name')) $('#f-name').value = d.name;
+    if (d.contact && $('#f-contact')) $('#f-contact').value = d.contact;
+    if (d.budget && $('#f-budget')) $('#f-budget').value = d.budget;
+    if (d.task && $('#f-task')) $('#f-task').value = d.task;
+    updateCounter();
+  })();
+
+  function setLoading(loading){
+    submitBtn.classList.toggle('is-loading', loading);
+    submitBtn.disabled = loading;
+    if (submitLabel) submitLabel.textContent = loading ? 'Отправляем…' : 'Отправить заявку';
+  }
+
+  on(form, 'submit', function(e){
+    e.preventDefault();
+    if (submitBtn.disabled) return;
+    var bad = validateAll();
+    if (bad) {
+      focusEl(bad.input);
+      toast('Проверьте поля — подсказки под каждым');
+      return;
+    }
+    setLoading(true);
+    var payload = {
+      name: $('#f-name').value.trim(),
+      contact: $('#f-contact').value.trim(),
+      budget: $('#f-budget').value,
+      task: $('#f-task').value.trim()
+    };
+    window.setTimeout(function(){
+      var number = 'ЦЕХ-2026-' + (1000 + Math.floor(Math.random() * 9000));
+      if (okNum) okNum.textContent = 'Номер заявки: ' + number;
+      if (formWrap) formWrap.hidden = true;
+      if (okPanel) { okPanel.hidden = false; focusEl(okPanel); }
+      setLoading(false);
+      form.reset();
+      fields.forEach(function(f){ setError(f, ''); });
+      updateCounter();
+      clearDraft();
+      try { window.localStorage.setItem('tsekh.lead.last', JSON.stringify({ number: number, name: payload.name })); } catch (e) {}
+      toast('Заявка ' + number + ' отправлена');
+    }, 900);
+  });
+
+  var again = $('#again-btn');
+  on(again, 'click', function(){
+    if (okPanel) okPanel.hidden = true;
+    if (formWrap) formWrap.hidden = false;
+    var firstInput = $('#f-name');
+    focusEl(firstInput);
+  });
+}
+
+/* ---------------------------------------------------------
+   Делегированные действия
+   --------------------------------------------------------- */
+on(doc, 'click', function(e){
+  var t = e.target;
+  if (!t || !t.closest) return;
+
+  var demo = t.closest('[data-demo]');
+  if (demo) {
+    e.preventDefault();
+    toast(demo.getAttribute('data-demo') || 'Демо закрыто — покажем на встрече');
+    return;
+  }
+  var cp = t.closest('[data-copy]');
+  if (cp) {
+    e.preventDefault();
+    copyText(cp.getAttribute('data-copy') || '', cp.getAttribute('data-copy-msg') || 'Скопировано');
+    return;
+  }
+  var close = t.closest('[data-close]');
+  if (close) {
+    e.preventDefault();
+    dismissDialog();
+    return;
+  }
+  var next = t.closest('[data-next]');
+  if (next) {
+    e.preventDefault();
+    var nextId = next.getAttribute('data-next');
+    try {
+      history.replaceState(null, '', '#/key/' + nextId);
+    } catch (err) {
+      location.hash = '#/key/' + nextId;
+      return;
+    }
+    openCaseById(nextId, false);
+    return;
+  }
+  var top = t.closest('[data-top]');
+  if (top) {
+    e.preventDefault();
+    try { window.scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' }); }
+    catch (err) { window.scrollTo(0, 0); }
+    return;
+  }
+});
+
+/* ---------------------------------------------------------
+   Клавиатура
+   --------------------------------------------------------- */
+on(doc, 'keydown', function(e){
+  var key = e.key;
+  if (key === 'Escape' || key === 'Esc') {
+    if (dlgOpen) { e.preventDefault(); dismissDialog(); return; }
+    if (mnavOpen) { e.preventDefault(); closeMenu(); focusEl(burger); return; }
+    return;
+  }
+  if (dlgOpen && key === 'Tab') {
+    var focusables = $$('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])', dlg);
+    focusables = focusables.filter(function(el){ return el.offsetParent !== null; });
+    if (!focusables.length) return;
+    var first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); focusEl(last); }
+    else if (!e.shiftKey && doc.activeElement === last) { e.preventDefault(); focusEl(first); }
+  }
+});
+
+/* ---------------------------------------------------------
+   Инициализация
+   --------------------------------------------------------- */
+renderCases();
+initReveal(doc);
+onScroll();
+route(true);
+on(window, 'load', function(){
+  initReveal(doc);
+  if (location.hash.indexOf('#/kontakty') === 0) {
+    window.setTimeout(scrollToContacts, 60);
+  }
+});
+})();
+</script>
+</body>
+</html>

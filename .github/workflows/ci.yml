@@ -48,11 +48,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Manifest matches folders
+      - name: Manifest, self-containment and inline JS
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os, sys
+          import os, re, sys
+
           root = "templates"
           dirs = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
           keys = []
@@ -69,12 +70,64 @@ jobs:
               sys.exit(f"manifest keys without folder: {missing_dir}")
           if missing_key:
               sys.exit(f"folders without manifest entry: {missing_key}")
-          for d in dirs:
-              p = os.path.join(root, d, "index.html")
-              if not os.path.isfile(p) or os.path.getsize(p) < 200:
-                  sys.exit(f"{p}: missing or too small")
+
+          # Заглушка — полноценный сайт: один самодостаточный index.html.
+          problems = []
+          js_dir = os.path.join(os.environ["RUNNER_TEMP"], "tpl-js")
+          os.makedirs(js_dir, exist_ok=True)
+          for key in keys:
+              path = os.path.join(root, key, "index.html")
+              if not os.path.isfile(path):
+                  problems.append(f"{path}: missing")
+                  continue
+              html = open(path, encoding="utf-8").read()
+              size = os.path.getsize(path)
+              if size < 15000:
+                  problems.append(f"{path}: {size} bytes — нужен полноценный сайт, не заглушка")
+              required = {
+                  "<html lang": "нет <html lang>",
+                  "<title>": "нет <title>",
+                  'name="viewport"': "нет viewport meta",
+                  'name="description"': "нет meta description",
+                  'rel="icon"': "нет favicon",
+                  "<script": "нет inline JS",
+                  "<h1": "нет <h1>",
+              }
+              for needle, msg in required.items():
+                  if needle not in html:
+                      problems.append(f"{path}: {msg}")
+              for url in re.findall(r"https?://[^\s\"'<>)]+", html):
+                  if url.startswith(("http://www.w3.org/", "https://www.w3.org/")):
+                      continue
+                  problems.append(f"{path}: внешний URL {url} (сайт должен быть самодостаточным)")
+              for i, m in enumerate(re.finditer(r"<script\b([^>]*)>(.*?)</script>", html, re.S)):
+                  attrs, body = m.group(1), m.group(2)
+                  if "src=" in attrs or "json" in attrs or "template" in attrs:
+                      continue
+                  if body.strip():
+                      ext = "mjs" if "module" in attrs else "js"
+                      with open(os.path.join(js_dir, f"{key}-{i}.{ext}"), "w", encoding="utf-8") as fh:
+                          fh.write(body)
+          if problems:
+              for p in problems:
+                  print(f"::error::{p}")
+              sys.exit(1)
           print(f"templates ok: {len(keys)}")
           PY
+
+      - name: Inline JS parses
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=("$RUNNER_TEMP"/tpl-js/*.js "$RUNNER_TEMP"/tpl-js/*.mjs)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::инлайн-скрипты не найдены"
+            exit 1
+          fi
+          for f in "${files[@]}"; do
+            node --check "$f" || { echo "::error::синтаксис JS в $f"; exit 1; }
+          done
+          echo "inline JS ok: ${#files[@]} script(s)"
 
       - name: Installer and nodego read the manifest
         run: |

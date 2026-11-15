@@ -1,75 +1,3842 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
+<title>Quarry API — Documentation</title>
+<meta name="description" content="Quarry API documentation: turn PDFs, scans, and invoices into structured JSON. Quickstart, authentication, the POST /v1/extract reference, error codes, rate limits, and SDKs for Node, Python, and Go.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Docs — Beacon API</title>
+<meta name="theme-color" content="#fbfbfa">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Quarry API — Documentation">
+<meta property="og:description" content="Extract invoice totals, dates, and line items from PDFs and scans as typed JSON. One endpoint: POST /v1/extract.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Quarry API">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%231a1d21'/%3E%3Cpath%20d='M16%206.4l8.2%204.5v10.2L16%2025.6l-8.2-4.5V10.9z'%20fill='none'%20stroke='%23d97706'%20stroke-width='1.7'%20stroke-linejoin='round'/%3E%3Cpath%20d='M7.8%2010.9L16%2015.4l8.2-4.5'%20fill='none'%20stroke='%23d97706'%20stroke-width='1.4'%20stroke-linejoin='round'/%3E%3Cpath%20d='M16%2015.4v10.2'%20fill='none'%20stroke='%23d97706'%20stroke-width='1.4'/%3E%3C/svg%3E">
 <style>
-  :root{color-scheme:light dark}
-  *{box-sizing:border-box}
-  body{margin:0;background:#fbfbfd;color:#1a1d23;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-  @media (prefers-color-scheme:dark){body{background:#0e1116;color:#d6dae1}.side,.main code,.note{background:#141a21!important;border-color:#212a35!important}a{color:#8ab4ff}}
-  .top{border-bottom:1px solid #e8eaf0;padding:14px 22px;display:flex;gap:22px;align-items:center;background:#fff}
-  @media (prefers-color-scheme:dark){.top{background:#121820;border-color:#212a35}}
-  .logo{font-weight:700}
-  .top nav a{color:inherit;text-decoration:none;opacity:.65;font-size:14px;margin-right:14px}
-  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 70px;display:grid;grid-template-columns:220px 1fr;gap:34px}
-  @media (max-width:820px){.wrap{grid-template-columns:1fr}}
-  .side{background:#fff;border:1px solid #e8eaf0;border-radius:12px;padding:14px;height:max-content}
-  .side h4{margin:0 0 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.5}
-  .side a{display:block;padding:6px 8px;border-radius:7px;color:inherit;text-decoration:none;opacity:.75;font-size:14px}
-  .side a.on{background:#eef2ff;color:#2545c8;opacity:1;font-weight:600}
-  h1{font-size:27px;margin:0 0 8px;letter-spacing:-.02em}
-  h2{font-size:18px;margin:34px 0 10px}
-  p{opacity:.85}
-  code{background:#f2f4f8;border:1px solid #e6e9f0;border-radius:6px;padding:1px 6px;font:13.5px ui-monospace,Menlo,monospace}
-  pre{background:#0f1420;color:#d7e0f0;padding:14px 16px;border-radius:10px;overflow:auto;font:13px/1.55 ui-monospace,Menlo,monospace}
-  pre .k{color:#8ab4ff}.pre .s{color:#a5e3a5}
-  .note{background:#f6f8fc;border:1px solid #e6eaf3;border-left:3px solid #2563eb;border-radius:8px;padding:12px 14px;font-size:14px;margin:18px 0}
-  table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0}
-  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eceef4}
-  th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}
+/* ============================================================
+   Tokens
+   ============================================================ */
+:root{
+  --bg:#fbfbfa;
+  --surface:#ffffff;
+  --ink:#1a1d21;
+  --muted:#5b6470;
+  --line:#e5e6e4;
+  --accent:#d97706;
+  --code-bg:#0f172a;
+  --code-ink:#e2e8f0;
+  --inline-bg:#f1f0ec;
+
+  --on-accent:#15181b;
+  --hdr-bg:rgba(251,251,250,.88);
+  --accent-soft:rgba(217,119,6,.10);
+  --accent-line:rgba(217,119,6,.30);
+  --ink-04:rgba(26,29,33,.04);
+  --ink-06:rgba(26,29,33,.07);
+  --sk-1:rgba(26,29,33,.05);
+  --sk-2:rgba(26,29,33,.11);
+  --code-line:rgba(226,232,240,.10);
+  --code-head:rgba(226,232,240,.05);
+  --code-mute:rgba(226,232,240,.60);
+  --code-hover:rgba(226,232,240,.07);
+  --shadow-sm:0 1px 2px rgba(26,29,33,.05);
+  --shadow:0 1px 2px rgba(26,29,33,.04),0 12px 32px -20px rgba(26,29,33,.30);
+
+  --r1:10px;
+  --r2:12px;
+  --r3:14px;
+
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
+
+  --hdr-h:64px;
+  --max:1440px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:ui-serif,Georgia,Cambria,"Times New Roman",Times,serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",Courier,monospace;
+  color-scheme:light;
+}
+html[data-theme="dark"]{
+  --bg:#0e1114;
+  --surface:#151a1f;
+  --ink:#e8ebee;
+  --muted:#98a2ad;
+  --line:#262d35;
+  --accent:#f0a44c;
+  --inline-bg:#20262d;
+
+  --on-accent:#15181b;
+  --hdr-bg:rgba(14,17,20,.88);
+  --accent-soft:rgba(240,164,76,.12);
+  --accent-line:rgba(240,164,76,.34);
+  --ink-04:rgba(232,235,238,.045);
+  --ink-06:rgba(232,235,238,.08);
+  --sk-1:rgba(232,235,238,.06);
+  --sk-2:rgba(232,235,238,.13);
+  --code-line:rgba(226,232,240,.15);
+  --code-head:rgba(226,232,240,.06);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.5);
+  --shadow:0 1px 2px rgba(0,0,0,.45),0 16px 40px -24px rgba(0,0,0,.8);
+  color-scheme:dark;
+}
+
+/* ============================================================
+   Reset + base
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:calc(var(--hdr-h) + 16px);
+  -webkit-text-size-adjust:100%;
+}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+h1,h2,h3,h4,p,ul,ol,figure,blockquote{margin:0}
+img,svg{display:block;max-width:100%}
+button{font:inherit;color:inherit}
+input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+::selection{background:var(--accent-soft);color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+hr{border:0;border-top:1px solid var(--line);margin:var(--s5) 0}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.skip{
+  position:absolute;left:var(--s2);top:var(--s2);z-index:400;
+  display:inline-flex;align-items:center;min-height:44px;
+  padding:0 var(--s4);
+  background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r1);
+  box-shadow:var(--shadow);text-decoration:none;font-size:13px;font-weight:600;
+  transform:translateY(-200%);
+}
+.skip:focus{transform:none}
+
+/* ============================================================
+   Header
+   ============================================================ */
+.hdr{
+  position:sticky;top:0;z-index:50;
+  background:var(--hdr-bg);
+  border-bottom:1px solid var(--line);
+  -webkit-backdrop-filter:saturate(180%) blur(12px);
+  backdrop-filter:saturate(180%) blur(12px);
+}
+.hdr-in{
+  max-width:var(--max);margin:0 auto;
+  height:var(--hdr-h);
+  padding:0 var(--s5);
+  display:flex;align-items:center;gap:var(--s4);
+}
+.menu-btn{display:none}
+.ibtn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;flex:none;
+  background:transparent;border:1px solid transparent;border-radius:var(--r1);
+  color:var(--muted);cursor:pointer;
+  transition:background .14s ease,color .14s ease,border-color .14s ease;
+}
+.ibtn:hover{background:var(--ink-04);color:var(--ink)}
+.ibtn:active{background:var(--ink-06)}
+.brand{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  min-height:44px;padding:0 var(--s1);
+  text-decoration:none;color:var(--ink);
+  font-weight:650;font-size:17px;letter-spacing:-.012em;
+  border-radius:var(--r1);
+}
+.brand-mark{display:inline-flex;color:var(--accent);flex:none}
+.brand-name{white-space:nowrap}
+.brand-pill{
+  font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.02em;
+  color:var(--muted);border:1px solid var(--line);border-radius:var(--r1);
+  padding:1px 6px;background:var(--surface);
+}
+.hdr-nav{display:flex;align-items:center;gap:var(--s1);margin-left:var(--s3)}
+.hdr-nav a{
+  display:inline-flex;align-items:center;gap:6px;min-height:44px;
+  padding:0 var(--s3);border-radius:var(--r1);
+  color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:550;
+  white-space:nowrap;transition:color .14s ease,background .14s ease;
+}
+.hdr-nav a:hover{color:var(--ink);background:var(--ink-04)}
+.hdr-nav a[aria-current="page"]{color:var(--ink);background:var(--ink-06)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
+
+/* search */
+.search{
+  display:flex;align-items:center;gap:var(--s2);
+  height:44px;width:250px;flex:none;
+  padding:0 var(--s2) 0 var(--s3);
+  background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r1);
+  box-shadow:var(--shadow-sm);
+  color:var(--muted);
+  transition:border-color .14s ease,box-shadow .14s ease;
+}
+.search:focus-within{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.search svg{flex:none}
+.search input{
+  flex:1 1 auto;min-width:0;height:100%;
+  border:0;background:transparent;outline:none;
+  font-size:13.5px;color:var(--ink);
+}
+.search input::placeholder{color:var(--muted)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.kbd{
+  flex:none;font-family:var(--mono);font-size:11px;line-height:1;
+  color:var(--muted);
+  border:1px solid var(--line);border-bottom-width:2px;border-radius:var(--r1);
+  padding:3px 6px;background:var(--bg);
+}
+
+/* buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
+  min-height:44px;padding:0 var(--s4);
+  border:1px solid var(--line);border-radius:var(--r1);
+  background:var(--surface);color:var(--ink);
+  font-size:13.5px;font-weight:600;text-decoration:none;white-space:nowrap;
+  cursor:pointer;box-shadow:var(--shadow-sm);
+  transition:background .14s ease,border-color .14s ease,transform .06s ease,filter .14s ease;
+}
+.btn:hover{background:var(--ink-04)}
+.btn:active{transform:translateY(1px)}
+.btn-accent{
+  background:var(--accent);border-color:var(--accent);color:var(--on-accent);
+}
+.btn-accent:hover{background:var(--accent);filter:brightness(1.07)}
+.btn-ghost{background:transparent;box-shadow:none}
+.btn-ghost:hover{background:var(--ink-04)}
+.btn-sm{min-height:44px;padding:0 var(--s3);font-size:12.5px}
+.btn:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
+
+/* ============================================================
+   Shell
+   ============================================================ */
+.shell{
+  max-width:var(--max);margin:0 auto;
+  padding:0 var(--s5);
+  display:grid;
+  grid-template-columns:236px minmax(0,1fr) 208px;
+  gap:var(--s7);
+  align-items:start;
+}
+.main{min-width:0;padding:var(--s7) 0 var(--s9)}
+#article{max-width:800px}
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+.sidebar{
+  position:sticky;top:var(--hdr-h);
+  align-self:start;
+  max-height:calc(100vh - var(--hdr-h));
+  overflow-y:auto;
+  padding:var(--s6) 0 var(--s7);
+  display:flex;flex-direction:column;gap:var(--s4);
+  scrollbar-width:thin;
+  scrollbar-color:var(--line) transparent;
+}
+.sidebar::-webkit-scrollbar{width:8px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--line);border-radius:var(--r1)}
+.sb-head{display:none;align-items:center;justify-content:space-between;gap:var(--s2)}
+.sb-title{font-size:13px;font-weight:650;letter-spacing:-.01em}
+.sb-search{display:none}
+.sb-search input{
+  width:100%;height:44px;padding:0 var(--s3);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r1);
+  font-size:13.5px;outline:none;
+}
+.sb-search input:focus{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.sbnav{display:flex;flex-direction:column;gap:var(--s4)}
+.sb-empty{
+  padding:var(--s3);
+  border:1px dashed var(--line);border-radius:var(--r1);
+  font-size:12.5px;color:var(--muted);
+  word-break:break-word;
+}
+.navgrp-t{
+  padding:0 var(--s3);
+  margin-bottom:var(--s1);
+  font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);
+}
+.navgrp-t:first-child{margin-top:0}
+.sbnav ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.navlink{
+  display:flex;align-items:center;gap:var(--s2);
+  min-height:44px;padding:0 var(--s3);
+  border-radius:var(--r1);
+  color:var(--muted);text-decoration:none;font-size:13.5px;
+  transition:color .14s ease,background .14s ease;
+}
+.navlink:hover{color:var(--ink);background:var(--ink-04)}
+.navlink:active{background:var(--ink-06)}
+.navlink[aria-current="page"]{
+  color:var(--ink);font-weight:600;background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--line),inset 2px 0 0 0 var(--accent),var(--shadow-sm);
+}
+.nav-tag{
+  margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:600;
+  color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:var(--r1);
+  padding:0 5px;line-height:16px;
+}
+.sb-card{
+  margin-top:var(--s2);
+  padding:var(--s3);
+  background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r2);
+  box-shadow:var(--shadow-sm);
+}
+.sb-card-t{font-size:12.5px;font-weight:650;margin-bottom:2px}
+.sb-card-d{font-size:12px;line-height:1.5;color:var(--muted);margin-bottom:var(--s3)}
+
+/* ============================================================
+   Table of contents
+   ============================================================ */
+.toc{
+  position:sticky;top:var(--hdr-h);
+  align-self:start;
+  max-height:calc(100vh - var(--hdr-h));
+  overflow-y:auto;
+  padding:var(--s6) 0 var(--s7);
+  scrollbar-width:thin;
+  scrollbar-color:var(--line) transparent;
+}
+.toc-t{
+  font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:var(--s2);padding-left:var(--s3);
+}
+.toc-list{
+  list-style:none;margin:0;padding:0;
+  border-left:1px solid var(--line);
+}
+.toc-link{
+  display:flex;align-items:center;
+  width:100%;min-height:44px;
+  padding:0 var(--s2) 0 var(--s3);
+  margin-left:-1px;
+  border:0;border-left:1px solid transparent;
+  background:transparent;
+  color:var(--muted);font-size:12.5px;line-height:1.4;text-align:left;
+  cursor:pointer;
+  transition:color .14s ease,border-color .14s ease;
+}
+.toc-link.lv3{padding-left:var(--s5);font-size:12px}
+.toc-link:hover{color:var(--ink)}
+.toc-link[aria-current="location"]{color:var(--ink);font-weight:600;border-left-color:var(--accent)}
+.toc-help{
+  margin-top:var(--s5);padding-top:var(--s4);
+  border-top:1px solid var(--line);
+  padding-left:var(--s3);
+}
+.toc-help p{font-size:12px;color:var(--muted);margin-bottom:var(--s2)}
+.toc-help-row{display:flex;gap:var(--s2)}
+
+/* ============================================================
+   Article
+   ============================================================ */
+.crumbs ol{
+  list-style:none;display:flex;flex-wrap:wrap;align-items:center;
+  margin:0 0 var(--s2);padding:0;
+  font-size:12.5px;color:var(--muted);
+}
+.crumbs li{display:inline-flex;align-items:center;min-height:44px}
+.crumbs a{
+  display:inline-flex;align-items:center;min-height:44px;padding:0 var(--s1);
+  border-radius:var(--r1);color:var(--muted);text-decoration:none;
+  transition:color .14s ease,background .14s ease;
+}
+.crumbs a:hover{color:var(--ink);background:var(--ink-04)}
+.crumb-sep{padding:0 var(--s1);color:var(--line);font-family:var(--mono)}
+.crumb-cur{color:var(--ink);font-weight:550;padding:0 var(--s1)}
+
+.art-hd{margin-bottom:var(--s5)}
+.art-hd h1{
+  font-size:clamp(26px,3.1vw,32px);
+  line-height:1.16;letter-spacing:-.022em;font-weight:680;
+  margin-bottom:var(--s2);
+}
+.art-hd h1:focus{outline:none}
+.art-meta{
+  display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);
+  font-size:12.5px;color:var(--muted);
+}
+.dot-sep{color:var(--line)}
+.badge{
+  display:inline-flex;align-items:center;height:24px;
+  padding:0 var(--s2);
+  border:1px solid var(--accent-line);border-radius:var(--r1);
+  background:var(--accent-soft);color:var(--accent);
+  font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.01em;
+}
+.badge-neutral{border-color:var(--line);background:var(--ink-04);color:var(--muted)}
+
+.lede{font-size:17px;line-height:1.6;color:var(--ink);margin-bottom:var(--s4)}
+#article p{margin:0 0 var(--s3);color:var(--ink)}
+#article p.muted{color:var(--muted);font-size:13.5px}
+#article h2{
+  font-size:21px;line-height:1.3;font-weight:650;letter-spacing:-.015em;
+  margin:var(--s7) 0 var(--s3);
+  padding-top:var(--s5);
+  border-top:1px solid var(--line);
+  scroll-margin-top:calc(var(--hdr-h) + 20px);
+}
+#article h2:first-of-type{margin-top:var(--s6)}
+#article h3{
+  font-size:16px;line-height:1.4;font-weight:650;letter-spacing:-.008em;
+  margin:var(--s5) 0 var(--s2);
+  scroll-margin-top:calc(var(--hdr-h) + 20px);
+}
+#article ul,#article ol{margin:0 0 var(--s4);padding:0}
+#article ul{list-style:none}
+#article ul>li{position:relative;padding-left:20px;margin:var(--s2) 0}
+#article ul>li::before{
+  content:"";position:absolute;left:3px;top:9px;
+  width:5px;height:5px;border-radius:50%;background:var(--muted);
+}
+#article ol{list-style:none;counter-reset:ol}
+#article ol>li{position:relative;padding-left:26px;margin:var(--s2) 0;counter-increment:ol}
+#article ol>li::before{
+  content:counter(ol);position:absolute;left:0;top:2px;
+  width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10.5px;color:var(--accent);
+  border:1px solid var(--accent-line);border-radius:var(--r1);background:var(--accent-soft);
+}
+#article li>p{margin:var(--s1) 0}
+#article a:not(.btn){
+  color:var(--ink);font-weight:500;
+  text-decoration:underline;
+  text-decoration-color:var(--accent-line);
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
+  transition:text-decoration-color .14s ease,color .14s ease;
+}
+#article a:not(.btn):hover{text-decoration-color:var(--accent)}
+code{
+  font-family:var(--mono);font-size:12.5px;
+  background:var(--inline-bg);
+  border:1px solid var(--line);border-radius:var(--r1);
+  padding:1px 5px;
+  color:var(--ink);
+  white-space:nowrap;
+  max-width:100%;
+}
+#article blockquote{
+  margin:var(--s5) 0;
+  padding:var(--s1) 0 var(--s1) var(--s5);
+  border-left:2px solid var(--accent);
+  font-family:var(--serif);
+  font-size:17px;line-height:1.55;color:var(--ink);
+}
+#article blockquote footer{
+  margin-top:var(--s2);
+  font-family:var(--sans);font-size:12.5px;color:var(--muted);
+}
+
+/* ============================================================
+   Code blocks
+   ============================================================ */
+.code{
+  margin:var(--s4) 0 var(--s5);
+  border-radius:var(--r2);
+  background:var(--code-bg);
+  border:1px solid var(--code-line);
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.code-hd{
+  display:flex;align-items:center;gap:var(--s2);
+  min-height:52px;
+  padding:var(--s1) var(--s2) var(--s1) var(--s1);
+  border-bottom:1px solid var(--code-line);
+  background:var(--code-head);
+}
+.tabs{display:flex;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  display:inline-flex;align-items:center;
+  min-height:44px;padding:0 var(--s3);
+  border:0;border-radius:var(--r1);
+  background:transparent;color:var(--code-mute);
+  font-size:12.5px;font-weight:550;letter-spacing:.01em;white-space:nowrap;
+  cursor:pointer;
+  transition:color .14s ease,background .14s ease;
+}
+.tab:hover{color:var(--code-ink);background:var(--code-hover)}
+.tab[aria-selected="true"]{
+  color:#ffffff;
+  background:var(--code-hover);
+  box-shadow:inset 0 -2px 0 0 var(--accent);
+}
+.code-lang{
+  flex:1 1 auto;min-width:0;
+  display:inline-flex;align-items:center;min-height:44px;
+  padding:0 var(--s2);
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--code-mute);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.copy{
+  display:inline-flex;align-items:center;gap:6px;flex:none;
+  min-height:44px;padding:0 var(--s2);
+  border:1px solid transparent;border-radius:var(--r1);
+  background:transparent;color:var(--code-mute);
+  font-size:12px;font-weight:550;cursor:pointer;
+  transition:color .14s ease,background .14s ease,border-color .14s ease;
+}
+.copy:hover{color:var(--code-ink);background:var(--code-hover)}
+.copy.done{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+.code-bd{
+  margin:0;padding:var(--s4) var(--s4) var(--s4) var(--s4);
+  overflow-x:auto;
+  font-family:var(--mono);font-size:12.5px;line-height:1.72;
+  color:var(--code-ink);
+  tab-size:2;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(226,232,240,.25) transparent;
+}
+.code-bd::-webkit-scrollbar{height:10px}
+.code-bd::-webkit-scrollbar-thumb{background:rgba(226,232,240,.2);border-radius:var(--r1)}
+.code-bd:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.code-bd code{background:none;border:0;border-radius:0;padding:0;font:inherit;color:inherit;white-space:pre}
+.tok-c{color:#7c8ea6;font-style:italic}
+.tok-k{color:#8fb8e8}
+.tok-s{color:#a8d5a2}
+.tok-n{color:#e9b171}
+.tok-b{color:#e9b171}
+.tok-kw{color:#c3b1f0}
+.tok-fn{color:#79c0e8}
+.tok-v{color:#e9b171}
+.tok-a{color:#9fb8d4}
+
+/* ============================================================
+   Tables
+   ============================================================ */
+.tbl-wrap{
+  margin:var(--s4) 0 var(--s5);
+  border:1px solid var(--line);border-radius:var(--r2);
+  background:var(--surface);
+  box-shadow:var(--shadow-sm);
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.tbl{width:100%;min-width:520px;border-collapse:collapse;font-size:13px;text-align:left}
+.tbl thead th{
+  padding:var(--s2) var(--s3);
+  font-size:10.5px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
+.tbl tbody td{
+  padding:var(--s3);
+  border-bottom:1px solid var(--line);
+  vertical-align:top;
+  color:var(--ink);
+}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl tbody tr{transition:background .12s ease}
+.tbl tbody tr:hover{background:var(--ink-04)}
+.tbl td code,.tbl th code{white-space:nowrap}
+.tbl .num{text-align:right;font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl .nowrap{white-space:nowrap}
+.tbl .tc-muted{color:var(--muted)}
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  height:22px;padding:0 var(--s2);
+  border:1px solid var(--line);border-radius:var(--r1);
+  background:var(--ink-04);color:var(--ink);
+  font-family:var(--mono);font-size:11px;font-weight:600;white-space:nowrap;
+}
+.pill-accent{border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent)}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex:none}
+
+/* ============================================================
+   Callouts
+   ============================================================ */
+.callout{
+  display:grid;grid-template-columns:20px minmax(0,1fr);gap:var(--s3);
+  margin:var(--s4) 0 var(--s5);
+  padding:var(--s3) var(--s4);
+  border:1px solid var(--line);border-left:2px solid var(--line);
+  border-radius:var(--r2);
+  background:var(--surface);
+}
+.callout .co-ic{color:var(--muted);margin-top:2px}
+.callout-t{
+  font-size:12.5px;font-weight:650;letter-spacing:.005em;
+  margin:0 0 2px !important;color:var(--ink);
+}
+.callout p:last-child{margin-bottom:0 !important}
+.callout p{font-size:13.5px;line-height:1.6}
+.callout.warn{border-left-color:var(--accent);background:var(--accent-soft)}
+.callout.warn .co-ic{color:var(--accent)}
+
+/* ============================================================
+   Steps
+   ============================================================ */
+.steps{list-style:none;counter-reset:step;margin:var(--s4) 0 var(--s5);padding:0}
+.steps>li{
+  position:relative;counter-increment:step;
+  padding:0 0 var(--s5) 44px;
+}
+.steps>li:last-child{padding-bottom:0}
+.steps>li::before{
+  content:counter(step);
+  position:absolute;left:0;top:0;
+  width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);
+  background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:var(--r1);
+}
+.steps>li::after{
+  content:"";position:absolute;left:13px;top:34px;bottom:8px;width:1px;background:var(--line);
+}
+.steps>li:last-child::after{display:none}
+.steps h3{margin-top:0 !important;margin-bottom:var(--s1) !important;font-size:15px !important}
+.steps p{font-size:14px}
+.steps .code,.steps .tbl-wrap{margin-top:var(--s3)}
+
+/* ============================================================
+   Try it panel
+   ============================================================ */
+.try{
+  margin:var(--s4) 0 var(--s5);
+  border:1px solid var(--line);border-radius:var(--r3);
+  background:var(--surface);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.try-hd{
+  display:flex;align-items:center;gap:var(--s2);
+  padding:var(--s2) var(--s4);
+  border-bottom:1px solid var(--line);
+  background:var(--ink-04);
+  min-height:48px;
+}
+.method{
+  font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:var(--r1);
+  padding:2px 6px;
+}
+.try-path{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.try-hd .try-tag{margin-left:auto;font-size:11.5px;color:var(--muted)}
+.try-bd{padding:var(--s4);display:flex;flex-wrap:wrap;gap:var(--s3);align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:6px;flex:1 1 190px;min-width:0}
+.field label{font-size:11.5px;font-weight:650;letter-spacing:.03em;color:var(--muted);text-transform:uppercase}
+.field input,.field select{
+  width:100%;height:44px;padding:0 var(--s3);
+  background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r1);
+  font-size:13.5px;outline:none;
+  transition:border-color .14s ease,box-shadow .14s ease;
+}
+.field input:focus,.field select:focus{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.field select{
+  -webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 21px,calc(100% - 13px) 21px;
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
+  padding-right:var(--s6);
+}
+.try-act{display:flex;gap:var(--s2);flex:0 0 auto}
+.try-out{
+  border-top:1px solid var(--code-line);
+  background:var(--code-bg);
+  color:var(--code-ink);
+  min-height:150px;
+}
+.try-empty{
+  padding:var(--s5) var(--s4);
+  font-size:12.5px;color:var(--code-mute);
+  font-family:var(--mono);
+}
+.resp-hd{
+  display:flex;align-items:center;flex-wrap:wrap;gap:var(--s2);
+  padding:var(--s3) var(--s4);
+  border-bottom:1px solid var(--code-line);
+}
+.resp-hd .pill{background:rgba(226,232,240,.08);border-color:var(--code-line);color:var(--code-ink)}
+.resp-meta{font-family:var(--mono);font-size:11px;color:var(--code-mute)}
+.resp-pre{
+  margin:0;padding:var(--s4);
+  font-family:var(--mono);font-size:12px;line-height:1.7;
+  overflow-x:auto;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(226,232,240,.25) transparent;
+}
+.resp-pre::-webkit-scrollbar{height:10px}
+.resp-pre::-webkit-scrollbar-thumb{background:rgba(226,232,240,.2);border-radius:var(--r1)}
+.resp-pre code{background:none;border:0;padding:0;font:inherit;color:inherit;white-space:pre}
+.sk-wrap{padding:var(--s4);display:flex;flex-direction:column;gap:10px}
+.sk{
+  height:12px;border-radius:var(--r1);
+  background:linear-gradient(90deg,var(--sk-1) 0%,var(--sk-2) 50%,var(--sk-1) 100%);
+  background-size:280px 100%;
+  animation:shimmer 1.15s linear infinite;
+}
+@keyframes shimmer{from{background-position:-280px 0}to{background-position:280px 0}}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============================================================
+   Article actions + prev/next
+   ============================================================ */
+.art-act{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  flex-wrap:wrap;
+  margin-top:var(--s7);padding-top:var(--s4);
+  border-top:1px solid var(--line);
+}
+.art-act-l{display:flex;gap:var(--s1);flex-wrap:wrap}
+.linkbtn{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  min-height:44px;padding:0 var(--s2);
+  border:1px solid transparent;border-radius:var(--r1);
+  background:transparent;color:var(--muted);
+  font-size:12.5px;font-weight:550;cursor:pointer;
+  transition:color .14s ease,background .14s ease;
+}
+.linkbtn:hover{color:var(--ink);background:var(--ink-04)}
+.linkbtn svg{flex:none}
+
+.pn{display:flex;gap:var(--s3);margin-top:var(--s5);flex-wrap:wrap}
+.pn-card{
+  flex:1 1 240px;
+  display:flex;flex-direction:column;gap:2px;
+  min-height:44px;padding:var(--s3) var(--s4);
+  border:1px solid var(--line);border-radius:var(--r2);
+  background:var(--surface);text-decoration:none;color:var(--ink);
+  box-shadow:var(--shadow-sm);
+  transition:border-color .14s ease,background .14s ease,transform .06s ease;
+}
+.pn-card:hover{border-color:var(--accent-line);background:var(--accent-soft)}
+.pn-card:active{transform:translateY(1px)}
+.pn-next{text-align:right;align-items:flex-end}
+.pn-l{font-size:11.5px;color:var(--muted);font-weight:550;letter-spacing:.01em}
+.pn-t{font-size:14px;font-weight:650;letter-spacing:-.01em}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.ft{
+  border-top:1px solid var(--line);
+  background:var(--surface);
+  margin-top:var(--s6);
+}
+.ft-in{
+  max-width:var(--max);margin:0 auto;
+  padding:var(--s7) var(--s5) var(--s6);
+  display:grid;
+  grid-template-columns:1.7fr 1fr 1fr 1fr;
+  gap:var(--s6);
+}
+.ft-d{font-size:12.5px;line-height:1.6;color:var(--muted);margin:var(--s2) 0 var(--s3);max-width:34ch}
+.ft-status{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  min-height:44px;padding:0 var(--s1);
+  font-size:12.5px;color:var(--muted);text-decoration:none;
+  border-radius:var(--r1);
+}
+.ft-status:hover{color:var(--ink)}
+.status-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--ink);
+  opacity:.55;flex:none;
+}
+.ft-t{
+  font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:var(--s1);
+}
+.ft-col ul{list-style:none;margin:0;padding:0}
+.ft-col a{
+  display:inline-flex;align-items:center;min-height:44px;
+  padding:0 var(--s1);border-radius:var(--r1);
+  font-size:13px;color:var(--muted);text-decoration:none;
+  transition:color .14s ease,background .14s ease;
+}
+.ft-col a:hover{color:var(--ink);background:var(--ink-04)}
+.ft-bot{
+  max-width:var(--max);margin:0 auto;
+  padding:var(--s4) var(--s5) var(--s8);
+  border-top:1px solid var(--line);
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--s2);
+  font-size:12px;color:var(--muted);
+}
+
+/* ============================================================
+   Toasts
+   ============================================================ */
+.toasts{
+  position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);
+  z-index:300;
+  width:min(92vw,440px);
+  display:flex;flex-direction:column;align-items:center;gap:var(--s2);
+  pointer-events:none;
+}
+.toast{
+  display:flex;align-items:center;gap:var(--s2);
+  max-width:100%;
+  padding:var(--s2) var(--s4);
+  border-radius:var(--r2);
+  background:var(--ink);color:var(--bg);
+  font-size:13px;line-height:1.45;
+  box-shadow:0 10px 30px -12px rgba(0,0,0,.45);
+  animation:toast-in .18s ease-out;
+}
+.toast .t-ic{display:inline-flex;color:var(--accent);flex:none}
+.toast.out{opacity:0;transform:translateY(6px);transition:opacity .18s ease,transform .18s ease}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   Modal
+   ============================================================ */
+.modal-root{
+  position:fixed;inset:0;z-index:250;
+  display:flex;align-items:center;justify-content:center;
+  padding:var(--s4);
+}
+.modal-backdrop{
+  position:absolute;inset:0;
+  background:rgba(15,23,42,.46);
+  -webkit-backdrop-filter:blur(2px);
+  backdrop-filter:blur(2px);
+  border:0;cursor:pointer;
+  animation:fade-in .16s ease-out;
+}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.modal{
+  position:relative;
+  width:min(520px,100%);
+  max-height:min(88vh,760px);
+  overflow-y:auto;
+  padding:var(--s5);
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r3);
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.5),var(--shadow-sm);
+  animation:modal-in .18s ease-out;
+}
+@keyframes modal-in{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.modal h2{font-size:19px;line-height:1.3;letter-spacing:-.015em;margin:0 0 var(--s2);font-weight:650}
+.modal .modal-d{font-size:13.5px;color:var(--muted);margin-bottom:var(--s4)}
+.modal-x{position:absolute;top:var(--s3);right:var(--s3)}
+.modal form{display:flex;flex-direction:column;gap:var(--s3)}
+.modal .field label{font-size:11.5px;font-weight:650;letter-spacing:.03em;color:var(--muted);text-transform:uppercase}
+.form-err{
+  font-size:12.5px;color:var(--accent);
+  background:var(--accent-soft);border:1px solid var(--accent-line);
+  border-radius:var(--r1);padding:var(--s2) var(--s3);
+}
+.keyline{
+  display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;
+  padding:var(--s2) var(--s2) var(--s2) var(--s3);
+  border:1px solid var(--line);border-radius:var(--r1);
+  background:var(--inline-bg);
+}
+.keyline code{
+  background:none;border:0;padding:0;
+  font-size:12.5px;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+.modal-note{
+  margin-top:var(--s4);padding-top:var(--s3);
+  border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--muted);
+}
+
+/* ============================================================
+   Status page widgets
+   ============================================================ */
+.bars{display:flex;gap:2px;align-items:flex-end;height:40px;margin:var(--s4) 0 var(--s2)}
+.bar{
+  flex:1 1 auto;height:32px;border-radius:var(--r1);
+  background:var(--muted);opacity:.35;
+}
+.bar.w{background:var(--accent);opacity:.85}
+.bar.p{background:var(--muted);opacity:.6}
+.bars-legend{display:flex;gap:var(--s4);flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-bottom:var(--s4)}
+.bars-legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{width:8px;height:8px;border-radius:50%;display:inline-block}
+.lg-ok{background:var(--muted);opacity:.4}
+.lg-acc{background:var(--accent)}
+
+/* ============================================================
+   Cards, stats, link overrides
+   ============================================================ */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+  gap:var(--s4);
+  margin:var(--s5) 0;
+  padding:var(--s4);
+  background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r2);
+  box-shadow:var(--shadow-sm);
+}
+.stat-v{font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.stat-l{font-size:11.5px;color:var(--muted);margin-top:2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--s3);margin:var(--s4) 0 var(--s5)}
+#article a.card{
+  display:flex;flex-direction:column;gap:2px;
+  min-height:44px;padding:var(--s3) var(--s4);
+  background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r2);
+  color:var(--ink);text-decoration:none;font-weight:500;
+  box-shadow:var(--shadow-sm);
+  transition:border-color .14s ease,background .14s ease,transform .06s ease;
+}
+#article a.card:hover{text-decoration:none;border-color:var(--accent-line);background:var(--accent-soft)}
+#article a.card:active{transform:translateY(1px)}
+.card-t{font-size:13.5px;font-weight:650}
+.card-d{font-size:12.5px;line-height:1.5;color:var(--muted)}
+#article a.pn-card{text-decoration:none;font-weight:500}
+#article .crumbs a{text-decoration:none;font-weight:550;color:var(--muted)}
+#article a.btn{text-decoration:none;font-weight:600}
+#article a:not(.card):not(.pn-card):not(.btn):hover{color:var(--ink)}
+
+/* breadcrumbs must not inherit article list markers */
+#article .crumbs ol{margin:0;padding:0;list-style:none;counter-reset:none}
+#article .crumbs ol > li{padding-left:0;margin:0;counter-increment:none;border:0}
+#article .crumbs ol > li::before{content:none;display:none}
+#article .crumbs ol > li::after{content:none;display:none}
+
+/* the drawer toggle belongs to the narrow layout only */
+.ibtn.menu-btn{display:none}
+@media (max-width:1099px){
+  .ibtn.menu-btn{display:inline-flex}
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width:1279px){
+  .shell{grid-template-columns:220px minmax(0,1fr) 192px;gap:var(--s6)}
+  .search{width:210px}
+}
+@media (max-width:1099px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .main{padding:var(--s5) 0 var(--s8)}
+  #article{max-width:none}
+  .menu-btn{display:inline-flex}
+  .hdr-nav{display:none}
+  .search{display:none}
+  .hdr-in{gap:var(--s2);padding:0 var(--s4)}
+  .toc{display:none}
+  .sidebar{
+    position:fixed;top:0;bottom:0;left:0;
+    width:min(86vw,330px);
+    max-height:none;height:100%;
+    z-index:140;
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    padding:var(--s3) var(--s3) var(--s7);
+    transform:translateX(-102%);
+    visibility:hidden;
+    transition:transform .22s ease,visibility .22s ease;
+  }
+  html.drawer-open .sidebar{
+    transform:none;visibility:visible;
+    box-shadow:0 24px 70px -24px rgba(0,0,0,.45);
+  }
+  html.drawer-open{overflow:hidden}
+  .sb-head{display:flex;padding:0 0 0 var(--s1)}
+  .sb-search{display:block}
+  .scrim{
+    position:fixed;inset:0;z-index:135;
+    background:rgba(15,23,42,.45);
+  }
+  .scrim:not([hidden]){display:block}
+  .ft-in{grid-template-columns:1fr 1fr;gap:var(--s5)}
+  .ft-brand{grid-column:1 / -1}
+}
+@media (max-width:760px){
+  body{font-size:14.5px}
+  .shell{padding:0 var(--s4)}
+  .hdr-in{padding:0 var(--s3)}
+  .brand{font-size:16px}
+  .ft-in{padding:var(--s6) var(--s4) var(--s5)}
+  .ft-bot{padding:var(--s4) var(--s4) var(--s8)}
+  #article h2{font-size:19px;margin-top:var(--s6)}
+  .lede{font-size:16px}
+  .code-bd{font-size:12px;padding:var(--s3)}
+  .tab{font-size:12px;padding:0 var(--s2)}
+  .pn{flex-direction:column}
+  .pn-card{flex:1 1 auto}
+  .pn-next{text-align:left;align-items:flex-start}
+  .try-bd{flex-direction:column;align-items:stretch}
+  .try-act{flex:1 1 auto}
+  .try-act .btn{flex:1 1 auto}
+  .art-act{flex-direction:column;align-items:flex-start;gap:var(--s2)}
+  .art-act-l{margin-left:calc(var(--s2) * -1)}
+  #article blockquote{font-size:16px;padding-left:var(--s4)}
+  .badge{height:22px;font-size:10.5px}
+  .crumbs{font-size:12px}
+}
+@media (max-width:480px){
+  .brand-pill{display:none}
+  .ft-in{grid-template-columns:1fr}
+  .ft-col a{min-height:44px}
+  .code-hd{min-height:48px}
+  .modal{padding:var(--s4)}
+  #article{font-size:14.5px}
+}
+@media (min-width:1100px){
+  .scrim{display:none}
+}
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+  }
+}
 </style>
 </head>
 <body>
-<div class="top">
-  <div class="logo">Beacon</div>
-  <nav><a href="#">Guides</a><a href="#">API</a><a href="#">Changelog</a><a href="#">Status</a></nav>
-</div>
-<div class="wrap">
-  <aside class="side">
-    <h4>Getting started</h4>
-    <a class="on" href="#">Quickstart</a>
-    <a href="#">Authentication</a>
-    <a href="#">Errors</a>
-    <h4 style="margin-top:16px">Endpoints</h4>
-    <a href="#">Events</a>
-    <a href="#">Metrics</a>
-    <a href="#">Webhooks</a>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="hdr" id="siteHeader">
+  <div class="hdr-in">
+    <button class="ibtn menu-btn" type="button" id="menuBtn" aria-label="Open documentation menu" aria-expanded="false" aria-controls="sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.5 6.5h17"/><path d="M3.5 12h17"/><path d="M3.5 17.5h17"/></svg>
+    </button>
+    <a class="brand" href="#/getting-started/introduction" aria-label="Quarry API documentation home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 2.9 20.2 7.4v9.2L12 21.1 3.8 16.6V7.4z"/><path d="M3.8 7.4 12 11.9l8.2-4.5"/><path d="M12 11.9v9.2"/></svg>
+      </span>
+      <span class="brand-name">Quarry</span>
+      <span class="brand-pill">v1.4</span>
+    </a>
+    <nav class="hdr-nav" aria-label="Main">
+      <a href="#/getting-started/introduction">Docs</a>
+      <a href="#/core/extract">API reference</a>
+      <a href="#/sdks/node">SDKs</a>
+      <a href="#/changelog">Changelog</a>
+      <a href="#/status">Status</a>
+    </nav>
+    <div class="hdr-right">
+      <div class="search" role="search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.75"/><path d="M15.9 15.9 20.5 20.5"/></svg>
+        <input type="search" id="searchInput" placeholder="Search docs" aria-label="Search documentation" autocomplete="off" spellcheck="false">
+        <kbd class="kbd" aria-hidden="true">/</kbd>
+      </div>
+      <button class="ibtn" type="button" id="themeBtn" aria-label="Switch to dark theme" aria-pressed="false" title="Switch to dark theme">
+        <svg class="ic-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2z"/></svg>
+        <svg class="ic-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" hidden><circle cx="12" cy="12" r="4.1"/><path d="M12 2.8v2.4"/><path d="M12 18.8v2.4"/><path d="M2.8 12h2.4"/><path d="M18.8 12h2.4"/><path d="M5.5 5.5 7.2 7.2"/><path d="M16.8 16.8l1.7 1.7"/><path d="M18.5 5.5 16.8 7.2"/><path d="M7.2 16.8 5.5 18.5"/></svg>
+      </button>
+      <button class="btn btn-accent" type="button" id="keyBtn" data-act="open-key">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8.2" cy="12" r="3.7"/><path d="M11.9 12h8.1"/><path d="M17.2 12v3.1"/><path d="M20 12v2.2"/></svg>
+        <span>Get API key</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+    <div class="sb-head">
+      <span class="sb-title">Documentation</span>
+      <button class="ibtn" type="button" id="sbClose" aria-label="Close documentation menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="sb-search">
+      <label class="sr-only" for="sbSearch">Filter documentation pages</label>
+      <input type="search" id="sbSearch" placeholder="Filter pages…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="sb-empty" id="sbEmpty" role="status" hidden>No results for “<span id="sbEmptyQ"></span>”</div>
+    <nav class="sbnav" id="sbnav" aria-label="Documentation sections">
+      <div class="navgrp" role="group" aria-labelledby="grp-getting">
+        <div class="navgrp-t" id="grp-getting">Getting started</div>
+        <ul>
+          <li><a class="navlink" href="#/getting-started/introduction" data-kw="overview what is supported pdf ocr fields">Introduction</a></li>
+          <li><a class="navlink" href="#/getting-started/quickstart" data-kw="first request invoice upload five minutes">Quickstart</a></li>
+          <li><a class="navlink" href="#/getting-started/authentication" data-kw="api key bearer token scopes rotate">Authentication</a></li>
+        </ul>
+      </div>
+      <div class="navgrp" role="group" aria-labelledby="grp-core">
+        <div class="navgrp-t" id="grp-core">Core</div>
+        <ul>
+          <li><a class="navlink" href="#/core/documents" data-kw="upload storage lifecycle pages retention">Documents</a></li>
+          <li><a class="navlink" href="#/core/extract" data-kw="post v1 extract schema fields parameters">Extract</a></li>
+          <li><a class="navlink" href="#/core/batches" data-kw="bulk batch queue thousand files">Batches</a></li>
+        </ul>
+      </div>
+      <div class="navgrp" role="group" aria-labelledby="grp-more">
+        <div class="navgrp-t" id="grp-more">Platform</div>
+        <ul>
+          <li><a class="navlink" href="#/webhooks" data-kw="events callback signature hmac retries">Webhooks</a></li>
+          <li><a class="navlink" href="#/errors" data-kw="status codes error object catalog 400 401 429">Errors</a></li>
+          <li><a class="navlink" href="#/rate-limits" data-kw="quota throttling backoff 429 headers">Rate limits</a></li>
+        </ul>
+      </div>
+      <div class="navgrp" role="group" aria-labelledby="grp-sdk">
+        <div class="navgrp-t" id="grp-sdk">SDKs</div>
+        <ul>
+          <li><a class="navlink" href="#/sdks/node" data-kw="javascript typescript npm node sdk">Node</a></li>
+          <li><a class="navlink" href="#/sdks/python" data-kw="python pip sdk">Python</a></li>
+          <li><a class="navlink" href="#/sdks/go" data-kw="golang go sdk module">Go</a></li>
+        </ul>
+      </div>
+      <div class="navgrp" role="group" aria-labelledby="grp-log">
+        <div class="navgrp-t" id="grp-log">Releases</div>
+        <ul>
+          <li><a class="navlink" href="#/changelog" data-kw="release notes versions history">Changelog<span class="nav-tag">1.4</span></a></li>
+        </ul>
+      </div>
+      <div class="navgrp" role="group" aria-labelledby="grp-shortcuts">
+        <div class="navgrp-t" id="grp-shortcuts">Shortcuts</div>
+        <ul>
+          <li><a class="navlink" href="#/core/extract" data-kw="reference endpoint">API reference</a></li>
+          <li><a class="navlink" href="#/status" data-kw="uptime incidents operational">Status</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="sb-card">
+      <p class="sb-card-t">Need a hand?</p>
+      <p class="sb-card-d">Send the <code>Quarry-Request-Id</code> from the response and we will trace it.</p>
+      <button class="btn btn-ghost btn-sm" type="button" data-act="copy-support">Copy support email</button>
+    </div>
   </aside>
-  <main>
-    <h1>Quickstart</h1>
-    <p>Send your first event in about two minutes. You need an API key from the console.</p>
-    <h2>1. Install</h2>
-    <pre>npm install @beacon/sdk</pre>
-    <h2>2. Send an event</h2>
-    <pre><span class="k">import</span> { Beacon } <span class="k">from</span> <span class="s">'@beacon/sdk'</span>;
+  <div class="scrim" id="scrim" hidden></div>
 
-<span class="k">const</span> client = <span class="k">new</span> Beacon({ key: process.env.BEACON_KEY });
-
-<span class="k">await</span> client.track({
-  name: <span class="s">'signup'</span>,
-  userId: <span class="s">'u_1042'</span>
-});</pre>
-    <div class="note">Requests are idempotent by <code>idempotency-key</code> — retries are safe.</div>
-    <h2>Parameters</h2>
-    <table>
-      <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
-      <tr><td><code>name</code></td><td>string</td><td>required, max 120 chars</td></tr>
-      <tr><td><code>userId</code></td><td>string</td><td>optional</td></tr>
-      <tr><td><code>props</code></td><td>object</td><td>flat key/value, max 40 keys</td></tr>
-    </table>
+  <main class="main" id="main" tabindex="-1">
+    <div id="article">
+      <noscript>
+        <p class="lede">Quarry API documentation runs as a single-page reference. Enable JavaScript to open Quickstart, Authentication, Extract, Errors, and the SDK guides.</p>
+        <p>The API itself is documented at <code>POST /v1/extract</code> and <code>GET /v1/documents/{id}</code>.</p>
+      </noscript>
+    </div>
   </main>
+
+  <aside class="toc" id="toc" aria-label="On this page">
+    <div class="toc-t">On this page</div>
+    <ul class="toc-list" id="tocList"></ul>
+    <div class="toc-help">
+      <p>Was this page helpful?</p>
+      <div class="toc-help-row">
+        <button class="btn btn-ghost btn-sm" type="button" data-act="feedback" data-v="yes">Yes</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-act="feedback" data-v="no">No</button>
+      </div>
+    </div>
+  </aside>
 </div>
+
+<footer class="ft" id="siteFooter">
+  <div class="ft-in">
+    <div class="ft-brand">
+      <a class="brand" href="#/getting-started/introduction" style="padding-left:0">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 2.9 20.2 7.4v9.2L12 21.1 3.8 16.6V7.4z"/><path d="M3.8 7.4 12 11.9l8.2-4.5"/><path d="M12 11.9v9.2"/></svg>
+        </span>
+        <span class="brand-name">Quarry</span>
+        <span class="brand-pill">API</span>
+      </a>
+      <p class="ft-d">Structured extraction for invoices, receipts, purchase orders, and scans. One endpoint, typed JSON, per-field confidence.</p>
+      <a class="ft-status" href="#/status"><span class="status-dot" aria-hidden="true"></span>All systems operational</a>
+    </div>
+    <nav class="ft-col" aria-labelledby="ft-docs">
+      <div class="ft-t" id="ft-docs">Documentation</div>
+      <ul>
+        <li><a href="#/getting-started/introduction">Introduction</a></li>
+        <li><a href="#/getting-started/quickstart">Quickstart</a></li>
+        <li><a href="#/getting-started/authentication">Authentication</a></li>
+        <li><a href="#/core/extract">Extract</a></li>
+      </ul>
+    </nav>
+    <nav class="ft-col" aria-labelledby="ft-sdk">
+      <div class="ft-t" id="ft-sdk">SDKs</div>
+      <ul>
+        <li><a href="#/sdks/node">Node</a></li>
+        <li><a href="#/sdks/python">Python</a></li>
+        <li><a href="#/sdks/go">Go</a></li>
+        <li><a href="#/changelog">Changelog</a></li>
+      </ul>
+    </nav>
+    <nav class="ft-col" aria-labelledby="ft-ref">
+      <div class="ft-t" id="ft-ref">Reference</div>
+      <ul>
+        <li><a href="#/core/documents">Documents</a></li>
+        <li><a href="#/webhooks">Webhooks</a></li>
+        <li><a href="#/errors">Errors</a></li>
+        <li><a href="#/rate-limits">Rate limits</a></li>
+      </ul>
+    </nav>
+  </div>
+  <div class="ft-bot">
+    <span>© 2025 Quarry Labs, Inc.</span>
+    <span>Quarry API v1.4 · updated Nov 12, 2025 · all timestamps UTC</span>
+  </div>
+</footer>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<div class="modal-root" id="keyModal" hidden>
+  <div class="modal-backdrop" data-act="modal-close" aria-hidden="true"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="kmTitle" aria-describedby="kmDesc" tabindex="-1">
+    <button class="ibtn modal-x" type="button" data-act="modal-close" aria-label="Close dialog">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>
+    </button>
+    <h2 id="kmTitle">Get an API key</h2>
+    <p class="modal-d" id="kmDesc">Keys are scoped to one workspace. Live keys bill per page; test keys return fixed fixtures and never charge.</p>
+    <form id="kmForm" novalidate>
+      <p class="form-err" id="kmErr" role="alert" hidden></p>
+      <div class="field">
+        <label for="kmEmail">Work email</label>
+        <input type="email" id="kmEmail" name="email" placeholder="you@company.com" autocomplete="email" aria-describedby="kmEmailHint">
+        <p class="hint" id="kmEmailHint">Used only for quota warnings and key expiry notices.</p>
+      </div>
+      <div class="field">
+        <label for="kmPlan">Plan</label>
+        <select id="kmPlan" name="plan">
+          <option value="Starter">Starter — 2,000 pages / month</option>
+          <option value="Growth">Growth — 25,000 pages / month</option>
+          <option value="Scale">Scale — custom volume</option>
+        </select>
+      </div>
+      <div class="try-act">
+        <button class="btn btn-accent" type="submit" style="flex:1 1 auto">Create live key</button>
+      </div>
+    </form>
+    <div id="kmResult" hidden>
+      <div class="field" style="margin-bottom:var(--s2)">
+        <span class="hint" style="text-transform:none;letter-spacing:0;font-size:11.5px;font-weight:650;color:var(--muted)">Live key</span>
+      </div>
+      <div class="keyline">
+        <code id="kmKey">qr_live_</code>
+        <button class="btn btn-ghost btn-sm" type="button" data-act="copy-key" style="margin-left:auto">Copy</button>
+      </div>
+      <p class="hint" style="margin-top:var(--s2)">Store it now — Quarry keeps only a SHA-256 hash and the first 12 characters.</p>
+      <button class="btn btn-ghost btn-sm" type="button" data-act="modal-close" style="margin-top:var(--s3)">Done</button>
+    </div>
+    <p class="modal-note">This is a documentation preview. No key is created and no email is stored.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ==========================================================
+     Helpers
+     ========================================================== */
+  var doc = document;
+
+  function qs(sel, root) { return (root || doc).querySelector(sel); }
+  function qsa(sel, root) {
+    return Array.prototype.slice.call((root || doc).querySelectorAll(sel));
+  }
+  var ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(value) {
+    return String(value).replace(/[&<>"']/g, function (ch) { return ESC_MAP[ch]; });
+  }
+  var store = {
+    get: function (key) {
+      try { return window.localStorage.getItem(key); } catch (err) { return null; }
+    },
+    set: function (key, value) {
+      try { window.localStorage.setItem(key, value); } catch (err) { /* storage disabled */ }
+    }
+  };
+  var reducedMotion = false;
+  try {
+    reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (err) { reducedMotion = false; }
+
+  function raw(src) {
+    var lines = String(src).replace(/\t/g, '  ').split('\n');
+    while (lines.length && !lines[0].trim()) { lines.shift(); }
+    while (lines.length && !lines[lines.length - 1].trim()) { lines.pop(); }
+    var min = Infinity;
+    lines.forEach(function (line) {
+      if (!line.trim()) { return; }
+      var lead = line.match(/^ */)[0].length;
+      if (lead < min) { min = lead; }
+    });
+    if (!isFinite(min)) { min = 0; }
+    return lines.map(function (line) { return line.slice(min).replace(/\s+$/, ''); }).join('\n');
+  }
+
+  /* ==========================================================
+     Icons — stroke 1.5, currentColor, 20px
+     ========================================================== */
+  function svg(paths, size) {
+    var dim = size || 20;
+    return '<svg width="' + dim + '" height="' + dim + '" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" ' +
+      'aria-hidden="true" focusable="false">' + paths + '</svg>';
+  }
+  var ICON = {
+    copy: svg('<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M16 6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16"/>'),
+    check: svg('<path d="M4.5 12.5 9.2 17.2 19.5 6.8"/>'),
+    info: svg('<circle cx="12" cy="12" r="8.6"/><path d="M12 11.2v5.3"/><path d="M12 7.8h.01"/>'),
+    warn: svg('<path d="M12 3.7 20.9 19.3H3.1z"/><path d="M12 9.3v4.2"/><path d="M12 16.5h.01"/>'),
+    edit: svg('<path d="M4 20h3.8L19 8.8a2.2 2.2 0 0 0-3.1-3.1L4.7 16.2 4 20z"/><path d="M14.6 6.9l2.5 2.5"/>'),
+    link: svg('<path d="M10.2 13.8a3.9 3.9 0 0 0 5.5 0l2.4-2.4a3.9 3.9 0 0 0-5.5-5.5l-1.2 1.2"/><path d="M13.8 10.2a3.9 3.9 0 0 0-5.5 0l-2.4 2.4a3.9 3.9 0 0 0 5.5 5.5l1.2-1.2"/>'),
+    up: svg('<path d="M12 19.2V4.8"/><path d="M5.4 11.4 12 4.8l6.6 6.6"/>'),
+    send: svg('<path d="M20.3 3.7 10.4 13.6"/><path d="M20.3 3.7 14 20.3l-3.6-6.7-6.7-3.6z"/>'),
+    spin: svg('<path d="M12 3.4a8.6 8.6 0 1 0 8.6 8.6"/>')
+  };
+
+  /* ==========================================================
+     Syntax highlighting — tokenizer, no dependencies
+     ========================================================== */
+  var KW = {
+    sh: 'if then else elif fi for while do done case esac function return export local readonly set unset echo printf curl npm npx pip go exit source true false',
+    js: 'const let var function return if else for while new class import from export async await try catch finally throw typeof instanceof of in this null true false undefined',
+    py: 'def return if elif else for while in import from as with try except finally raise class None True False and or not async await print pass lambda',
+    go: 'package import func return if else for range var const type struct interface map chan go defer switch case default nil true false error string int64 bool float64 byte rune',
+    json: 'true false null'
+  };
+  var KW_SETS = {};
+  Object.keys(KW).forEach(function (lang) {
+    KW_SETS[lang] = {};
+    KW[lang].split(' ').forEach(function (word) { KW_SETS[lang][word] = true; });
+  });
+
+  function highlight(src, lang) {
+    var text = String(src);
+    var sets = KW_SETS[lang] || KW_SETS.js;
+    var out = '';
+    var i = 0;
+    var n = text.length;
+
+    function emit(cls, chunk) {
+      out += cls ? '<span class="' + cls + '">' + esc(chunk) + '</span>' : esc(chunk);
+    }
+
+    while (i < n) {
+      var ch = text.charAt(i);
+      var next = text.charAt(i + 1);
+
+      if (lang === 'sh' && ch === '#') {
+        var ce = text.indexOf('\n', i);
+        if (ce < 0) { ce = n; }
+        emit('tok-c', text.slice(i, ce));
+        i = ce;
+        continue;
+      }
+      if (lang === 'py' && ch === '#') {
+        var pe = text.indexOf('\n', i);
+        if (pe < 0) { pe = n; }
+        emit('tok-c', text.slice(i, pe));
+        i = pe;
+        continue;
+      }
+      if ((lang === 'js' || lang === 'go' || lang === 'json') && ch === '/' && next === '/') {
+        var le = text.indexOf('\n', i);
+        if (le < 0) { le = n; }
+        emit('tok-c', text.slice(i, le));
+        i = le;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === '`') {
+        var quote = ch;
+        var j = i + 1;
+        if (quote === '`' && lang === 'go') {
+          var close = text.indexOf('`', j);
+          j = close < 0 ? n : close + 1;
+        } else {
+          while (j < n) {
+            var cj = text.charAt(j);
+            if (cj === '\\') { j += 2; continue; }
+            if (cj === quote) { j += 1; break; }
+            j += 1;
+          }
+        }
+        var str = text.slice(i, j);
+        var cls = 'tok-s';
+        if (lang === 'json') {
+          var k = j;
+          while (k < n && /\s/.test(text.charAt(k))) { k += 1; }
+          cls = text.charAt(k) === ':' ? 'tok-k' : 'tok-s';
+        }
+        emit(cls, str);
+        i = j;
+        continue;
+      }
+      if (/[0-9]/.test(ch) && !/[A-Za-z_$]/.test(text.charAt(i - 1))) {
+        var num = i;
+        while (num < n && /[0-9._]/.test(text.charAt(num))) { num += 1; }
+        emit('tok-n', text.slice(i, num));
+        i = num;
+        continue;
+      }
+      if (/[A-Za-z_$]/.test(ch)) {
+        var id = i;
+        while (id < n && /[A-Za-z0-9_$]/.test(text.charAt(id))) { id += 1; }
+        var word = text.slice(i, id);
+        var look = id;
+        while (look < n && (text.charAt(look) === ' ' || text.charAt(look) === '\t')) { look += 1; }
+        if (sets[word]) {
+          emit(lang === 'json' ? 'tok-b' : 'tok-kw', word);
+        } else if (text.charAt(look) === '(') {
+          emit('tok-fn', word);
+        } else {
+          emit('', word);
+        }
+        i = id;
+        continue;
+      }
+      if (lang === 'sh' && ch === '$') {
+        var v = i + 1;
+        while (v < n && /[A-Za-z0-9_{}]/.test(text.charAt(v))) { v += 1; }
+        emit('tok-v', text.slice(i, v));
+        i = v;
+        continue;
+      }
+      if ((lang === 'sh' || lang === 'go') && ch === '-' && /[A-Za-z-]/.test(next)) {
+        var fl = i + 1;
+        while (fl < n && /[A-Za-z0-9-]/.test(text.charAt(fl))) { fl += 1; }
+        emit('tok-a', text.slice(i, fl));
+        i = fl;
+        continue;
+      }
+      emit('', ch);
+      i += 1;
+    }
+    return out;
+  }
+
+  /* ==========================================================
+     Content factories
+     ========================================================== */
+  var DS = {};
+  var dsSeq = 0;
+  var codePref = 'sh';
+  var LANG_LABEL = { sh: 'cURL', js: 'Node', py: 'Python', go: 'Go', json: 'JSON', http: 'HTTP' };
+
+  function codeBlock(langs, opts) {
+    opts = opts || {};
+    dsSeq += 1;
+    var id = 'cb' + dsSeq;
+    var order = opts.order || Object.keys(langs);
+    var active = langs[codePref] ? codePref : order[0];
+    var cooked = {};
+    order.forEach(function (lang) { cooked[lang] = raw(langs[lang]); });
+    DS[id] = cooked;
+
+    var head;
+    if (order.length > 1) {
+      head = '<div class="tabs" role="tablist" aria-label="Code language">' +
+        order.map(function (lang) {
+          var on = lang === active;
+          return '<button class="tab" type="button" role="tab" data-act="tab" data-block="' + id +
+            '" data-lang="' + lang + '" aria-selected="' + (on ? 'true' : 'false') + '"' +
+            ' tabindex="' + (on ? '0' : '-1') + '">' + LANG_LABEL[lang] + '</button>';
+        }).join('') +
+        '</div>';
+    } else {
+      head = '<div class="code-lang">' + esc(opts.label || LANG_LABEL[order[0]] || order[0]) + '</div>';
+    }
+
+    return '<div class="code">' +
+      '<div class="code-hd">' + head +
+        '<button class="copy" type="button" data-act="copy">' + ICON.copy +
+          '<span class="copy-t">Copy</span></button>' +
+      '</div>' +
+      '<pre class="code-bd" tabindex="0"><code>' + highlight(cooked[active], active) + '</code></pre>' +
+    '</div>';
+  }
+
+  function ic(text) { return '<code>' + text + '</code>'; }
+
+  function tbl(cols, rows) {
+    var head = '<thead><tr>' + cols.map(function (col) {
+      var label = typeof col === 'string' ? col : col.t;
+      var cls = typeof col === 'string' ? '' : (col.cls || '');
+      return '<th scope="col"' + (cls ? ' class="' + cls + '"' : '') + '>' + label + '</th>';
+    }).join('') + '</tr></thead>';
+    var body = '<tbody>' + rows.map(function (row) {
+      return '<tr>' + row.map(function (cell, idx) {
+        var col = cols[idx];
+        var classes = typeof col === 'string' ? '' : (col.cls || '');
+        var html = cell;
+        if (cell && typeof cell === 'object') {
+          classes = (classes + ' ' + (cell.cls || '')).trim();
+          html = cell.t;
+        }
+        return '<td' + (classes ? ' class="' + classes + '"' : '') + '>' + html + '</td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+    return '<div class="tbl-wrap"><table class="tbl">' + head + body + '</table></div>';
+  }
+
+  function callout(kind, title, bodyHtml) {
+    return '<div class="callout' + (kind === 'warn' ? ' warn' : '') + '">' +
+      '<span class="co-ic" aria-hidden="true">' + (kind === 'warn' ? ICON.warn : ICON.info) + '</span>' +
+      '<div><p class="callout-t">' + title + '</p><p>' + bodyHtml + '</p></div>' +
+    '</div>';
+  }
+
+  function pill(text, accent) {
+    return '<span class="pill' + (accent ? ' pill-accent' : '') + '">' +
+      (accent ? '<span class="pill-dot" aria-hidden="true"></span>' : '') + text + '</span>';
+  }
+
+  function bars(count) {
+    var out = [];
+    for (var i = 0; i < count; i += 1) {
+      var cls = 'bar';
+      if (i === 41 || i === 68) { cls += ' w'; }
+      else if (i === 12 || i === 55) { cls += ' p'; }
+      out.push('<span class="' + cls + '"></span>');
+    }
+    return '<div class="bars" role="img" aria-label="90-day uptime: 86 fully operational days, 2 degraded days, 2 days with partial degradation">' +
+      out.join('') + '</div>' +
+      '<div class="bars-legend"><span><i class="lg lg-ok" aria-hidden="true"></i>Operational</span>' +
+      '<span><i class="lg lg-acc" aria-hidden="true"></i>Degraded</span><span>90 days · 99.98% uptime</span></div>';
+  }
+
+  /* ==========================================================
+     Pages (content sections)
+     ========================================================== */
+  var PAGES = {};
+  var C = {};
+  var DEFAULT_ROUTE = 'getting-started/introduction';
+
+  /* ---------- Code samples: getting started ---------- */
+  C.extractOne = {
+    sh: `
+export QUARRY_API_KEY="qr_live_9f2c41d8b7e0a63f5c92"
+export QUARRY_BASE="api.quarry.dev"
+
+curl -X POST "$QUARRY_BASE/v1/extract" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"document_id":"doc_8Hk2QmR4","schema":{"invoice_total":"currency","due_date":"date"}}'
+`
+  };
+
+  C.upload = {
+    sh: `
+curl -X POST "$QUARRY_BASE/v1/documents" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY" \\
+  -F "file=@invoice-0417.pdf" \\
+  -F "auto_extract=false"
+`,
+    js: `
+import { readFile } from "node:fs/promises";
+import Quarry from "@quarry/sdk";
+
+const quarry = new Quarry({ apiKey: process.env.QUARRY_API_KEY });
+
+const document = await quarry.documents.create({
+  file: await readFile("invoice-0417.pdf"),
+  autoExtract: false
+});
+
+console.log(document.id, document.status); // doc_8Hk2QmR4 queued
+`,
+    py: `
+import os
+import quarry
+
+client = quarry.Client(api_key=os.environ["QUARRY_API_KEY"])
+
+with open("invoice-0417.pdf", "rb") as handle:
+    document = client.documents.upload(file=handle, auto_extract=False)
+
+print(document.id, document.status)  # doc_8Hk2QmR4 queued
+`,
+    go: `
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+
+    quarry "go.quarry.dev/sdk"
+)
+
+func main() {
+    client := quarry.New(os.Getenv("QUARRY_API_KEY"))
+
+    document, err := client.Documents.Create(context.Background(), quarry.CreateDocumentParams{
+        FilePath:    "invoice-0417.pdf",
+        AutoExtract: false,
+    })
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Println(document.ID, document.Status) // doc_8Hk2QmR4 queued
+}
+`
+  };
+
+  C.extract = {
+    sh: `
+curl -X POST "$QUARRY_BASE/v1/extract" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+        "document_id": "doc_8Hk2QmR4",
+        "schema": {
+          "invoice_number": "string",
+          "invoice_total": "currency",
+          "due_date": "date",
+          "line_items": "table"
+        },
+        "pages": ["1-4"]
+      }'
+`,
+    js: `
+const request = await quarry.extract({
+  documentId: "doc_8Hk2QmR4",
+  schema: {
+    invoice_number: "string",
+    invoice_total: "currency",
+    due_date: "date",
+    line_items: "table"
+  },
+  pages: ["1-4"]
+});
+
+console.log(request.id, request.status); // ext_2Qp8Vz queued
+`,
+    py: `
+request = client.extract(
+    document_id="doc_8Hk2QmR4",
+    schema={
+        "invoice_number": "string",
+        "invoice_total": "currency",
+        "due_date": "date",
+        "line_items": "table",
+    },
+    pages=["1-4"],
+)
+
+print(request.id, request.status)  # ext_2Qp8Vz queued
+`,
+    go: `
+request, err := client.Extract(context.Background(), quarry.ExtractParams{
+    DocumentID: "doc_8Hk2QmR4",
+    Schema: map[string]string{
+        "invoice_number": "string",
+        "invoice_total":  "currency",
+        "due_date":       "date",
+        "line_items":     "table",
+    },
+    Pages: []string{"1-4"},
+})
+if err != nil {
+    panic(err)
+}
+
+fmt.Println(request.ID, request.Status) // ext_2Qp8Vz queued
+`
+  };
+
+  C.poll = {
+    sh: `
+curl "$QUARRY_BASE/v1/documents/doc_8Hk2QmR4?include=fields,confidence" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY"
+`,
+    js: `
+const document = await quarry.documents.retrieve("doc_8Hk2QmR4", {
+  include: ["fields", "confidence"]
+});
+
+console.log(document.status, document.pages); // processed 12
+console.log(document.fields.invoice_total);   // €1,284.00
+`,
+    py: `
+document = client.documents.retrieve(
+    "doc_8Hk2QmR4",
+    include=["fields", "confidence"],
+)
+
+print(document.status, document.pages)  # processed 12
+print(document.fields.invoice_total)    # €1,284.00
+`,
+    go: `
+document, err := client.Documents.Retrieve(context.Background(), "doc_8Hk2QmR4",
+    quarry.RetrieveParams{Include: []string{"fields", "confidence"}},
+)
+if err != nil {
+    panic(err)
+}
+
+fmt.Println(document.Status, document.Pages) // processed 12
+`
+  };
+
+  C.result = {
+    json: `
+{
+  "id": "doc_8Hk2QmR4",
+  "object": "document",
+  "status": "processed",
+  "pages": 12,
+  "type": "invoice",
+  "fields": {
+    "invoice_number": "INV-2025-0417",
+    "invoice_total": "€1,284.00",
+    "amount_minor": 128400,
+    "currency": "EUR",
+    "due_date": "2025-12-14",
+    "issuer_name": "Nordwind Logistik GmbH",
+    "line_items": [
+      {
+        "description": "Pallet transport, 12 t",
+        "quantity": 4,
+        "unit_price": "€210.00",
+        "total": "€840.00"
+      },
+      {
+        "description": "Loading fee",
+        "quantity": 1,
+        "unit_price": "€444.00",
+        "total": "€444.00"
+      }
+    ]
+  },
+  "confidence": {
+    "invoice_total": 0.99,
+    "due_date": 0.94,
+    "issuer_name": 0.88
+  },
+  "created_at": "2025-11-12T09:41:07Z",
+  "processed_at": "2025-11-12T09:41:36Z"
+}
+`
+  };
+
+  C.errorObj = {
+    json: `
+{
+  "error": {
+    "type": "invalid_request_error",
+    "code": "missing_parameter",
+    "message": "Missing required parameter: schema.",
+    "param": "schema",
+    "request_id": "req_7c1f9a2d"
+  }
+}
+`
+  };
+
+  /* ---------- Introduction ---------- */
+  PAGES['getting-started/introduction'] = {
+    title: 'Introduction',
+    crumb: ['Getting started', 'Introduction'],
+    date: 'Nov 12, 2025',
+    read: '7 min',
+    body: `
+      <p class="lede">Quarry turns the documents you already receive — invoices, receipts, purchase orders, contracts, scanned forms — into typed JSON. Send a file, name the fields you need, and read the values back with a confidence score and a page location for every field.</p>
+
+      <div class="stats">
+        <div class="stat"><div class="stat-v">34</div><div class="stat-l">document types</div></div>
+        <div class="stat"><div class="stat-v">2,000</div><div class="stat-l">pages per document</div></div>
+        <div class="stat"><div class="stat-v">1.9 s</div><div class="stat-l">median extraction</div></div>
+        <div class="stat"><div class="stat-v">99.98%</div><div class="stat-l">30-day uptime</div></div>
+      </div>
+
+      <h2 id="what-you-get">What you get back</h2>
+      <p>Every extraction returns a document object with the fields you asked for, a normalized value, and the raw text Quarry matched on. Field types are declared in the request; Quarry validates the result against them before the document is marked <code>processed</code>.</p>
+      ${tbl(
+        ['Field type', 'Returned value', 'Behaviour'],
+        [
+          [ic('currency'), ic('"invoice_total": "€1,284.00"'), 'Normalized to ISO 4217. The printed form is kept in <code>fields.raw</code>.'],
+          [ic('date'), ic('"due_date": "2025-12-14"'), 'Resolved to ISO 8601 from any locale format on the page.'],
+          [ic('parties'), ic('["Nordwind Logistik GmbH", …]'), 'Party names are de-duplicated across header and footer blocks.'],
+          [ic('table'), ic('"line_items": [{ … }]'), 'Rows, columns, and cell bounding boxes on the source page.'],
+          [ic('enum'), ic('"doc_type": "invoice"'), '34 source types; unknown types return <code>other</code> with the closest match.']
+        ]
+      )}
+
+      <h2 id="supported-documents">Supported documents</h2>
+      <p>Classification runs before extraction, so you do not need to tell Quarry what the file is. Mixed batches — invoices, credit notes, and receipts in one PDF — are split page by page.</p>
+      ${tbl(
+        ['Document', 'Detected as', 'Typical fields'],
+        [
+          ['Invoices and credit notes', ic('invoice'), 'invoice_number, invoice_total, due_date, line_items'],
+          ['Receipts', ic('receipt'), 'merchant, receipt_total, tax_total, purchased_at'],
+          ['Purchase orders', ic('purchase_order'), 'po_number, buyer, delivery_date, line_items'],
+          ['Bank statements', ic('bank_statement'), 'account_iban, opening_balance, closing_balance, transactions'],
+          ['Contracts', ic('contract'), 'parties, effective_date, term_months, governing_law'],
+          ['Shipping documents', ic('bill_of_lading'), 'carrier, bill_number, port_of_loading, containers']
+        ]
+      )}
+      <p class="muted">Scans are accepted at 200 DPI or higher. Quarry does not upscale images: a blurry scan stays blurry, and tabular accuracy drops by roughly 12% below 200 DPI.</p>
+
+      <h2 id="request-flow">How a request flows</h2>
+      <ol class="steps">
+        <li>
+          <h3>Upload the file</h3>
+          <p><code>POST /v1/documents</code> accepts <code>multipart/form-data</code> up to 20 MB and returns a document id. The document is stored encrypted at rest and pages are counted immediately.</p>
+        </li>
+        <li>
+          <h3>Ask for fields</h3>
+          <p><code>POST /v1/extract</code> takes a document id and a schema — the field names you want, each with a type. The call returns <code>202 Accepted</code> with an extraction id.</p>
+        </li>
+        <li>
+          <h3>Read the result</h3>
+          <p>Poll <code>GET /v1/documents/{id}</code> while <code>status</code> is <code>queued</code> or <code>processing</code>, or subscribe to the <code>document.processed</code> webhook. Field writes are atomic: you never read a half-filled document.</p>
+        </li>
+      </ol>
+      ${callout('note', 'Note', 'Extraction is asynchronous on purpose. Long documents and table-heavy scans take 6–40 seconds, and queueing keeps the POST latency under 120 ms.')}
+      ${codeBlock(C.extractOne, { label: 'cURL · POST /v1/extract' })}
+
+      <h2 id="limits">Limits at a glance</h2>
+      ${tbl(
+        ['Limit', 'Trial', 'Growth', 'Scale'],
+        [
+          ['Payload size', { t: '20 MB', cls: 'num' }, { t: '20 MB', cls: 'num' }, { t: '100 MB', cls: 'num' }],
+          ['Pages per document', { t: '50', cls: 'num' }, { t: '2,000', cls: 'num' }, { t: '5,000', cls: 'num' }],
+          ['Extractions per minute', { t: '6', cls: 'num' }, { t: '120', cls: 'num' }, { t: '600', cls: 'num' }],
+          ['Concurrent documents', { t: '2', cls: 'num' }, { t: '8', cls: 'num' }, { t: '32', cls: 'num' }],
+          ['Retention', { t: '7 days', cls: 'num' }, { t: '30 days', cls: 'num' }, { t: '12 months', cls: 'num' }]
+        ]
+      )}
+      ${callout('warn', 'Warning', 'A single request that exceeds the page limit fails with <code>413 payload_too_large</code> and the document is discarded. Split large files client-side before upload.')}
+
+      <h2 id="next-steps">Next steps</h2>
+      <div class="cards">
+        <a class="card" href="#/getting-started/quickstart"><span class="card-t">Quickstart</span><span class="card-d">Upload a PDF and read your first extracted fields.</span></a>
+        <a class="card" href="#/getting-started/authentication"><span class="card-t">Authentication</span><span class="card-d">Key types, scopes, and how to rotate without downtime.</span></a>
+        <a class="card" href="#/core/extract"><span class="card-t">Extract reference</span><span class="card-d">Every parameter, schema type, and response field.</span></a>
+      </div>
+    `
+  };
+
+  /* ---------- Quickstart ---------- */
+  PAGES['getting-started/quickstart'] = {
+    title: 'Quickstart',
+    crumb: ['Getting started', 'Quickstart'],
+    date: 'Nov 12, 2025',
+    read: '6 min',
+    body: `
+      <p class="lede">Extract a structured invoice in about five minutes. You need one API key and one file — PDF, PNG, JPEG, or multi-page TIFF. The examples below use the sample invoice <code>INV-2025-0417</code>, a 12-page scan.</p>
+
+      <h2 id="qs-key">1. Get an API key</h2>
+      <p>Keys are created per workspace and shown once. Quarry stores a SHA-256 hash and the first 12 characters; the rest cannot be recovered. Live keys are prefixed <code>qr_live_</code>, test keys <code>qr_test_</code> and return fixed fixtures without billing.</p>
+      <p><button class="btn" type="button" data-act="open-key">Create a key in this preview</button></p>
+      ${callout('note', 'Note', 'Set the key as an environment variable instead of pasting it into source. The samples below read <code>QUARRY_API_KEY</code> and <code>QUARRY_BASE</code>, which keeps keys out of shell history in CI.')}
+
+      <h2 id="qs-upload">2. Upload a document</h2>
+      <p><code>POST /v1/documents</code> takes the file plus two optional flags: <code>auto_extract</code> to run a default schema immediately, and <code>metadata</code> for your own identifiers. The reply is <code>201 Created</code>.</p>
+      ${codeBlock(C.upload)}
+      ${codeBlock({ json: '{\n  "id": "doc_8Hk2QmR4",\n  "object": "document",\n  "status": "queued",\n  "pages": 12,\n  "type": "invoice",\n  "created_at": "2025-11-12T09:41:07Z"\n}' }, { label: '201 Created' })}
+
+      <h2 id="qs-extract">3. Request an extraction</h2>
+      <p>Send the document id and a schema. Keys are the output names you want; values are types. Supported types are <code>string</code>, <code>number</code>, <code>currency</code>, <code>date</code>, <code>boolean</code>, <code>enum</code>, <code>table</code>, and <code>array</code>. The call returns <code>202 Accepted</code> immediately.</p>
+      ${codeBlock(C.extract)}
+      ${callout('warn', 'Warning', 'A <code>202</code> means the work is queued, not finished. Poll <code>GET /v1/documents/{id}</code> every 2 seconds for the first 30 seconds, then back off to 10 seconds. Do not poll faster than once per second.')}
+
+      <h2 id="qs-result">4. Read the result</h2>
+      <p>The document flips to <code>processed</code> when every requested field has a value or a documented miss. Values are typed: amounts carry the printed string, a normalized integer in minor units, and the ISO 4217 code.</p>
+      ${codeBlock(C.poll)}
+      ${codeBlock(C.result, { label: '200 OK · application/json' })}
+
+      <h2 id="qs-errors">5. Handle errors</h2>
+      <p>Every error uses the same envelope with <code>type</code>, <code>code</code>, <code>message</code>, and a <code>request_id</code> you can quote to support. The five status codes you will meet first:</p>
+      ${tbl(
+        ['Status', 'Meaning', 'What to do'],
+        [
+          [{ t: '200', cls: 'num nowrap' }, 'The document is processed and the body is complete.', 'Read <code>fields</code>.'],
+          [{ t: '202', cls: 'num nowrap' }, 'The extraction was accepted and is queued.', 'Poll or wait for the webhook.'],
+          [{ t: '400', cls: 'num nowrap' }, 'Malformed JSON, unknown schema type, missing <code>document_id</code>.', 'Fix the payload. Retrying unchanged will not help.'],
+          [{ t: '401', cls: 'num nowrap' }, 'Key missing, revoked, or from the wrong environment.', 'Check the <code>Authorization: Bearer</code> header.'],
+          [{ t: '429', cls: 'num nowrap' }, 'Rate limit or concurrency limit reached.', 'Honour <code>Retry-After</code> and retry with jitter.']
+        ]
+      )}
+      ${codeBlock(C.errorObj, { label: '400 Bad Request' })}
+
+      <h2 id="qs-params">Request parameters</h2>
+      <p>Full body for <code>POST /v1/extract</code>. Only <code>document_id</code> and <code>schema</code> are required.</p>
+      ${tbl(
+        ['Parameter', 'Type', 'Required', 'Description'],
+        [
+          [ic('document_id'), 'string', 'Yes', 'Id returned by the upload call. Up to 2,000 pages per document.'],
+          [ic('schema'), 'object', 'Yes', 'Map of output field name to type. Maximum 120 keys per request.'],
+          [ic('pages'), 'string[]', 'No', 'Page ranges such as <code>["1-4","7"]</code>. Defaults to every page.'],
+          [ic('language'), 'string', 'No', 'BCP-47 hint for printed text, e.g. <code>de-DE</code>. Default <code>auto</code>.'],
+          [ic('webhook_url'), 'string', 'No', 'Per-request webhook target. Must be an absolute HTTPS endpoint you control.'],
+          [ic('store_response'), 'boolean', 'No', 'Keep the raw response for 30 days. Default <code>true</code>.'],
+          [ic('metadata'), 'object', 'No', 'Up to 40 keys of strings, echoed back on the document object.']
+        ]
+      )}
+
+      <h2 id="qs-try">Try it</h2>
+      <p>The panel replays a recorded <code>200 OK</code> response for the sample document, so you can see the shape of the payload without a key. Choose a schema preset to switch between invoice, receipt, and contract fixtures.</p>
+      <div class="try">
+        <div class="try-hd">
+          <span class="method">POST</span>
+          <span class="try-path">/v1/extract</span>
+          <span class="try-tag">fixture replay · no quota used</span>
+        </div>
+        <div class="try-bd">
+          <div class="field">
+            <label for="tryDoc">Document ID</label>
+            <input type="text" id="tryDoc" data-doc value="doc_8Hk2QmR4" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="trySchema">Schema preset</label>
+            <select id="trySchema" data-schema>
+              <option value="invoice">Invoice fields</option>
+              <option value="receipt">Receipt fields</option>
+              <option value="contract">Contract fields</option>
+            </select>
+          </div>
+          <div class="try-act">
+            <button class="btn btn-accent" type="button" data-act="send" data-idle="Send request"><span aria-hidden="true" style="display:inline-flex">${ICON.send}</span>Send request</button>
+          </div>
+        </div>
+        <div class="try-out" data-slot>
+          <div class="try-empty">The response appears here after you send. This preview makes no live request.</div>
+        </div>
+      </div>
+
+      ${callout('note', 'Note', 'The SDKs wrap polling for you: <code>quarry.documents.wait(id)</code> resolves when the document is processed and throws <code>ExtractionFailed</code> with the failure reason otherwise.')}
+    `
+  };
+
+  /* ---------- Code samples: authentication + core ---------- */
+  C.authHeader = {
+    sh: `
+curl "$QUARRY_BASE/v1/documents/doc_8Hk2QmR4" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY" \\
+  -H "Quarry-Version: 2025-11-12"
+`,
+    js: `
+import Quarry from "@quarry/sdk";
+
+// Reads QUARRY_API_KEY from the environment when apiKey is omitted.
+const quarry = new Quarry({ apiKey: process.env.QUARRY_API_KEY });
+`,
+    py: `
+import os
+import quarry
+
+client = quarry.Client(api_key=os.environ["QUARRY_API_KEY"])
+`,
+    go: `
+client := quarry.New(
+    os.Getenv("QUARRY_API_KEY"),
+    quarry.WithRegion("eu"),
+)
+`
+  };
+
+  C.rotateKey = {
+    sh: `
+# 1. Create the replacement and store it in your secret manager
+curl -X POST "$QUARRY_BASE/v1/keys" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"label":"rotate-2025-11","scopes":["documents:read","documents:write","extract:run"]}'
+
+# 2. Deploy it everywhere, then confirm no traffic uses the old key
+
+# 3. Revoke the old key
+curl -X PATCH "$QUARRY_BASE/v1/keys/key_4QmV7t" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"status":"revoked"}'
+`
+  };
+
+  C.sessionKey = {
+    sh: `
+curl -X POST "$QUARRY_BASE/v1/session_keys" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"scopes":["documents:write"],"ttl_seconds":900}'
+`
+  };
+
+  C.docList = {
+    sh: `
+curl "$QUARRY_BASE/v1/documents?limit=2&status=processed" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY"
+`
+  };
+
+  C.docListResp = {
+    json: `
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "doc_8Hk2QmR4",
+      "status": "processed",
+      "pages": 12,
+      "type": "invoice",
+      "created_at": "2025-11-12T09:41:07Z"
+    },
+    {
+      "id": "doc_3Rt7NbW1",
+      "status": "processed",
+      "pages": 1,
+      "type": "receipt",
+      "created_at": "2025-11-09T08:12:00Z"
+    }
+  ],
+  "has_more": true,
+  "next_cursor": "cur_9dK2Lm"
+}
+`
+  };
+
+  C.docDelete = {
+    sh: `
+curl -X DELETE "$QUARRY_BASE/v1/documents/doc_8Hk2QmR4" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY"
+`
+  };
+
+  C.exAccepted = {
+    json: `
+{
+  "id": "ext_2Qp8Vz",
+  "object": "extraction",
+  "status": "queued",
+  "document_id": "doc_8Hk2QmR4",
+  "pages_queued": 4,
+  "estimated_seconds": 3,
+  "created_at": "2025-11-12T09:41:11Z"
+}
+`
+  };
+
+  C.exFields = {
+    json: `
+{
+  "fields": {
+    "invoice_total": "€1,284.00"
+  },
+  "raw": {
+    "invoice_total": {
+      "text": "Summe EUR 1.284,00",
+      "page": 3,
+      "bbox": [412, 186, 571, 204]
+    }
+  },
+  "confidence": {
+    "invoice_total": 0.99
+  }
+}
+`
+  };
+
+  /* ---------- Authentication ---------- */
+  PAGES['getting-started/authentication'] = {
+    title: 'Authentication',
+    crumb: ['Getting started', 'Authentication'],
+    date: 'Nov 12, 2025',
+    read: '5 min',
+    body: `
+      <p class="lede">Every request carries a bearer key in the <code>Authorization</code> header. Keys belong to a single workspace, are environment-specific, and can be limited to a subset of scopes.</p>
+      ${codeBlock(C.authHeader, { active: 'sh' })}
+
+      <h2 id="key-types">Key types</h2>
+      ${tbl(
+        ['Prefix', 'Environment', 'Behaviour'],
+        [
+          [ic('qr_live_…'), 'Production', 'Real documents, billed per page, up to 2,000 pages per document.'],
+          [ic('qr_test_…'), 'Sandbox', 'Fixed fixtures, no billing, capped at 100 requests per minute. Documents are deleted after 24 hours.'],
+          [ic('qr_session_…'), 'Production, short-lived', 'Created from a live key, valid for up to 900 seconds, and limited to <code>documents:write</code> for direct browser uploads.']
+        ]
+      )}
+      ${callout('warn', 'Warning', 'Never ship a <code>qr_live_</code> key in a browser bundle, mobile binary, or a public repository. Mint a session key on your server for client-side uploads instead.')}
+
+      <h2 id="sending-the-key">Sending the key</h2>
+      <p>Send the key on every request. The optional <code>Quarry-Version</code> header pins the API behaviour; omitting it uses the workspace default, currently <code>2025-11-12</code>.</p>
+      ${codeBlock(C.sessionKey, { label: 'cURL · mint a session key' })}
+
+      <h2 id="scopes">Scopes</h2>
+      <p>Keys are created with all scopes by default. Narrow them for services that only read results or only upload files.</p>
+      ${tbl(
+        ['Scope', 'Grants', 'Typical use'],
+        [
+          [ic('documents:read'), 'List and retrieve documents, read extracted fields', 'Reporting jobs, review tools'],
+          [ic('documents:write'), 'Upload and delete documents', 'Ingestion workers, browser uploads'],
+          [ic('extract:run'), 'Start extractions and batches', 'Pipeline orchestrators'],
+          [ic('webhooks:manage'), 'Create endpoints, rotate signing secrets', 'Platform setup only'],
+          [ic('keys:admin'), 'Create and revoke keys', 'Dashboard sessions only; cannot be attached to a live key']
+        ]
+      )}
+
+      <h2 id="rotating-keys">Rotating keys</h2>
+      <p>Rotation is intentionally boring: create the replacement, deploy it, confirm the old key is unused, then revoke it. Both keys work during the overlap, so there is no downtime window.</p>
+      ${codeBlock(C.rotateKey, { label: 'cURL · rotate a key' })}
+      ${callout('note', 'Note', 'Revocation is immediate for new requests but in-flight extractions keep running. A revoked key returns <code>401 invalid_api_key</code> with the key prefix in the message so you can identify it in logs.')}
+
+      <h2 id="auth-errors">Authentication errors</h2>
+      ${tbl(
+        ['Status', 'Code', 'Cause and fix'],
+        [
+          [{ t: '401', cls: 'num nowrap' }, ic('invalid_api_key'), 'Key is unknown, revoked, or belongs to another workspace. Check for trailing whitespace in secrets.'],
+          [{ t: '401', cls: 'num nowrap' }, ic('key_expired'), 'Session key older than its <code>ttl_seconds</code>. Mint a new one.'],
+          [{ t: '403', cls: 'num nowrap' }, ic('insufficient_scope'), 'Key is valid but lacks the scope for this route.'],
+          [{ t: '403', cls: 'num nowrap' }, ic('workspace_suspended'), 'Billing hold or policy review. Contact support; retries cannot help.']
+        ]
+      )}
+      <p class="muted">Authentication failures never reveal whether a document id exists: the response is identical for an unknown id and a document in another workspace.</p>
+    `
+  };
+
+  /* ---------- Documents ---------- */
+  PAGES['core/documents'] = {
+    title: 'Documents',
+    crumb: ['Core', 'Documents'],
+    date: 'Nov 12, 2025',
+    read: '6 min',
+    body: `
+      <p class="lede">A document is the uploaded file plus its extracted state. Uploads are idempotent when you send an <code>Idempotency-Key</code> header, so retrying a failed upload cannot create duplicate bills.</p>
+
+      <h2 id="upload">Upload a document</h2>
+      <p><code>POST /v1/documents</code> accepts <code>multipart/form-data</code>. The file must be a PDF, PNG, JPEG, WebP, or TIFF; Quarry rejects encrypted PDFs with <code>422 document_encrypted</code>.</p>
+      ${tbl(
+        ['Parameter', 'Type', 'Required', 'Description'],
+        [
+          [ic('file'), 'binary', 'Yes', 'The document body. Maximum 20 MB on Trial and Growth, 100 MB on Scale.'],
+          [ic('auto_extract'), 'boolean', 'No', 'Run the default invoice/receipt schema on upload. Default <code>false</code>.'],
+          [ic('metadata'), 'object', 'No', 'Up to 40 string keys, echoed back and searchable via <code>GET /v1/documents</code>.'],
+          [ic('webhook_url'), 'string', 'No', 'Override the workspace webhook for this document only.'],
+          [ic('pages'), 'string[]', 'No', 'Store only these page ranges, e.g. <code>["1-4"]</code>. Useful for splitting a 3,000-page archive.']
+        ]
+      )}
+      <p>The reply is <code>201 Created</code> with the document id, page count, and detected type. Page counting happens before upload completes, so <code>pages</code> is accurate even if extraction is never requested.</p>
+
+      <h2 id="retrieve">Retrieve a document</h2>
+      <p><code>GET /v1/documents/{id}</code> returns the document with the extraction result once available. Two query parameters change the payload size:</p>
+      ${tbl(
+        ['Parameter', 'Type', 'Default', 'Description'],
+        [
+          [ic('include'), 'string[]', ic('fields'), 'Any of <code>fields</code>, <code>confidence</code>, <code>raw</code>, <code>pages</code>. <code>raw</code> adds matched text and bounding boxes and is 4–8× larger.'],
+          [ic('version'), 'string', ic('latest'), 'Pin a schema version, e.g. <code>v3</code>, to keep field names stable across schema edits.']
+        ]
+      )}
+      ${codeBlock(C.poll)}
+      ${codeBlock(C.result, { label: '200 OK · application/json' })}
+
+      <h2 id="lifecycle">Document lifecycle</h2>
+      ${tbl(
+        ['Status', 'Terminal', 'Meaning'],
+        [
+          [ic('queued'), 'No', 'Stored and waiting for a worker. Concurrency limits are enforced here.'],
+          [ic('processing'), 'No', 'Pages are being classified and parsed. Partial fields are not readable.'],
+          [ic('processed'), 'Yes', 'Every requested field has a value or a documented miss.'],
+          [ic('failed'), 'Yes', 'Unrecoverable: corrupt file, password-protected PDF, or a schema that cannot be satisfied.'],
+          [ic('expired'), 'Yes', 'Retention window passed and the stored file was deleted. The metadata row remains for audit.']
+        ]
+      )}
+      ${callout('note', 'Note', 'Only <code>processed</code> and <code>failed</code> are terminal. Any polling loop should stop on those two values and treat <code>expired</code> as a data-retention event, not a retry.')}
+
+      <h2 id="list">List documents</h2>
+      <p>Lists are cursor-paginated: pass <code>limit</code> (1–100, default 20) and an optional <code>status</code> or <code>type</code> filter. The <code>next_cursor</code> value is opaque — treat it as a string and never construct one yourself.</p>
+      ${codeBlock(C.docList)}
+      ${codeBlock(C.docListResp, { label: '200 OK · application/json' })}
+
+      <h2 id="delete">Delete a document</h2>
+      <p><code>DELETE /v1/documents/{id}</code> removes the stored file and the extracted payload immediately and returns <code>204 No Content</code>. The billing record survives deletion; the audit row keeps the id, page count, and timestamps.</p>
+      ${codeBlock(C.docDelete)}
+      ${callout('warn', 'Warning', 'Deletion cannot be undone and is not covered by retention. If your pipeline retries uploads with a new <code>Idempotency-Key</code> after a deletion, you will be billed twice for the same pages.')}
+    `
+  };
+
+  /* ---------- Extract ---------- */
+  PAGES['core/extract'] = {
+    title: 'Extract',
+    crumb: ['Core', 'Extract'],
+    date: 'Nov 12, 2025',
+    read: '8 min',
+    body: `
+      <p class="lede"><code>POST /v1/extract</code> asks Quarry for specific fields from an uploaded document. You define the output shape with a schema; Quarry validates every value against the declared type before the document is marked processed.</p>
+
+      <h2 id="request">Request</h2>
+      <p><code>POST /v1/extract</code> takes a JSON body. The endpoint is asynchronous: it returns <code>202 Accepted</code> with an extraction id as soon as the job is queued.</p>
+      ${tbl(
+        ['Parameter', 'Type', 'Required', 'Description'],
+        [
+          [ic('document_id'), 'string', 'Yes', 'Document id from the upload call.'],
+          [ic('schema'), 'object', 'Yes', 'Up to 120 entries of <code>field_name</code> to type. Nested objects are not supported; use <code>table</code> for repetition.'],
+          [ic('pages'), 'string[]', 'No', 'Page ranges, 1-indexed, inclusive: <code>["1-4","9"]</code>.'],
+          [ic('language'), 'string', 'No', 'Printed-language hint, e.g. <code>de-DE</code> or <code>pt-BR</code>. Default <code>auto</code>, which detects per page.'],
+          [ic('webhook_url'), 'string', 'No', 'Per-request callback. Overrides the workspace endpoint.'],
+          [ic('store_response'), 'boolean', 'No', 'Retain the raw response for 30 days. Default <code>true</code>.'],
+          [ic('confidence_threshold'), 'number', 'No', 'Below this value a field is flagged in <code>review.reason</code>. Range 0–1, default <code>0.75</code>.']
+        ]
+      )}
+
+      <h2 id="schema-types">Schema types</h2>
+      ${tbl(
+        ['Type', 'Output', 'Accepted input on the page'],
+        [
+          [ic('string'), ic('"INV-2025-0417"'), 'Free text; line breaks collapsed. Maximum 4,096 characters.'],
+          [ic('number'), ic('"quantity": 4'), 'Integers and decimals; thousand separators resolved.'],
+          [ic('currency'), ic('"€1,284.00"'), 'Symbol or ISO code plus <code>amount_minor</code> on the parent field set.'],
+          [ic('date'), ic('"2025-12-14"'), 'ISO 8601 out. Locale formats, month names, and two-digit years are resolved from context.'],
+          [ic('boolean'), ic('true'), 'Checkboxes, yes/no words, signed stamps.'],
+          [ic('enum'), ic('"invoice"'), 'Match against a list you supply: <code>{"doc_type":{"type":"enum","values":["invoice","credit_note"]}}</code>.'],
+          [ic('table'), ic('"line_items": [ … ]'), 'Repeating rows with header detection and per-cell bounding boxes.'],
+          [ic('array'), ic('"parties": [ … ]'), 'Flat list of scalars such as IBANs or references.']
+        ]
+      )}
+
+      <h2 id="example">Example request</h2>
+      ${codeBlock(C.extract)}
+      ${codeBlock(C.exAccepted, { label: '202 Accepted · application/json' })}
+
+      <h2 id="reading-fields">Reading fields</h2>
+      <p>Three parallel views of the result are available. <code>fields</code> holds normalized values, <code>raw</code> holds the text Quarry matched with page and bounding box, and <code>confidence</code> holds a 0–1 score per requested field.</p>
+      ${codeBlock(C.exFields, { label: '200 OK · excerpt' })}
+      ${callout('note', 'Note', 'Bounding boxes use PDF points from the top-left of the page. Multiply by 1.333 for CSS pixels if you draw highlights in a web viewer at 96 DPI.')}
+
+      <h2 id="review">Fields that need review</h2>
+      <p>Requesting a field does not guarantee a value. When Quarry cannot find a field or the score falls below <code>confidence_threshold</code>, the field appears in <code>review.fields</code> with a reason and the document still becomes <code>processed</code> — a miss is data, not an error.</p>
+      ${tbl(
+        ['Reason', 'Meaning'],
+        [
+          [ic('not_found'), 'No candidate text matched the field type on any requested page.'],
+          [ic('low_confidence'), 'A value was read but scored below the threshold. Present it for human confirmation.'],
+          [ic('ambiguous'), 'Several candidates scored within 0.05 of each other, for example two totals on a page.']
+        ]
+      )}
+
+      <h2 id="errors">Errors</h2>
+      ${tbl(
+        ['Status', 'Code', 'Cause and fix'],
+        [
+          [{ t: '400', cls: 'num nowrap' }, ic('invalid_schema'), 'Unknown type, empty field name, or more than 120 keys.'],
+          [{ t: '404', cls: 'num nowrap' }, ic('document_not_found'), 'The id is unknown, or the document expired.'],
+          [{ t: '409', cls: 'num nowrap' }, ic('document_not_ready'), 'Extraction requested while a previous run is still writing results.'],
+          [{ t: '413', cls: 'num nowrap' }, ic('payload_too_large'), 'Page range above the document page count or above the plan limit.'],
+          [{ t: '422', cls: 'num nowrap' }, ic('unsupported_media_type'), 'Encrypted PDF, HEIC image, or a file with no readable pages.'],
+          [{ t: '429', cls: 'num nowrap' }, ic('rate_limited'), 'Concurrency or per-minute limit reached. Read <code>Retry-After</code>.']
+        ]
+      )}
+    `
+  };
+
+  /* ---------- Code samples: platform ---------- */
+  C.batchCreate = {
+    sh: `
+curl -X POST "$QUARRY_BASE/v1/batches" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -H "Idempotency-Key: acme-2025-11-12-nightly" \\
+  -d '{
+        "schema": {
+          "invoice_number": "string",
+          "invoice_total": "currency",
+          "due_date": "date"
+        },
+        "items": [
+          { "document_id": "doc_8Hk2QmR4" },
+          { "document_id": "doc_3Rt7NbW1" },
+          { "document_id": "doc_6Lm9QpX2", "pages": ["1-2"] }
+        ]
+      }'
+`,
+    js: `
+const batch = await quarry.batches.create({
+  schema: {
+    invoice_number: "string",
+    invoice_total: "currency",
+    due_date: "date"
+  },
+  items: [
+    { documentId: "doc_8Hk2QmR4" },
+    { documentId: "doc_3Rt7NbW1" },
+    { documentId: "doc_6Lm9QpX2", pages: ["1-2"] }
+  ]
+});
+
+console.log(batch.id, batch.status); // bat_5Nq8Ws queued
+`
+  };
+
+  C.batchStatus = {
+    sh: `
+curl "$QUARRY_BASE/v1/batches/bat_5Nq8Ws" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY"
+`
+  };
+
+  C.batchResp = {
+    json: `
+{
+  "id": "bat_5Nq8Ws",
+  "object": "batch",
+  "status": "processing",
+  "counts": {
+    "total": 240,
+    "succeeded": 211,
+    "failed": 3,
+    "queued": 26
+  },
+  "created_at": "2025-11-12T10:02:44Z",
+  "estimated_seconds_remaining": 48
+}
+`
+  };
+
+  C.batchCancel = {
+    sh: `
+curl -X DELETE "$QUARRY_BASE/v1/batches/bat_5Nq8Ws" \\
+  -H "Authorization: Bearer $QUARRY_API_KEY"
+`
+  };
+
+  C.webhookPayload = {
+    json: `
+{
+  "id": "evt_9kD2Lm4Q",
+  "type": "document.processed",
+  "created_at": "2025-11-12T09:41:36Z",
+  "data": {
+    "document_id": "doc_8Hk2QmR4",
+    "batch_id": null,
+    "status": "processed",
+    "pages": 12,
+    "type": "invoice"
+  }
+}
+`
+  };
+
+  C.verify = {
+    js: `
+import crypto from "node:crypto";
+
+// header: Quarry-Signature: t=1762940467,v1=4f0c9e8a…
+export function verifySignature(rawBody, header, secret) {
+  const parts = Object.fromEntries(header.split(",").map((p) => p.split("=")));
+  const age = Math.abs(Date.now() / 1000 - Number(parts.t));
+
+  if (!parts.v1 || age > 300) return false;
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(parts.t + "." + rawBody)
+    .digest("hex");
+
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(parts.v1));
+}
+`,
+    py: `
+import hashlib
+import hmac
+import time
+
+
+def verify_signature(raw_body: str, header: str, secret: str, tolerance: int = 300) -> bool:
+    parts = dict(item.split("=", 1) for item in header.split(","))
+    if abs(time.time() - int(parts["t"])) > tolerance:
+        return False
+
+    expected = hmac.new(
+        secret.encode(),
+        (parts["t"] + "." + raw_body).encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    return hmac.compare_digest(expected, parts["v1"])
+`,
+    go: `
+func VerifySignature(rawBody, header, secret string, now time.Time) bool {
+    parts := map[string]string{}
+    for _, item := range strings.Split(header, ",") {
+        kv := strings.SplitN(item, "=", 2)
+        parts[kv[0]] = kv[1]
+    }
+
+    ts, err := strconv.ParseInt(parts["t"], 10, 64)
+    if err != nil || now.Unix()-ts > 300 {
+        return false
+    }
+
+    mac := hmac.New(sha256.New, []byte(secret))
+    mac.Write([]byte(parts["t"] + "." + rawBody))
+    expected := hex.EncodeToString(mac.Sum(nil))
+
+    return hmac.Equal([]byte(expected), []byte(parts["v1"]))
+}
+`
+  };
+
+  C.backoff = {
+    js: `
+async function withRetry(run, attempts = 4) {
+  let delay = 500;
+
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await run();
+    } catch (error) {
+      if (error.status !== 429 && error.status < 500) throw error;
+
+      const wait = error.retryAfter ?? delay;
+      await new Promise((resolve) => setTimeout(resolve, wait + Math.random() * 250));
+      delay *= 2;
+    }
+  }
+
+  throw new Error("Retry budget exhausted");
+}
+`
+  };
+
+  C.rateHeaders = {
+    http: `
+HTTP/1.1 200 OK
+content-type: application/json
+quarry-request-id: req_7c1f9a2d
+quarry-version: 2025-11-12
+ratelimit-limit: 120
+ratelimit-remaining: 97
+ratelimit-reset: 12
+`
+  };
+
+  C.rate429 = {
+    json: `
+{
+  "error": {
+    "type": "rate_limit_error",
+    "code": "rate_limited",
+    "message": "120 extractions per minute exceeded for workspace ws_acme.",
+    "retry_after": 12,
+    "request_id": "req_2b8e41c0"
+  }
+}
+`
+  };
+
+  /* ---------- Batches ---------- */
+  PAGES['core/batches'] = {
+    title: 'Batches',
+    crumb: ['Core', 'Batches'],
+    date: 'Nov 12, 2025',
+    read: '5 min',
+    body: `
+      <p class="lede">A batch runs one schema over up to 1,000 documents. Use it for nightly invoice runs and archives instead of a client-side loop: the queue survives your process, per-item failures are reported individually, and a single webhook signals completion.</p>
+
+      <h2 id="create">Create a batch</h2>
+      <p><code>POST /v1/batches</code> takes a shared schema and a list of items. Each item may override <code>pages</code> and add its own <code>metadata</code>. The call returns <code>202 Accepted</code> with the batch id; items start within a few seconds.</p>
+      ${codeBlock(C.batchCreate)}
+      ${callout('note', 'Note', 'Send an <code>Idempotency-Key</code> when the batch is built by a scheduled job. A repeat with the same key returns the original batch instead of enqueueing the pages twice.')}
+
+      <h2 id="progress">Check progress</h2>
+      <p>Batch counts are eventually consistent within two seconds. Poll no faster than once every five seconds, or wait for the <code>batch.completed</code> webhook.</p>
+      ${codeBlock(C.batchStatus)}
+      ${codeBlock(C.batchResp, { label: '200 OK · application/json' })}
+
+      <h2 id="items">Read individual items</h2>
+      <p>Failed items are the useful ones. <code>GET /v1/batches/{id}/items?status=failed</code> returns the error code per item, so a single unreadable scan does not hide a 240-document run.</p>
+      ${tbl(
+        ['Item status', 'Meaning'],
+        [
+          [ic('queued'), 'Waiting for a worker slot.'],
+          [ic('succeeded'), 'Document processed; the result is readable through the documents endpoint.'],
+          [ic('failed'), 'Unrecoverable per-item error. The batch itself still completes.'],
+          [ic('skipped'), 'Cancelled before it started, or the document had already expired.']
+        ]
+      )}
+
+      <h2 id="cancel">Cancel a batch</h2>
+      <p><code>DELETE /v1/batches/{id}</code> marks every queued item as <code>skipped</code>. Items already processing finish and are billed; you are never charged for skipped items.</p>
+      ${codeBlock(C.batchCancel)}
+
+      <h2 id="limits">Batch limits</h2>
+      ${tbl(
+        ['Limit', 'Value'],
+        [
+          ['Items per batch', { t: '1,000', cls: 'num' }],
+          ['Batches per hour', { t: '50', cls: 'num' }],
+          ['Concurrent items per workspace', { t: '8 on Growth, 32 on Scale', cls: 'num nowrap' }],
+          ['Ordering guarantee', 'None — items complete in worker order']
+        ]
+      )}
+      ${callout('warn', 'Warning', 'A batch is not a queue you can append to. Sending a second batch with the same items is charged a second time; use <code>Idempotency-Key</code> to protect scheduled runs.')}
+    `
+  };
+
+  /* ---------- Webhooks ---------- */
+  PAGES['webhooks'] = {
+    title: 'Webhooks',
+    crumb: ['Webhooks'],
+    date: 'Nov 12, 2025',
+    read: '5 min',
+    body: `
+      <p class="lede">Webhooks remove polling from your pipeline. Register one endpoint per workspace, verify the signature, and Quarry pushes an event when a document or batch changes state.</p>
+
+      <h2 id="events">Events</h2>
+      ${tbl(
+        ['Event', 'Fires when'],
+        [
+          [ic('document.processed'), 'Extraction finished and every requested field is readable.'],
+          [ic('document.failed'), 'A document failed permanently: encrypted PDF, unreadable scan, or unsatisfiable schema.'],
+          [ic('batch.completed'), 'All items in a batch reached a terminal state. Includes the counts.'],
+          [ic('key.revoked'), 'A key was revoked. Useful for alerting when a rotation was unexpected.']
+        ]
+      )}
+
+      <h2 id="payload">Payload</h2>
+      <p>Events are delivered as <code>POST</code> with <code>Content-Type: application/json</code> and the <code>Quarry-Signature</code> header. The body is the event envelope: <code>id</code>, <code>type</code>, <code>created_at</code>, and <code>data</code>.</p>
+      ${codeBlock(C.webhookPayload, { label: 'event body' })}
+
+      <h2 id="verify">Verify the signature</h2>
+      <p>The header looks like <code>t=1762940467,v1=4f0c9e8a…</code>. Sign the string <code>t.rawBody</code> with HMAC-SHA256 using the endpoint secret, compare in constant time, and reject timestamps older than 300 seconds. Read the raw body — a framework that re-serializes JSON changes the bytes and breaks the signature.</p>
+      ${codeBlock(C.verify)}
+
+      <h2 id="retries">Retries and delivery</h2>
+      <p>Any 2xx response within 20 seconds counts as delivered. Everything else is retried with exponential backoff — 1 min, 5 min, 30 min, 2 h, 12 h — for up to 10 attempts over 24 hours.</p>
+      ${tbl(
+        ['Response', 'Behaviour'],
+        [
+          [{ t: '2xx', cls: 'num nowrap' }, 'Delivered. The attempt is logged with your status code.'],
+          [{ t: '4xx', cls: 'num nowrap' }, 'Retried, except <code>410 Gone</code>, which disables the endpoint after three consecutive responses.'],
+          [{ t: '5xx', cls: 'num nowrap' }, 'Retried with backoff. Include your own request id in the logs.'],
+          [{ t: 'timeout', cls: 'num nowrap' }, 'Treated as a failure. Keep handlers under two seconds and queue the real work.']
+        ]
+      )}
+      ${callout('warn', 'Warning', 'Deliveries are at-least-once, not exactly-once. A retry after a slow response can repeat an event, so deduplicate on the event <code>id</code>.')}
+    `
+  };
+
+  /* ---------- Errors ---------- */
+  PAGES['errors'] = {
+    title: 'Errors',
+    crumb: ['Errors'],
+    date: 'Nov 12, 2025',
+    read: '6 min',
+    body: `
+      <p class="lede">Quarry uses conventional HTTP status codes and a single JSON envelope for every failure. One object shape means one error handler, whichever endpoint you call.</p>
+
+      <h2 id="error-object">Error object</h2>
+      ${codeBlock(C.errorObj, { label: '400 Bad Request' })}
+      ${tbl(
+        ['Field', 'Type', 'Description'],
+        [
+          [ic('type'), 'string', 'Broad class: <code>invalid_request_error</code>, <code>authentication_error</code>, <code>rate_limit_error</code>, <code>api_error</code>.'],
+          [ic('code'), 'string', 'Stable machine-readable code. This is what you branch on, never the message.'],
+          [ic('message'), 'string', 'Human-readable sentence with the offending value where safe to include.'],
+          [ic('param'), 'string', 'Present for request errors: the field that failed validation.'],
+          [ic('request_id'), 'string', 'Correlates with server logs and support traces. Log it with the failure.']
+        ]
+      )}
+
+      <h2 id="status-codes">HTTP status codes</h2>
+      ${tbl(
+        ['Status', 'Class', 'When it happens'],
+        [
+          [{ t: '200', cls: 'num nowrap' }, pill('2xx'), 'Read succeeded, including a processed document.'],
+          [{ t: '201', cls: 'num nowrap' }, pill('2xx'), 'Document uploaded and stored.'],
+          [{ t: '202', cls: 'num nowrap' }, pill('2xx'), 'Extraction or batch accepted and queued.'],
+          [{ t: '204', cls: 'num nowrap' }, pill('2xx'), 'Delete succeeded; the body is empty.'],
+          [{ t: '400', cls: 'num nowrap' }, pill('4xx', true), 'Malformed JSON, missing parameter, unknown schema type.'],
+          [{ t: '401', cls: 'num nowrap' }, pill('4xx', true), 'Key missing, invalid, expired, or revoked.'],
+          [{ t: '403', cls: 'num nowrap' }, pill('4xx', true), 'Key is valid but lacks the scope, or the workspace is suspended.'],
+          [{ t: '404', cls: 'num nowrap' }, pill('4xx', true), 'Unknown document, extraction, or batch id.'],
+          [{ t: '409', cls: 'num nowrap' }, pill('4xx', true), 'State conflict, for example extracting a document that is still being written.'],
+          [{ t: '413', cls: 'num nowrap' }, pill('4xx', true), 'Payload or page count above the plan limit.'],
+          [{ t: '422', cls: 'num nowrap' }, pill('4xx', true), 'The file was understood but cannot be processed: encrypted, corrupt, or unsupported encoding.'],
+          [{ t: '429', cls: 'num nowrap' }, pill('4xx', true), 'Rate or concurrency limit reached. Retry after <code>Retry-After</code>.'],
+          [{ t: '500', cls: 'num nowrap' }, pill('5xx', true), 'Unexpected server error. Retry once with the same idempotency key.'],
+          [{ t: '503', cls: 'num nowrap' }, pill('5xx', true), 'Region is temporarily unavailable. Retry with backoff; check the status page first.']
+        ]
+      )}
+
+      <h2 id="catalog">Error catalog</h2>
+      ${tbl(
+        ['Code', 'Status', 'What it means'],
+        [
+          [ic('missing_parameter'), { t: '400', cls: 'num' }, 'A required body field is absent. <code>param</code> names it.'],
+          [ic('invalid_schema'), { t: '400', cls: 'num' }, 'A type is unknown, a field name is empty, or the schema exceeds 120 keys.'],
+          [ic('invalid_api_key'), { t: '401', cls: 'num' }, 'Key not found. Check environment prefix — a test key cannot call the live host.'],
+          [ic('insufficient_scope'), { t: '403', cls: 'num' }, 'The key is missing <code>extract:run</code> or <code>documents:write</code>.'],
+          [ic('document_not_found'), { t: '404', cls: 'num' }, 'Unknown id, or retention expired the file.'],
+          [ic('document_not_ready'), { t: '409', cls: 'num' }, 'A previous extraction is still writing results for this page range.'],
+          [ic('payload_too_large'), { t: '413', cls: 'num' }, 'File above the size cap, or page range beyond the page count.'],
+          [ic('unsupported_media_type'), { t: '422', cls: 'num' }, 'HEIC, SVG, or an encrypted PDF. Convert to PDF or JPEG first.'],
+          [ic('rate_limited'), { t: '429', cls: 'num' }, 'Per-minute rate or concurrency cap. See Rate limits for headers.'],
+          [ic('internal_error'), { t: '500', cls: 'num' }, 'Retry once with the same <code>Idempotency-Key</code>; if it repeats, contact support.'],
+          [ic('region_unavailable'), { t: '503', cls: 'num' }, 'The region is draining. Retry against another region after checking status.']
+        ]
+      )}
+
+      <h2 id="retries">Retry strategy</h2>
+      <p>Retry <code>429</code> and <code>5xx</code>. Do not retry <code>400</code>, <code>401</code>, <code>403</code>, <code>404</code>, or <code>422</code> — the request will fail again and you will burn quota. Add jitter so retries from a fleet do not arrive together.</p>
+      ${codeBlock(C.backoff, { label: 'Node · retry with backoff and jitter' })}
+
+      <h2 id="debugging">Debugging a failure</h2>
+      <p>Every response, including errors, carries <code>Quarry-Request-Id</code>. Log it next to your own trace id. Support can retrieve the request timeline within 30 days from that id alone; no document content is included in the trace.</p>
+      <p><button class="btn" type="button" data-act="toast" data-msg="Support trace requested · support@quarry.dev replies within one business day.">Request a support trace</button></p>
+    `
+  };
+
+  /* ---------- Rate limits ---------- */
+  PAGES['rate-limits'] = {
+    title: 'Rate limits',
+    crumb: ['Rate limits'],
+    date: 'Nov 12, 2025',
+    read: '4 min',
+    body: `
+      <p class="lede">Limits are per workspace, not per key, and reset on a rolling 60-second window. Bulk work belongs in a batch: batches consume item slots under the same concurrency cap but return one response instead of a thousand.</p>
+
+      <h2 id="tiers">Limits by plan</h2>
+      ${tbl(
+        ['Plan', { t: 'Requests / min', cls: 'num' }, { t: 'Extractions / min', cls: 'num' }, { t: 'Concurrency', cls: 'num' }, { t: 'Batches / hour', cls: 'num' }],
+        [
+          ['Trial', { t: '60', cls: 'num' }, { t: '6', cls: 'num' }, { t: '2', cls: 'num' }, { t: '5', cls: 'num' }],
+          ['Starter', { t: '300', cls: 'num' }, { t: '30', cls: 'num' }, { t: '4', cls: 'num' }, { t: '20', cls: 'num' }],
+          ['Growth', { t: '1,200', cls: 'num' }, { t: '120', cls: 'num' }, { t: '8', cls: 'num' }, { t: '50', cls: 'num' }],
+          ['Scale', { t: '6,000', cls: 'num' }, { t: '600', cls: 'num' }, { t: '32', cls: 'num' }, { t: '200', cls: 'num' }]
+        ]
+      )}
+
+      <h2 id="headers">Rate-limit headers</h2>
+      <p>Every response carries the current window state. Read <code>ratelimit-reset</code> as seconds until the window rolls over, not as a timestamp.</p>
+      ${codeBlock(C.rateHeaders, { label: 'response headers' })}
+      ${tbl(
+        ['Header', 'Meaning'],
+        [
+          [ic('ratelimit-limit'), 'Requests allowed in the current window.'],
+          [ic('ratelimit-remaining'), 'Requests left before throttling starts.'],
+          [ic('ratelimit-reset'), 'Seconds until the window resets.'],
+          [ic('retry-after'), 'Present on <code>429</code> only. Seconds to wait before the next attempt.']
+        ]
+      )}
+
+      <h2 id="too-many">What a 429 looks like</h2>
+      <p>A throttled request is not processed and is not billed. The error body repeats the wait in <code>retry_after</code> so a background worker can sleep without parsing headers.</p>
+      ${codeBlock(C.rate429, { label: '429 Too Many Requests' })}
+
+      <h2 id="backoff">Back off correctly</h2>
+      <p>Exponential backoff with full jitter keeps a fleet from synchronising. A safe starting point is 500 ms doubling to 8 s, with up to 25% random jitter on each wait.</p>
+      ${codeBlock(C.backoff, { label: 'Node · retry with backoff and jitter' })}
+      ${callout('note', 'Note', 'A <code>429</code> on <code>POST /v1/extract</code> means the job was never queued. It is always safe to retry the same payload with the same <code>Idempotency-Key</code>.')}
+
+      <h2 id="increase">Requesting an increase</h2>
+      <p>Concurrency increases are granted per workspace after a review of recent usage. Tell us your peak concurrent documents and the p95 document size; most increases are applied within one business day.</p>
+      <p><button class="btn" type="button" data-act="toast" data-msg="Limit-increase request noted · support@quarry.dev asks for peak concurrency and p95 page count.">Request a limit increase</button></p>
+    `
+  };
+
+  /* ---------- Code samples: SDKs + releases ---------- */
+  C.nodeFull = {
+    js: `
+import { readFile } from "node:fs/promises";
+import Quarry from "@quarry/sdk";
+
+const quarry = new Quarry({
+  apiKey: process.env.QUARRY_API_KEY,
+  maxRetries: 3,
+  timeoutMs: 20000
+});
+
+const document = await quarry.documents.create({
+  file: await readFile("invoice-0417.pdf")
+});
+
+await quarry.extract({
+  documentId: document.id,
+  schema: {
+    invoice_number: "string",
+    invoice_total: "currency",
+    due_date: "date"
+  }
+});
+
+const result = await quarry.documents.wait(document.id);
+console.log(result.status, result.pages);              // processed 12
+console.log(result.fields.invoice_total);              // €1,284.00
+console.log(result.confidence.invoice_total);          // 0.99
+`
+  };
+
+  C.nodeErrors = {
+    js: `
+import { QuarryError, RateLimitError } from "@quarry/sdk";
+
+try {
+  await quarry.documents.retrieve("doc_missing");
+} catch (error) {
+  if (error instanceof RateLimitError) {
+    console.log("retry after", error.retryAfter, "seconds");
+  } else if (error instanceof QuarryError) {
+    console.log(error.status, error.code, error.requestId);
+  }
+}
+`
+  };
+
+  C.pyFull = {
+    py: `
+import os
+import quarry
+
+client = quarry.Client(
+    api_key=os.environ["QUARRY_API_KEY"],
+    max_retries=3,
+    timeout=20.0,
+)
+
+with open("invoice-0417.pdf", "rb") as handle:
+    document = client.documents.upload(file=handle)
+
+client.extract(
+    document_id=document.id,
+    schema={
+        "invoice_number": "string",
+        "invoice_total": "currency",
+        "due_date": "date",
+    },
+)
+
+result = client.documents.wait(document.id)
+print(result.status, result.pages)          # processed 12
+print(result.fields.invoice_total)          # €1,284.00
+print(result.confidence["invoice_total"])   # 0.99
+`
+  };
+
+  C.pyErrors = {
+    py: `
+import quarry
+
+try:
+    client.documents.retrieve("doc_missing")
+except quarry.RateLimitError as error:
+    print("retry after", error.retry_after, "seconds")
+except quarry.QuarryError as error:
+    print(error.status, error.code, error.request_id)
+`
+  };
+
+  C.goFull = {
+    go: `
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+    "time"
+
+    quarry "go.quarry.dev/sdk"
+)
+
+func main() {
+    client := quarry.New(
+        os.Getenv("QUARRY_API_KEY"),
+        quarry.WithMaxRetries(3),
+        quarry.WithTimeout(20*time.Second),
+    )
+
+    ctx := context.Background()
+
+    document, err := client.Documents.Create(ctx, quarry.CreateDocumentParams{
+        FilePath: "invoice-0417.pdf",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    err = client.ExtractAsync(ctx, quarry.ExtractParams{
+        DocumentID: document.ID,
+        Schema: map[string]string{
+            "invoice_number": "string",
+            "invoice_total":  "currency",
+            "due_date":       "date",
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    result, err := client.Documents.Wait(ctx, document.ID)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(result.Status, result.Pages)                            // processed 12
+    fmt.Println(result.Fields["invoice_total"])                         // €1,284.00
+    fmt.Println(result.Confidence["invoice_total"])                     // 0.99
+}
+`
+  };
+
+  C.goErrors = {
+    go: `
+result, err := client.Documents.Wait(ctx, document.ID)
+if err != nil {
+    var apiErr *quarry.APIError
+    if errors.As(err, &apiErr) {
+        log.Printf("status=%d code=%s request=%s",
+            apiErr.Status, apiErr.Code, apiErr.RequestID)
+    }
+    return
+}
+
+fmt.Println(result.Fields["invoice_total"])
+`
+  };
+
+  /* ---------- SDK: Node ---------- */
+  PAGES['sdks/node'] = {
+    title: 'Node SDK',
+    crumb: ['SDKs', 'Node'],
+    date: 'Nov 12, 2025',
+    read: '4 min',
+    body: `
+      <p class="lede">The official Node SDK wraps uploads, extraction, polling, and retries. It ships as ESM with a CommonJS build, has no runtime dependencies, and targets Node 18 or newer.</p>
+
+      <h2 id="node-install">Install</h2>
+      ${codeBlock({ sh: 'npm install @quarry/sdk' }, { label: 'shell' })}
+      <p>Also installable with <code>pnpm add @quarry/sdk</code> or <code>yarn add @quarry/sdk</code>. TypeScript declarations are bundled — no <code>@types</code> package is needed.</p>
+
+      <h2 id="node-configure">Configure the client</h2>
+      <p>The client reads <code>QUARRY_API_KEY</code> from the environment when <code>apiKey</code> is omitted. Set <code>maxRetries</code> to retry <code>429</code> and <code>5xx</code> automatically; <code>timeoutMs</code> applies per attempt.</p>
+      ${codeBlock(C.nodeFull)}
+
+      <h2 id="node-errors">Error handling</h2>
+      <p>Failures throw typed errors. <code>QuarryError</code> carries <code>status</code>, <code>code</code>, <code>requestId</code>, and the parsed body; <code>RateLimitError</code> adds <code>retryAfter</code> in seconds.</p>
+      ${codeBlock(C.nodeErrors)}
+
+      <h2 id="node-notes">Notes</h2>
+      <ul>
+        <li><code>documents.wait()</code> polls every 2 seconds for the first 30 seconds, then every 10 seconds. It rejects after the workspace timeout (10 minutes by default).</li>
+        <li>Streaming uploads accept any <code>Readable</code>: pass the file stream directly for files above 20 MB.</li>
+        <li>The SDK sets <code>Idempotency-Key</code> automatically on <code>documents.create</code> and <code>batches.create</code> when you enable <code>idempotent: true</code>.</li>
+      </ul>
+    `
+  };
+
+  /* ---------- SDK: Python ---------- */
+  PAGES['sdks/python'] = {
+    title: 'Python SDK',
+    crumb: ['SDKs', 'Python'],
+    date: 'Nov 12, 2025',
+    read: '4 min',
+    body: `
+      <p class="lede">The Python client supports sync and async usage, typed responses, and automatic retries. It requires Python 3.9 or newer and depends only on <code>httpx</code>.</p>
+
+      <h2 id="py-install">Install</h2>
+      ${codeBlock({ sh: 'pip install quarry-api' }, { label: 'shell' })}
+      <p>For async usage install the same package and call <code>quarry.AsyncClient</code>. Type hints are shipped in the wheel; run <code>mypy --strict</code> against your integration without stubs.</p>
+
+      <h2 id="py-extract">Extract a document</h2>
+      ${codeBlock(C.pyFull)}
+
+      <h2 id="py-errors">Error handling</h2>
+      <p>Every error inherits from <code>quarry.QuarryError</code>. Catch the specific subclass first — <code>RateLimitError</code>, <code>AuthenticationError</code>, <code>ValidationError</code> — then the base class as a fallback.</p>
+      ${codeBlock(C.pyErrors)}
+
+      <h2 id="py-notes">Notes</h2>
+      <ul>
+        <li><code>client.documents.upload()</code> accepts a path, a file object, or raw bytes.</li>
+        <li>Results are attribute access: <code>result.fields.invoice_total</code>. Fields not requested on the schema raise <code>AttributeError</code> instead of returning <code>None</code>.</li>
+        <li>Use <code>async with quarry.AsyncClient() as client</code> to reuse one HTTP/2 connection pool across tasks.</li>
+      </ul>
+    `
+  };
+
+  /* ---------- SDK: Go ---------- */
+  PAGES['sdks/go'] = {
+    title: 'Go SDK',
+    crumb: ['SDKs', 'Go'],
+    date: 'Nov 12, 2025',
+    read: '4 min',
+    body: `
+      <p class="lede">The Go client is context-aware throughout and returns typed structs. It targets Go 1.21 or newer, has no cgo dependency, and reuses a single <code>http.Client</code> for connection pooling.</p>
+
+      <h2 id="go-install">Install</h2>
+      ${codeBlock({ sh: 'go get go.quarry.dev/sdk' }, { label: 'shell' })}
+      <p>The module path is versioned: import <code>go.quarry.dev/sdk</code> and pin the module version in <code>go.mod</code> as usual.</p>
+
+      <h2 id="go-extract">Extract a document</h2>
+      ${codeBlock(C.goFull)}
+
+      <h2 id="go-errors">Error handling</h2>
+      <p>Transport and API failures are wrapped in <code>*quarry.APIError</code>. Use <code>errors.As</code> to reach <code>Status</code>, <code>Code</code>, and <code>RequestID</code> without string matching.</p>
+      ${codeBlock(C.goErrors)}
+
+      <h2 id="go-notes">Notes</h2>
+      <ul>
+        <li>Every call takes a <code>context.Context</code>; cancellation aborts the request and frees the worker slot.</li>
+        <li><code>ExtractAsync</code> returns after the job is queued. Use <code>Documents.Wait</code> or your own webhook handler to read the result.</li>
+        <li>For bulk work prefer <code>client.Batches.Create</code> — it keeps 240 documents to a single HTTP round trip.</li>
+      </ul>
+    `
+  };
+
+  /* ---------- Changelog ---------- */
+  PAGES['changelog'] = {
+    title: 'Changelog',
+    crumb: ['Changelog'],
+    date: 'Nov 12, 2025',
+    read: '3 min',
+    body: `
+      <p class="lede">Every change to the API surface, with the date it reached production. Additive fields are never a breaking change; removals are announced at least 90 days ahead.</p>
+
+      <h2 id="rel-1-4">v1.4 · November 12, 2025 <span class="badge" style="margin-left:8px">New</span></h2>
+      <ul>
+        <li><strong>Batches API is generally available.</strong> Up to 1,000 items per batch, per-item error codes, and one <code>batch.completed</code> webhook.</li>
+        <li><strong>New <code>table</code> schema type.</strong> Rows are returned with header detection and per-cell bounding boxes.</li>
+        <li><strong>Signed webhooks.</strong> The <code>Quarry-Signature</code> header now uses a versioned <code>v1=</code> digest over <code>t.rawBody</code>. The legacy header is accepted until March 2026.</li>
+        <li><strong><code>confidence_threshold</code></strong> on <code>POST /v1/extract</code>, default <code>0.75</code>.</li>
+      </ul>
+
+      <h2 id="rel-1-3">v1.3 · October 28, 2025</h2>
+      <ul>
+        <li><strong>Line-item normalization.</strong> Quarry checks <code>unit_price × quantity</code> against <code>total</code> and flags mismatches in <code>review.fields</code>.</li>
+        <li><strong><code>retry_after</code> in the 429 body</strong>, alongside the header, so background workers can sleep without header parsing.</li>
+        <li><strong>Go SDK 0.9</strong> polls with the server-provided backoff instead of a fixed interval.</li>
+      </ul>
+
+      <h2 id="rel-1-2">v1.2 · September 30, 2025</h2>
+      <ul>
+        <li><strong>Per-field confidence scores</strong> returned by default with <code>include=confidence</code>.</li>
+        <li><strong><code>include=raw</code></strong> adds matched text and bounding boxes; payloads grow 4–8×.</li>
+        <li><strong>Session keys</strong> (<code>qr_session_</code>) for direct browser uploads, valid up to 900 seconds.</li>
+      </ul>
+
+      <h2 id="rel-1-1">v1.1 · August 19, 2025</h2>
+      <ul>
+        <li><strong>EU region</strong> at <code>eu.api.quarry.dev</code> with data residency for documents processed there.</li>
+        <li><strong>Sandbox fixtures</strong> for invoices, receipts, and contracts through <code>qr_test_</code> keys.</li>
+        <li><strong><code>Idempotency-Key</code></strong> support on uploads and batches.</li>
+      </ul>
+
+      <h2 id="rel-1-0">v1.0 · July 1, 2025</h2>
+      <ul>
+        <li><strong>General availability</strong> of documents, extraction, and webhooks.</li>
+        <li><strong>99.9% monthly SLA</strong> for Growth and Scale workspaces.</li>
+      </ul>
+
+      <h2 id="deprecations">Deprecations</h2>
+      ${tbl(
+        ['Removed', 'Replacement', 'Date'],
+        [
+          [ic('X-Quarry-Key'), ic('Authorization: Bearer'), 'Removed 2025-09-01'],
+          [ic('GET /v1/jobs/{id}'), ic('GET /v1/documents/{id}'), 'Removed 2025-10-01'],
+          [ic('Legacy webhook header'), ic('Quarry-Signature'), 'Removed 2026-03-01'],
+          [ic('schema string shorthand'), 'Explicit <code>{ type, values }</code> objects', 'Removed 2026-01-15']
+        ]
+      )}
+      ${callout('note', 'Note', 'Version pinning is per request: send <code>Quarry-Version: 2025-11-12</code> to keep old behaviour after an upgrade lands.')}
+    `
+  };
+
+  /* ---------- Status ---------- */
+  PAGES['status'] = {
+    title: 'Status',
+    crumb: ['Status'],
+    date: 'Nov 15, 2025',
+    read: '2 min',
+    body: `
+      <p class="lede">Live availability for the Quarry API, extraction workers, and webhook delivery. This page is generated from the same checks that page the on-call engineer.</p>
+      ${callout('note', 'All systems operational', 'Uptime over the last 90 days: <strong>99.98%</strong>. Three degraded days, no full outages.')}
+
+      <h2 id="components">Components</h2>
+      ${tbl(
+        ['Component', { t: 'Status', cls: 'nowrap' }, { t: 'Uptime 90d', cls: 'num' }, { t: 'p95', cls: 'num' }],
+        [
+          ['API · us-east', pill('Operational'), { t: '99.99%', cls: 'num' }, { t: '84 ms', cls: 'num' }],
+          ['API · eu', pill('Operational'), { t: '99.99%', cls: 'num' }, { t: '91 ms', cls: 'num' }],
+          ['Extraction workers', pill('Operational'), { t: '99.96%', cls: 'num' }, { t: '1.9 s', cls: 'num' }],
+          ['Webhook delivery', pill('Operational'), { t: '99.94%', cls: 'num' }, { t: '2.1 s', cls: 'num' }],
+          ['Dashboard', pill('Operational'), { t: '100%', cls: 'num' }, { t: '140 ms', cls: 'num' }]
+        ]
+      )}
+
+      <h2 id="uptime">90-day uptime</h2>
+      <p>Each bar is one day. Amber marks a day with an incident, a lighter bar marks degraded performance for less than an hour.</p>
+      ${bars(90)}
+
+      <h2 id="incidents">Recent incidents</h2>
+      ${tbl(
+        ['Date', 'Duration', 'Summary'],
+        [
+          ['Oct 14, 2025', { t: '41 min', cls: 'num nowrap' }, 'Extraction queue backed up in us-east after a worker deployment. Documents queued during the window were delayed, none failed.'],
+          ['Sep 28, 2025', { t: '12 min', cls: 'num nowrap' }, 'Webhook delivery retried with elevated latency. No events were lost; retries completed within the 24-hour window.']
+        ]
+      )}
+
+      <h2 id="subscribe">Subscribe to updates</h2>
+      <p>Status changes are also pushed to the workspace owner by email. Incident reviews are published within five business days.</p>
+      <p><button class="btn" type="button" data-act="toast" data-msg="Subscribed to incident updates for this workspace.">Subscribe to incident updates</button></p>
+    `
+  };
+
+  /* ---------- Not found ---------- */
+  PAGES['not-found'] = {
+    title: 'Page not found',
+    crumb: ['Not found'],
+    date: 'Nov 12, 2025',
+    read: '1 min',
+    body: `
+      <p class="lede">There is no documentation page at that address. The link may be from an older version of these docs, or the section was renamed in v1.4.</p>
+      <div class="cards">
+        <a class="card" href="#/getting-started/introduction"><span class="card-t">Introduction</span><span class="card-d">Start from the overview of documents and fields.</span></a>
+        <a class="card" href="#/getting-started/quickstart"><span class="card-t">Quickstart</span><span class="card-d">Upload a document and read your first result.</span></a>
+        <a class="card" href="#/core/extract"><span class="card-t">API reference</span><span class="card-d">Parameters for POST /v1/extract and friends.</span></a>
+      </div>
+      <p class="muted">If you followed a link from our own docs, copy the page address and send it to support — every response id is traceable for 30 days.</p>
+    `
+  };
+
+  /* ==========================================================
+     Routing + rendering
+     ========================================================== */
+  var ORDER = [
+    'getting-started/introduction',
+    'getting-started/quickstart',
+    'getting-started/authentication',
+    'core/documents',
+    'core/extract',
+    'core/batches',
+    'webhooks',
+    'errors',
+    'rate-limits',
+    'sdks/node',
+    'sdks/python',
+    'sdks/go',
+    'changelog'
+  ];
+
+  var rootEl = doc.documentElement;
+  var articleEl = qs('#article');
+  var sidebarEl = qs('#sidebar');
+  var tocEl = qs('#toc');
+  var tocListEl = qs('#tocList');
+  var toastBox = qs('#toasts');
+  var currentRoute = '';
+  var firstRender = true;
+
+  function themeIsDark() { return rootEl.getAttribute('data-theme') === 'dark'; }
+
+  function setTheme(theme, persist) {
+    var dark = theme === 'dark';
+    rootEl.setAttribute('data-theme', dark ? 'dark' : 'light');
+    var btn = qs('#themeBtn');
+    if (btn) {
+      btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+      btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+      btn.setAttribute('title', dark ? 'Switch to light theme' : 'Switch to dark theme');
+      var moon = qs('.ic-moon', btn);
+      var sun = qs('.ic-sun', btn);
+      if (moon) { moon.hidden = dark; }
+      if (sun) { sun.hidden = !dark; }
+    }
+    var meta = qs('meta[name="theme-color"]');
+    if (meta) { meta.setAttribute('content', dark ? '#0e1114' : '#fbfbfa'); }
+    if (persist) { store.set('quarry:theme', dark ? 'dark' : 'light'); }
+  }
+
+  function crumbsHtml(list) {
+    var out = '<nav class="crumbs" aria-label="Breadcrumb"><ol>' +
+      '<li><a href="#/' + DEFAULT_ROUTE + '">Docs</a></li>';
+    list.forEach(function (item, idx) {
+      var last = idx === list.length - 1;
+      out += '<li><span class="crumb-sep" aria-hidden="true">/</span>' +
+        (last ? '<span class="crumb-cur" aria-current="page">' + esc(item) + '</span>'
+              : '<span>' + esc(item) + '</span>') +
+        '</li>';
+    });
+    return out + '</ol></nav>';
+  }
+
+  function metaHtml(page) {
+    return '<div class="art-meta">' +
+      '<span class="badge">API v1.4</span>' +
+      '<span class="dot-sep" aria-hidden="true">·</span>' +
+      '<span>Updated ' + esc(page.date) + '</span>' +
+      '<span class="dot-sep" aria-hidden="true">·</span>' +
+      '<span>' + esc(page.read) + ' read</span>' +
+    '</div>';
+  }
+
+  function actionsHtml() {
+    return '<div class="art-act">' +
+      '<div class="art-act-l">' +
+        '<button class="linkbtn" type="button" data-act="toast" data-msg="Repository editing is disabled in this documentation preview.">' +
+          ICON.edit + '<span>Edit this page</span></button>' +
+        '<button class="linkbtn" type="button" data-act="copy-page">' +
+          ICON.link + '<span>Copy page link</span></button>' +
+      '</div>' +
+      '<button class="linkbtn" type="button" data-act="top">' + ICON.up + '<span>Back to top</span></button>' +
+    '</div>';
+  }
+
+  function pnHtml(route) {
+    var idx = ORDER.indexOf(route);
+    if (idx < 0) { return ''; }
+    var prev = idx > 0 ? PAGES[ORDER[idx - 1]] : null;
+    var prevRoute = idx > 0 ? ORDER[idx - 1] : null;
+    var next = idx < ORDER.length - 1 ? PAGES[ORDER[idx + 1]] : null;
+    var nextRoute = idx < ORDER.length - 1 ? ORDER[idx + 1] : null;
+    var out = '';
+    if (prev) {
+      out += '<a class="pn-card pn-prev" href="#/' + prevRoute + '"><span class="pn-l"><span aria-hidden="true">←</span> Previous</span><span class="pn-t">' + esc(prev.title) + '</span></a>';
+    }
+    if (next) {
+      out += '<a class="pn-card pn-next" href="#/' + nextRoute + '"><span class="pn-l">Next <span aria-hidden="true">→</span></span><span class="pn-t">' + esc(next.title) + '</span></a>';
+    }
+    if (!out) { return ''; }
+    return '<nav class="pn" aria-label="Page navigation">' + out + '</nav>';
+  }
+
+  function setActiveNav(route) {
+    qsa('.navlink').forEach(function (link) {
+      if (link.getAttribute('href') === '#/' + route) {
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+    qsa('.hdr-nav a').forEach(function (link) {
+      var href = link.getAttribute('href') || '';
+      var on = false;
+      if (href === '#/getting-started/introduction') { on = route.indexOf('getting-started/') === 0; }
+      else if (href === '#/core/extract') { on = route.indexOf('core/') === 0; }
+      else if (href === '#/sdks/node') { on = route.indexOf('sdks/') === 0; }
+      else { on = href === '#/' + route; }
+      if (on) { link.setAttribute('aria-current', 'page'); }
+      else { link.removeAttribute('aria-current'); }
+    });
+  }
+
+  function buildToc() {
+    if (!tocListEl || !tocEl) { return; }
+    var heads = qsa('#article h2[id], #article h3[id]');
+    if (!heads.length) {
+      tocEl.hidden = true;
+      tocListEl.innerHTML = '';
+      return;
+    }
+    tocEl.hidden = false;
+    tocListEl.innerHTML = heads.map(function (head) {
+      var lvl = head.tagName === 'H3' ? ' lv3' : '';
+      return '<li><button class="toc-link' + lvl + '" type="button" data-act="jump" data-id="' +
+        head.id + '">' + esc(head.textContent) + '</button></li>';
+    }).join('');
+    updateSpy();
+  }
+
+  var spyTick = false;
+  function updateSpy() {
+    var links = qsa('.toc-link');
+    if (!links.length) { return; }
+    var header = qs('.hdr');
+    var offset = (header ? header.offsetHeight : 64) + Math.round(window.innerHeight * 0.22);
+    var active = links[0].getAttribute('data-id');
+    links.forEach(function (link) {
+      var target = doc.getElementById(link.getAttribute('data-id'));
+      if (target && target.getBoundingClientRect().top <= offset) {
+        active = link.getAttribute('data-id');
+      }
+    });
+    var docEl = doc.documentElement;
+    if (window.innerHeight + window.pageYOffset >= docEl.scrollHeight - 8) {
+      active = links[links.length - 1].getAttribute('data-id');
+    }
+    links.forEach(function (link) {
+      if (link.getAttribute('data-id') === active) {
+        link.setAttribute('aria-current', 'location');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+  }
+  window.addEventListener('scroll', function () {
+    if (spyTick) { return; }
+    spyTick = true;
+    window.requestAnimationFrame(function () {
+      spyTick = false;
+      updateSpy();
+    });
+  }, { passive: true });
+
+  function render(route) {
+    var page = PAGES[route];
+    if (!page) {
+      route = 'not-found';
+      page = PAGES['not-found'];
+    }
+    currentRoute = route;
+    articleEl.innerHTML =
+      crumbsHtml(page.crumb) +
+      '<header class="art-hd"><h1 id="pageTitle" tabindex="-1">' + esc(page.title) + '</h1>' +
+        metaHtml(page) +
+      '</header>' +
+      page.body +
+      actionsHtml() +
+      pnHtml(route);
+
+    doc.title = page.title + ' · Quarry API documentation';
+    setActiveNav(route);
+    buildToc();
+
+    var searchA = qs('#searchInput');
+    var searchB = qs('#sbSearch');
+    if (searchA) { searchA.value = ''; }
+    if (searchB) { searchB.value = ''; }
+    applyFilter('');
+
+    var htmlEl = doc.documentElement;
+    var prevBehavior = htmlEl.style.scrollBehavior;
+    htmlEl.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    htmlEl.style.scrollBehavior = prevBehavior;
+
+    if (!firstRender) {
+      var h1 = qs('#pageTitle');
+      if (h1) {
+        try { h1.focus({ preventScroll: true }); } catch (err) { h1.focus(); }
+      }
+    }
+    firstRender = false;
+  }
+
+  function routeFromHash() {
+    var hash = window.location.hash || '';
+    if (hash.indexOf('#/') !== 0) { return null; }
+    var route = hash.slice(2).replace(/\/+$/, '');
+    return route || DEFAULT_ROUTE;
+  }
+
+  function onHashChange() {
+    var route = routeFromHash();
+    if (route === null) { return; }
+    closeDrawer(false);
+    render(route);
+  }
+  window.addEventListener('hashchange', onHashChange);
+
+  /* ==========================================================
+     Toasts
+     ========================================================== */
+  function toast(message, iconPaths) {
+    if (!toastBox) { return; }
+    var el = doc.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = '<span class="t-ic" aria-hidden="true">' + (iconPaths || ICON.check) + '</span><span>' + esc(message) + '</span>';
+    toastBox.appendChild(el);
+    while (toastBox.children.length > 3) {
+      toastBox.removeChild(toastBox.firstChild);
+    }
+    window.setTimeout(function () {
+      el.classList.add('out');
+      window.setTimeout(function () {
+        if (el.parentNode) { el.parentNode.removeChild(el); }
+      }, 220);
+    }, 2600);
+  }
+
+  /* ==========================================================
+     Clipboard
+     ========================================================== */
+  function fallbackCopy(text) {
+    var ok = false;
+    try {
+      var area = doc.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.top = '-1000px';
+      area.style.opacity = '0';
+      doc.body.appendChild(area);
+      area.select();
+      area.setSelectionRange(0, text.length);
+      ok = doc.execCommand('copy');
+      doc.body.removeChild(area);
+    } catch (err) { ok = false; }
+    return !!ok;
+  }
+
+  function copyText(text) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      function done(ok) {
+        if (settled) { return; }
+        settled = true;
+        resolve(!!ok);
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { done(true); },
+            function () { done(fallbackCopy(text)); });
+          return;
+        }
+      } catch (err) { /* clipboard unavailable */ }
+      done(fallbackCopy(text));
+    });
+  }
+
+  function selectContents(el) {
+    if (!el) { return; }
+    try {
+      var range = doc.createRange();
+      range.selectNodeContents(el);
+      var sel = window.getSelection();
+      if (!sel) { return; }
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch (err) { /* selection unavailable */ }
+  }
+
+  function copyWithFeedback(button, text, labelEl, selectEl) {
+    copyText(text).then(function (ok) {
+      if (!button.isConnected) { return; }
+      if (labelEl) {
+        labelEl.textContent = ok ? 'Copied' : 'Copy';
+      }
+      button.classList.toggle('done', ok);
+      window.clearTimeout(button._resetTimer);
+      button._resetTimer = window.setTimeout(function () {
+        if (labelEl) { labelEl.textContent = 'Copy'; }
+        button.classList.remove('done');
+      }, 1800);
+      if (!ok) { selectContents(selectEl); }
+      toast(ok ? 'Copied to clipboard'
+        : (selectEl ? 'Clipboard blocked — text is selected, press Ctrl+C' : 'Copy is blocked by the browser'),
+        ok ? ICON.check : ICON.warn);
+    });
+  }
+
+  /* ==========================================================
+     Code tabs
+     ========================================================== */
+  function selectTab(tab, focusIt) {
+    var block = tab.closest('.code');
+    if (!block) { return; }
+    var langs = DS[tab.getAttribute('data-block')];
+    var lang = tab.getAttribute('data-lang');
+    if (!langs || !langs[lang]) { return; }
+    qsa('.tab', block).forEach(function (other) {
+      var on = other === tab;
+      other.setAttribute('aria-selected', on ? 'true' : 'false');
+      other.tabIndex = on ? 0 : -1;
+    });
+    var pre = qs('pre', block);
+    if (pre) {
+      pre.innerHTML = '<code>' + highlight(langs[lang], lang) + '</code>';
+    }
+    codePref = lang;
+    store.set('quarry:lang', lang);
+    if (focusIt) { tab.focus(); }
+  }
+
+  /* ==========================================================
+     Drawer
+     ========================================================== */
+  function drawerOpen() { return rootEl.classList.contains('drawer-open'); }
+  function openDrawer(restoreTarget) {
+    rootEl.classList.add('drawer-open');
+    var scrim = qs('#scrim');
+    if (scrim) { scrim.hidden = false; }
+    var btn = qs('#menuBtn');
+    if (btn) { btn.setAttribute('aria-expanded', 'true'); }
+    drawerReturn = restoreTarget || doc.activeElement;
+    window.setTimeout(function () {
+      var input = qs('#sbSearch');
+      var firstLink = qs('.navlink', sidebarEl);
+      if (input && input.offsetParent !== null) { input.focus(); }
+      else if (firstLink) { firstLink.focus(); }
+    }, 40);
+  }
+  function closeDrawer(restoreFocus) {
+    if (!drawerOpen()) { return; }
+    rootEl.classList.remove('drawer-open');
+    var scrim = qs('#scrim');
+    if (scrim) { scrim.hidden = true; }
+    var btn = qs('#menuBtn');
+    if (btn) { btn.setAttribute('aria-expanded', 'false'); }
+    if (restoreFocus) {
+      var target = drawerReturn || btn;
+      if (target && target.focus) { target.focus(); }
+    }
+  }
+  var drawerReturn = null;
+
+  /* ==========================================================
+     Search / sidebar filter
+     ========================================================== */
+  var searchInputs = [];
+  function applyFilter(value) {
+    var term = String(value || '').trim().toLowerCase();
+    var links = qsa('.navlink');
+    var shown = 0;
+    links.forEach(function (link) {
+      var hay = ((link.getAttribute('data-kw') || '') + ' ' + link.textContent).toLowerCase();
+      var hit = !term || hay.indexOf(term) !== -1;
+      var item = link.parentNode;
+      if (item && item.tagName === 'LI') { item.hidden = !hit; }
+      else { link.hidden = !hit; }
+      if (hit) { shown += 1; }
+    });
+    qsa('.navgrp').forEach(function (group) {
+      var any = qsa('.navlink', group).some(function (link) {
+        return !(link.hidden || (link.parentNode && link.parentNode.hidden));
+      });
+      group.hidden = !any;
+    });
+    var empty = qs('#sbEmpty');
+    if (empty) {
+      empty.hidden = !(term && !shown);
+      var q = qs('#sbEmptyQ');
+      if (q) { q.textContent = String(value || '').trim(); }
+    }
+  }
+
+  function focusSearch() {
+    var wide = window.innerWidth >= 1100;
+    var headerInput = qs('#searchInput');
+    if (wide && headerInput) {
+      headerInput.focus();
+      try { headerInput.select(); } catch (err) { /* ignore */ }
+      return;
+    }
+    openDrawer();
+  }
+
+  function bindSearch(input) {
+    if (!input) { return; }
+    searchInputs.push(input);
+    input.addEventListener('input', function () {
+      searchInputs.forEach(function (other) {
+        if (other !== input) { other.value = input.value; }
+      });
+      applyFilter(input.value);
+    });
+    input.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (input.value) {
+          searchInputs.forEach(function (other) { other.value = ''; });
+          applyFilter('');
+        } else {
+          input.blur();
+          if (window.innerWidth < 1100) { closeDrawer(true); }
+        }
+        return;
+      }
+      if (event.key === 'Enter') {
+        var firstVisible = qsa('.navlink').filter(function (link) {
+          return !link.hidden && !(link.parentNode && link.parentNode.hidden) && link.offsetParent !== null;
+        })[0];
+        if (firstVisible) {
+          event.preventDefault();
+          var href = firstVisible.getAttribute('href');
+          if (window.location.hash === href) {
+            searchInputs.forEach(function (other) { other.value = ''; });
+            applyFilter('');
+          } else {
+            window.location.hash = href;
+          }
+        }
+      }
+    });
+  }
+
+  /* ==========================================================
+     Modal (API key)
+     ========================================================== */
+  var modalRoot = qs('#keyModal');
+  var modalIsOpen = false;
+  var modalReturn = null;
+
+  function setBackgroundInert(on) {
+    ['.hdr', '.shell', '.ft'].forEach(function (sel) {
+      var el = qs(sel);
+      if (!el) { return; }
+      if (on) { el.setAttribute('inert', ''); }
+      else { el.removeAttribute('inert'); }
+    });
+  }
+
+  function openKeyModal() {
+    if (!modalRoot || modalIsOpen) { return; }
+    modalReturn = doc.activeElement;
+    modalIsOpen = true;
+    modalRoot.hidden = false;
+    setBackgroundInert(true);
+    var form = qs('#kmForm');
+    var result = qs('#kmResult');
+    var err = qs('#kmErr');
+    var email = qs('#kmEmail');
+    if (form) { form.hidden = false; }
+    if (result) { result.hidden = true; }
+    if (err) { err.hidden = true; }
+    if (email) {
+      email.value = '';
+      window.setTimeout(function () { email.focus(); }, 40);
+    }
+  }
+
+  function closeKeyModal() {
+    if (!modalRoot || !modalIsOpen) { return; }
+    modalIsOpen = false;
+    modalRoot.hidden = true;
+    setBackgroundInert(false);
+    if (modalReturn && modalReturn.isConnected && modalReturn.focus) {
+      modalReturn.focus();
+    }
+  }
+
+  function trapModalFocus(event) {
+    if (!modalIsOpen || event.key !== 'Tab') { return; }
+    var focusables = qsa('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])', modalRoot)
+      .filter(function (el) { return el.offsetParent !== null; });
+    if (!focusables.length) { return; }
+    var first = focusables[0];
+    var last = focusables[focusables.length - 1];
+    if (event.shiftKey && doc.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && doc.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function randomKey() {
+    var chars = '0123456789abcdef';
+    var out = '';
+    for (var i = 0; i < 20; i += 1) {
+      out += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return 'qr_live_' + out;
+  }
+
+  function submitKeyForm(event) {
+    event.preventDefault();
+    var email = qs('#kmEmail');
+    var err = qs('#kmErr');
+    var value = email ? email.value.trim() : '';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
+      if (err) {
+        err.hidden = false;
+        err.textContent = 'Enter a valid work email address, for example you@company.com.';
+      }
+      if (email) { email.focus(); }
+      return;
+    }
+    if (err) { err.hidden = true; }
+    var planEl = qs('#kmPlan');
+    var plan = planEl ? planEl.value : 'Starter';
+    var key = randomKey();
+    var keyCode = qs('#kmKey');
+    if (keyCode) { keyCode.textContent = key; }
+    var form = qs('#kmForm');
+    var result = qs('#kmResult');
+    if (form) { form.hidden = true; }
+    if (result) { result.hidden = false; }
+    toast('Live key created on the ' + plan + ' plan');
+    var copyBtn = qs('[data-act="copy-key"]');
+    if (copyBtn) { copyBtn.focus(); }
+  }
+
+  /* ==========================================================
+     Try-it request simulator
+     ========================================================== */
+  function hex(len) {
+    var chars = '0123456789abcdef';
+    var out = '';
+    for (var i = 0; i < len; i += 1) {
+      out += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return out;
+  }
+
+  function fixture(kind) {
+    if (kind === 'receipt') {
+      return {
+        id: 'doc_3Rt7NbW1', object: 'document', status: 'processed', pages: 1,
+        type: 'receipt', fields: {
+          merchant: 'Kaffeehaus Ost', receipt_total: '€18.40', currency: 'EUR',
+          purchased_at: '2025-11-09T08:12:00Z', tax_total: '€1.47', payment_method: 'card'
+        },
+        confidence: { receipt_total: 0.98, merchant: 0.93, purchased_at: 0.9 }
+      };
+    }
+    if (kind === 'contract') {
+      return {
+        id: 'doc_6Lm9QpX2', object: 'document', status: 'processed', pages: 8,
+        type: 'contract', fields: {
+          parties: ['Nordwind Logistik GmbH', 'Hafen Betrieb AG'],
+          effective_date: '2026-01-01', term_months: 24, governing_law: 'DE',
+          termination_notice_days: 90
+        },
+        confidence: { parties: 0.91, effective_date: 0.96, term_months: 0.87 }
+      };
+    }
+    return {
+      id: 'doc_8Hk2QmR4', object: 'document', status: 'processed', pages: 12,
+      type: 'invoice', fields: {
+        invoice_number: 'INV-2025-0417',
+        invoice_total: '€1,284.00',
+        amount_minor: 128400,
+        currency: 'EUR',
+        due_date: '2025-12-14',
+        issuer_name: 'Nordwind Logistik GmbH',
+        line_items: [
+          { description: 'Pallet transport, 12 t', quantity: 4, unit_price: '€210.00', total: '€840.00' },
+          { description: 'Loading fee', quantity: 1, unit_price: '€444.00', total: '€444.00' }
+        ]
+      },
+      confidence: { invoice_total: 0.99, due_date: 0.94, issuer_name: 0.88 },
+      created_at: '2025-11-12T09:41:07Z',
+      processed_at: '2025-11-12T09:41:36Z'
+    };
+  }
+
+  function runTry(button) {
+    var panel = button.closest('.try');
+    if (!panel) { return; }
+    var out = qs('[data-slot]', panel);
+    if (!out) { return; }
+    var schemaEl = qs('[data-schema]', panel);
+    var docEl = qs('[data-doc]', panel);
+    var kind = schemaEl ? schemaEl.value : 'invoice';
+    var label = button.getAttribute('data-idle') || 'Send request';
+    button.disabled = true;
+    button.innerHTML = '<span class="spin" aria-hidden="true" style="display:inline-flex">' + ICON.spin + '</span>Sending…';
+
+    out.innerHTML = '<div class="sk-wrap" aria-hidden="true">' +
+      '<div class="sk" style="width:56%"></div>' +
+      '<div class="sk" style="width:88%"></div>' +
+      '<div class="sk" style="width:71%"></div>' +
+      '<div class="sk" style="width:44%"></div>' +
+    '</div>';
+
+    var wait = reducedMotion ? 160 : 900;
+    window.setTimeout(function () {
+      if (!button.isConnected) { return; }
+      var payload = fixture(kind);
+      var id = docEl ? docEl.value.trim() : '';
+      if (id) { payload.id = id; }
+      var text = JSON.stringify(payload, null, 2);
+      out.innerHTML = '<div class="resp-hd">' + pill('200 OK') +
+        '<span class="resp-meta">' + (150 + Math.floor(Math.random() * 480)) + ' ms · request ' +
+        'req_' + hex(8) + '</span></div>' +
+        '<pre class="resp-pre"><code>' + highlight(text, 'json') + '</code></pre>';
+      button.disabled = false;
+      button.innerHTML = '<span aria-hidden="true" style="display:inline-flex">' + ICON.send + '</span>' + label;
+    }, wait);
+  }
+
+  /* ==========================================================
+     Actions (event delegation)
+     ========================================================== */
+  doc.addEventListener('click', function (event) {
+    var node = event.target;
+    if (!node || !node.closest) { return; }
+    var el = node.closest('[data-act]');
+    if (!el) { return; }
+    var act = el.getAttribute('data-act');
+
+    if (act === 'copy') {
+      var block = el.closest('.code');
+      var pre = block ? qs('pre', block) : null;
+      var text = pre ? pre.textContent : '';
+      if (text) { copyWithFeedback(el, text, qs('.copy-t', el), pre); }
+      return;
+    }
+    if (act === 'tab') { selectTab(el, true); return; }
+    if (act === 'jump') {
+      var target = doc.getElementById(el.getAttribute('data-id'));
+      if (target) {
+        var header = qs('.hdr');
+        var offset = (header ? header.offsetHeight : 64) + 20;
+        var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        if (reducedMotion) { window.scrollTo(0, top); }
+        else { window.scrollTo({ top: top, behavior: 'smooth' }); }
+        if (!el.getAttribute('aria-current')) {
+          qsa('.toc-link').forEach(function (other) {
+            if (other === el) { other.setAttribute('aria-current', 'location'); }
+            else { other.removeAttribute('aria-current'); }
+          });
+        }
+      }
+      return;
+    }
+    if (act === 'top') {
+      if (reducedMotion) { window.scrollTo(0, 0); }
+      else { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      return;
+    }
+    if (act === 'send') { runTry(el); return; }
+    if (act === 'open-key') { openKeyModal(); return; }
+    if (act === 'modal-close') { closeKeyModal(); return; }
+    if (act === 'copy-key') {
+      var keyEl = qs('#kmKey');
+      if (keyEl) { copyWithFeedback(el, keyEl.textContent, null, keyEl); }
+      return;
+    }
+    if (act === 'copy-support') {
+      copyWithFeedback(el, 'support@quarry.dev', null, null);
+      return;
+    }
+    if (act === 'copy-page') {
+      var url = window.location.href;
+      copyText(url).then(function (ok) {
+        toast(ok ? 'Page link copied' : 'Copy is blocked by the browser — copy the address bar instead');
+      });
+      return;
+    }
+    if (act === 'feedback') {
+      toast(el.getAttribute('data-v') === 'yes'
+        ? 'Thanks — noted as helpful.'
+        : 'Thanks. Tell us what was missing: support@quarry.dev');
+      return;
+    }
+    if (act === 'toast') {
+      toast(el.getAttribute('data-msg') || 'Done');
+      return;
+    }
+  });
+
+  doc.addEventListener('keydown', function (event) {
+    if (event.defaultPrevented) { return; }
+    var target = event.target;
+    var tag = target && target.tagName ? target.tagName : '';
+    var typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (target && target.isContentEditable);
+
+    if (modalIsOpen) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeKeyModal();
+        return;
+      }
+      trapModalFocus(event);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      if (drawerOpen()) {
+        event.preventDefault();
+        closeDrawer(true);
+        return;
+      }
+      if (typing && target.value) {
+        target.value = '';
+        searchInputs.forEach(function (other) { other.value = ''; });
+        applyFilter('');
+        return;
+      }
+      if (typing) { target.blur(); }
+      return;
+    }
+
+    var meta = event.ctrlKey || event.metaKey || event.altKey;
+    if ((event.key === '/' || event.key === 'Divide') && !typing && !meta) {
+      event.preventDefault();
+      focusSearch();
+      return;
+    }
+
+    var tab = target && target.classList && target.classList.contains('tab') ? target : null;
+    if (tab && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+      var tabBlock = tab.closest('.code');
+      if (!tabBlock) { return; }
+      var tabs = qsa('.tab', tabBlock);
+      var at = tabs.indexOf(tab);
+      if (at < 0) { return; }
+      event.preventDefault();
+      var shift = event.key === 'ArrowRight' ? 1 : tabs.length - 1;
+      selectTab(tabs[(at + shift) % tabs.length], true);
+    }
+  });
+
+  doc.addEventListener('submit', function (event) {
+    if (event.target && event.target.id === 'kmForm') {
+      submitKeyForm(event);
+    }
+  });
+
+  /* ==========================================================
+     Wiring
+     ========================================================== */
+  var themeBtn = qs('#themeBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function () {
+      setTheme(themeIsDark() ? 'light' : 'dark', true);
+    });
+  }
+
+  var menuBtn = qs('#menuBtn');
+  if (menuBtn) {
+    menuBtn.addEventListener('click', function () {
+      if (drawerOpen()) { closeDrawer(true); } else { openDrawer(menuBtn); }
+    });
+  }
+
+  var sbClose = qs('#sbClose');
+  if (sbClose) {
+    sbClose.addEventListener('click', function () { closeDrawer(true); });
+  }
+
+  var scrim = qs('#scrim');
+  if (scrim) {
+    scrim.addEventListener('click', function () { closeDrawer(true); });
+  }
+
+  bindSearch(qs('#searchInput'));
+  bindSearch(qs('#sbSearch'));
+
+  var resizeTick = false;
+  window.addEventListener('resize', function () {
+    if (resizeTick) { return; }
+    resizeTick = true;
+    window.requestAnimationFrame(function () {
+      resizeTick = false;
+      if (window.innerWidth >= 1100 && drawerOpen()) { closeDrawer(false); }
+    });
+  }, { passive: true });
+
+  /* ==========================================================
+     Boot
+     ========================================================== */
+  codePref = store.get('quarry:lang') || 'sh';
+  setTheme(store.get('quarry:theme') === 'dark' ? 'dark' : 'light', false);
+
+  var initialRoute = routeFromHash();
+  if (initialRoute === null) {
+    render(DEFAULT_ROUTE);
+    var suffix = '#/' + DEFAULT_ROUTE;
+    try {
+      window.history.replaceState(null, '', suffix);
+    } catch (err) {
+      /* file:// or restricted history — hash stays empty, routing still works on next click */
+    }
+  } else {
+    render(PAGES[initialRoute] ? initialRoute : 'not-found');
+  }
+})();
+</script>
 </body>
 </html>

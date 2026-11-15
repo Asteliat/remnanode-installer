@@ -3,48 +3,1161 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Layer — VPS и хостинг</title>
+<title>Basalt Cloud — fast, boring cloud VPS in EU and US</title>
+<meta name="description" content="Basalt Cloud rents simple VPS instances in 14 regions: predictable prices, 99.99% uptime, no surprise egress bills. Provisioned in 55 seconds.">
+<meta name="theme-color" content="#0f1216">
+<meta property="og:title" content="Basalt Cloud — fast, boring cloud VPS">
+<meta property="og:description" content="Simple VPS instances in 14 regions. Predictable prices, 99.99% uptime, provisioned in 55 seconds.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Basalt Cloud">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f1216'/%3E%3Cpath d='M16 6l9 5.5v9L16 26l-9-5.5v-9z' fill='none' stroke='%2335e0c8' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
-  :root{color-scheme:light dark}
+  :root{
+    --bg:#0f1216; --panel:#161a20; --inset:#1b2027; --ink:#e8edf2; --muted:#93a0ae; --faint:#6b7784;
+    --line:#242b34; --line-2:#2f3843;
+    --accent:#35e0c8; --accent-dim:#1f8d7f; --blue:#8ab4ff; --warn:#fbbf24; --bad:#f87171; --good:#34d399;
+    --radius:16px; --radius-sm:10px;
+    --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:#0b0d11;color:#e6e9ee;font:15px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-  .nav{padding:15px 22px;display:flex;align-items:center;gap:20px;border-bottom:1px solid #1b2027}
-  .logo{font-weight:700}
-  .logo i{color:#38bdf8;font-style:normal}
-  .nav a{color:#98a2b0;text-decoration:none;font-size:14px}
-  .nav .me{margin-left:auto;font-size:13px;color:#7c8794}
-  .hero{max-width:1000px;margin:0 auto;padding:56px 22px 30px;text-align:center}
-  .hero h1{font-size:clamp(28px,5vw,44px);line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}
-  .hero p{max-width:54ch;margin:0 auto 24px;color:#a2acb9}
-  .hero .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-  .btn{padding:12px 20px;border-radius:10px;background:#38bdf8;color:#06202b;font-weight:700;text-decoration:none;font-size:14.5px}
-  .btn.ghost{background:transparent;border:1px solid #2a323c;color:#e6e9ee}
-  .plans{max-width:1000px;margin:0 auto;padding:14px 22px 80px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-  .plan{background:#121820;border:1px solid #1f2834;border-radius:14px;padding:18px}
-  .plan .n{font-weight:600;font-size:14px}
-  .plan .p{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:6px 0 10px}
-  .plan .p span{font-size:13px;font-weight:400;color:#8b95a3}
-  .plan ul{margin:0;padding-left:17px;color:#9aa4b2;font-size:13.5px}
-  .plan li{margin-bottom:4px}
-  .plan.hot{border-color:#38bdf8}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 var(--sans); -webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  button{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:6px}
+  .skip{position:absolute;left:-9999px;background:#fff;color:#000;padding:10px 14px;border-radius:0 0 8px 0;z-index:200}
+  .skip:focus{left:0}
+  .icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .icon-lg{width:22px;height:22px}
+  .wrap{max-width:1140px; margin:0 auto; padding:0 22px}
+  .mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+  /* topbar */
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(15,18,22,.82); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar__in{max-width:1140px; margin:0 auto; padding:0 22px; height:64px; display:flex; align-items:center; gap:22px}
+  .brand{display:flex; align-items:center; gap:9px; text-decoration:none; font-weight:650; letter-spacing:-.02em; font-size:16px}
+  .brand svg{width:26px;height:26px}
+  .nav{display:flex; gap:2px}
+  .nav a{padding:7px 11px; border-radius:8px; text-decoration:none; font-size:13.5px; color:var(--muted)}
+  .nav a:hover{background:#1a1f26; color:var(--ink)}
+  .status-pill{
+    display:inline-flex; align-items:center; gap:7px; padding:5px 11px 5px 9px; border:1px solid #1f4a42;
+    background:#12211f; color:#7fe3cf; border-radius:999px; font-size:12px; margin-left:auto; text-decoration:none;
+  }
+  .status-pill:hover{background:#162a27}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 16px;
+    border-radius:10px; border:1px solid var(--line-2); background:var(--panel); color:var(--ink);
+    font-size:14px; font-weight:500; cursor:pointer; text-decoration:none; white-space:nowrap;
+    transition:background .15s, border-color .15s, transform .12s, color .15s;
+  }
+  .btn:hover{background:#1d232b; border-color:#3b4552}
+  .btn:active{transform:translateY(1px)}
+  .btn--primary{background:var(--accent); border-color:var(--accent); color:#08201c; font-weight:650}
+  .btn--primary:hover{background:#5aebd7; border-color:#5aebd7}
+  .btn--ghost{background:none; border-color:transparent; color:var(--muted)}
+  .btn--ghost:hover{background:#1a1f26; color:var(--ink)}
+  .btn--sm{height:34px; padding:0 12px; font-size:13px; border-radius:8px}
+  .burger{display:none; width:40px; height:40px; border:1px solid var(--line-2); background:var(--panel); border-radius:10px; cursor:pointer; align-items:center; justify-content:center}
+
+  /* hero */
+  .hero{position:relative; overflow:hidden; border-bottom:1px solid var(--line)}
+  .hero::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:52px 52px;
+    mask-image:radial-gradient(120% 90% at 50% 0%, #000 20%, transparent 78%);
+  }
+  .hero::after{content:""; position:absolute; left:50%; top:-160px; width:760px; height:420px; transform:translateX(-50%);
+    background:radial-gradient(closest-side, rgba(53,224,200,.16), transparent 70%); pointer-events:none}
+  .hero__in{position:relative; max-width:1140px; margin:0 auto; padding:76px 22px 54px}
+  .kicker{display:inline-flex; align-items:center; gap:8px; font:600 11.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin:0 0 18px}
+  .kicker::before{content:""; width:22px; height:1px; background:var(--accent-dim)}
+  h1{font-size:clamp(32px,5vw,52px); line-height:1.06; letter-spacing:-.035em; margin:0 0 18px; max-width:19ch; font-weight:680}
+  .hero p.lead{font-size:17px; line-height:1.65; color:var(--muted); max-width:60ch; margin:0 0 26px}
+  .hero__cta{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:44px}
+  .stat-strip{display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+  .stat-strip div{padding:16px 2px 16px 18px; border-left:1px solid var(--line)}
+  .stat-strip div:first-child{border-left:0; padding-left:0}
+  .stat-strip b{display:block; font:600 21px/1.2 var(--mono); letter-spacing:-.02em}
+  .stat-strip small{color:var(--faint); font-size:12px; letter-spacing:.02em}
+
+  /* sections */
+  section.block{padding:64px 0}
+  .sec-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:26px; flex-wrap:wrap}
+  h2{font-size:clamp(22px,2.6vw,29px); line-height:1.2; letter-spacing:-.025em; margin:0; font-weight:660}
+  .sec-head p{margin:7px 0 0; color:var(--muted); font-size:14.5px; max-width:62ch}
+
+  /* configurator */
+  .config{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.35)}
+  .config__tabs{display:flex; border-bottom:1px solid var(--line); padding:6px; gap:4px; background:#13171d; flex-wrap:wrap}
+  .config__tabs button{
+    border:0; background:none; padding:9px 14px; border-radius:9px; font-size:13.5px; font-weight:550;
+    color:var(--muted); cursor:pointer;
+  }
+  .config__tabs button:hover{color:var(--ink); background:#1a1f26}
+  .config__tabs button[aria-selected="true"]{background:#1e262f; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line-2)}
+  .config__body{display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+  .config__controls{padding:24px 24px 26px}
+  .config__price{padding:24px; border-left:1px solid var(--line); background:#131820; display:flex; flex-direction:column; gap:16px}
+  .panel[hidden]{display:none}
+  .ctl{margin-bottom:20px}
+  .ctl__top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:9px}
+  .ctl__label{font-size:13.5px; color:var(--muted); font-weight:500}
+  .ctl__val{font:600 15px/1 var(--mono); font-variant-numeric:tabular-nums}
+  .ctl__val small{color:var(--faint); font-weight:400; font-size:12px; font-family:var(--sans)}
+  .slider{
+    -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:999px; outline-offset:8px;
+    background:linear-gradient(90deg, var(--accent) var(--fill,30%), #262e38 var(--fill,30%)); cursor:pointer;
+  }
+  .slider::-webkit-slider-thumb{-webkit-appearance:none; width:17px; height:17px; border-radius:50%; background:#f2fffc;
+    border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.5); cursor:grab}
+  .slider::-moz-range-thumb{width:13px; height:13px; border-radius:50%; background:#f2fffc; border:3px solid var(--accent)}
+  .slider:active::-webkit-slider-thumb{cursor:grabbing}
+  .ticks{display:flex; justify-content:space-between; margin-top:7px; font:11.5px/1 var(--mono); color:var(--faint)}
+  .toggles{display:flex; flex-direction:column; gap:10px; margin-top:24px; padding-top:20px; border-top:1px solid var(--line)}
+  .toggle{display:flex; align-items:center; gap:11px; font-size:13.5px; cursor:pointer; user-select:none}
+  .toggle input{position:absolute; opacity:0; width:1px; height:1px}
+  .toggle .sw{width:38px; height:22px; border-radius:99px; background:#2a323d; border:1px solid #39424e; position:relative; flex:0 0 auto; transition:background .16s}
+  .toggle .sw::after{content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#9aa6b4; transition:transform .16s, background .16s}
+  .toggle input:checked + .sw{background:#14453f; border-color:#1f8d7f}
+  .toggle input:checked + .sw::after{transform:translateX(16px); background:var(--accent)}
+  .toggle input:focus-visible + .sw{outline:2px solid var(--accent); outline-offset:2px}
+  .toggle .price-tag{margin-left:auto; font:12px var(--mono); color:var(--faint)}
+  .region-row{display:grid; grid-template-columns:1fr auto; gap:14px; align-items:center; margin-bottom:4px}
+  .select{
+    appearance:none; width:100%; height:40px; padding:0 36px 0 12px; border:1px solid var(--line-2); border-radius:9px;
+    background:var(--inset) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%2393a0ae' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    font:13.5px var(--sans); color:var(--ink); cursor:pointer;
+  }
+  .latency{font:12px var(--mono); color:var(--faint); white-space:nowrap}
+  .price-total{display:flex; align-items:baseline; gap:8px}
+  .price-total b{font:650 34px/1 var(--mono); letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+  .price-total span{font-size:13.5px; color:var(--muted)}
+  .price-hourly{font:12.5px var(--mono); color:var(--faint); margin-top:-8px}
+  .breakdown{display:flex; flex-direction:column; gap:7px; font-size:13px; color:var(--muted); margin:0; padding:14px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+  .breakdown div{display:flex; justify-content:space-between; gap:12px}
+  .breakdown b{font:500 13px var(--mono); color:var(--ink); font-variant-numeric:tabular-nums}
+  .breakdown .sum{color:var(--ink); font-weight:600}
+  .price-note{font-size:12px; color:var(--faint); margin:0}
+  .price-note strong{color:var(--muted); font-weight:500}
+  .config__price .btn{margin-top:auto}
+
+  /* plans */
+  .plans{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
+  .plan{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 18px 16px; display:flex; flex-direction:column; gap:4px; transition:border-color .15s, transform .15s}
+  .plan:hover{border-color:var(--line-2); transform:translateY(-2px)}
+  .plan--hero{border-color:#2b6b62; background:linear-gradient(180deg,#12211f,#151a20)}
+  .plan h3{margin:0; font-size:14px; font-weight:620; display:flex; align-items:center; gap:8px}
+  .plan .tagpill{font:600 10.5px/1 var(--sans); padding:3px 7px; border-radius:999px; background:#14453f; color:#7fe3cf; letter-spacing:.03em}
+  .plan .amount{font:650 26px/1.2 var(--mono); letter-spacing:-.02em; margin:8px 0 2px}
+  .plan .amount span{font:400 12.5px var(--sans); color:var(--faint); letter-spacing:0}
+  .plan ul{list-style:none; margin:12px 0 16px; padding:0; display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--muted)}
+  .plan li{display:flex; gap:7px; align-items:flex-start}
+  .plan li svg{color:var(--accent); margin-top:1px; width:13px; height:13px}
+  .plan .btn{margin-top:auto; width:100%}
+
+  /* features */
+  .features{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+  .feature{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px}
+  .feature .ico{width:36px; height:36px; border-radius:10px; background:#14222a; border:1px solid #1d3a40; display:grid; place-items:center; color:var(--accent); margin-bottom:13px}
+  .feature h3{margin:0 0 6px; font-size:14.5px; font-weight:620}
+  .feature p{margin:0; font-size:13px; line-height:1.6; color:var(--muted)}
+
+  /* network */
+  .net{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:14px; align-items:stretch}
+  .net__map{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:10px 10px 0; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center}
+  .net__map svg{display:block; width:100%; height:auto}
+  .map-foot{display:flex; gap:8px; border-top:1px solid var(--line); margin:4px -10px 0; padding:11px 14px; flex-wrap:wrap}
+  .map-foot span{display:flex; flex-direction:column; gap:1px; font-size:11px; color:var(--faint); letter-spacing:.02em}
+  .map-foot b{font:600 13px/1.2 var(--mono); color:var(--ink)}
+  .map-foot span + span{margin-left:18px}
+  .pin{cursor:pointer}
+  .pin circle.hit{fill:transparent}
+  .pin .ring{fill:rgba(53,224,200,.16); stroke:rgba(53,224,200,.6); stroke-width:1.2}
+  .pin .core{fill:var(--accent)}
+  .pin text{fill:#9fb0bd; font:11px var(--mono); letter-spacing:.05em}
+  .pin:hover .core{fill:#fff}
+  .pin[aria-pressed="true"] .ring{fill:rgba(53,224,200,.28); stroke:#35e0c8; stroke-width:1.6}
+  .pin[aria-pressed="true"] text{fill:#e8edf2}
+  .net__side{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:12px}
+  .net__side h3{margin:0; font-size:15px; font-weight:620; display:flex; align-items:center; gap:8px}
+  .net__side .kv{display:flex; justify-content:space-between; gap:12px; font-size:13px; color:var(--muted); padding:8px 0; border-bottom:1px dashed #232a33}
+  .net__side .kv b{font:500 13px var(--mono); color:var(--ink)}
+  .net__side p{margin:4px 0 0; font-size:12.5px; color:var(--faint); line-height:1.6}
+
+  /* status */
+  .status-card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px}
+  .status-bars{display:flex; gap:2px; margin:14px 0 10px}
+  .status-bars i{flex:1; height:26px; border-radius:2px; background:#1f6b5c}
+  .status-bars i.warn{background:#a56c14}
+  .status-bars i.down{background:#8c3030}
+  .status-legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--faint)}
+  .status-legend span{display:inline-flex; align-items:center; gap:6px}
+  .status-legend em{width:9px;height:9px;border-radius:2px;display:inline-block;background:#1f6b5c}
+  .status-legend em.warn{background:#a56c14}
+  .status-note{margin:14px 0 0; font-size:13px; color:var(--muted); line-height:1.6}
+  .status-note b{color:var(--warn); font-weight:550}
+
+  /* quotes, faq */
+  .quotes{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .quote{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px}
+  .quote p{margin:0 0 14px; font-size:14.5px; line-height:1.65; color:#d5dde6}
+  .quote footer{display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--faint)}
+  .quote .who{width:30px; height:30px; border-radius:50%; display:grid; place-items:center; background:#1f3a44; color:#9fe8da; font:600 11px var(--sans)}
+  .quote strong{color:var(--ink); font-weight:600; display:block; font-size:13px}
+  .faq{display:flex; flex-direction:column; gap:8px; max-width:840px}
+  .faq__item{border:1px solid var(--line); border-radius:12px; background:var(--panel); overflow:hidden}
+  .faq__q{display:flex; align-items:center; gap:12px; width:100%; padding:15px 17px; border:0; background:none; text-align:left; font-size:14.5px; font-weight:550; cursor:pointer}
+  .faq__q svg{margin-left:auto; color:var(--muted); transition:transform .18s}
+  .faq__item[data-open="true"] .faq__q svg{transform:rotate(45deg)}
+  .faq__a{padding:0 17px 16px; font-size:13.5px; line-height:1.7; color:var(--muted)}
+  .faq__a[hidden]{display:none}
+  .cta-band{border:1px solid #2b6b62; border-radius:var(--radius); padding:34px 30px; background:linear-gradient(120deg,#12211f,#101a22 60%,#131820); display:flex; align-items:center; justify-content:space-between; gap:22px; flex-wrap:wrap}
+  .cta-band h2{max-width:22ch}
+  .cta-band p{margin:8px 0 0; color:var(--muted); font-size:14px; max-width:52ch}
+
+  /* footer */
+  footer.site{border-top:1px solid var(--line); background:#0c0f13; margin-top:20px}
+  .footer__in{max-width:1140px; margin:0 auto; padding:44px 22px 36px; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:28px}
+  .footer__in h4{font:600 11px/1 var(--sans); letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin:0 0 12px}
+  .footer__in ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+  .footer__in a{font-size:13px; color:var(--muted); text-decoration:none}
+  .footer__in a:hover{color:var(--ink)}
+  .footer__in p{font-size:13px; color:var(--muted); margin:0 0 10px; max-width:34ch; line-height:1.6}
+  .footer__bottom{border-top:1px solid var(--line); max-width:1140px; margin:0 auto; padding:16px 22px 28px; display:flex; gap:14px; justify-content:space-between; flex-wrap:wrap; font-size:12px; color:var(--faint)}
+  .footer__bottom span{display:inline-flex; gap:14px; flex-wrap:wrap}
+
+  /* modal + toast */
+  .modal{position:fixed; inset:0; z-index:80; display:none; place-items:center; padding:18px; background:rgba(6,9,11,.7); backdrop-filter:blur(5px)}
+  .modal.is-open{display:grid}
+  .modal__box{width:min(520px,100%); background:var(--panel); border:1px solid var(--line-2); border-radius:16px; box-shadow:0 30px 80px rgba(0,0,0,.6); max-height:92vh; overflow:auto}
+  .modal__head{display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--line)}
+  .modal__head h2{font-size:16px; margin:0; letter-spacing:-.01em}
+  .modal__head button{margin-left:auto; width:32px; height:32px; border:0; background:none; border-radius:8px; color:var(--muted); cursor:pointer; display:grid; place-items:center}
+  .modal__head button:hover{background:#1d232b; color:var(--ink)}
+  .modal__body{padding:18px 20px}
+  .summary{display:flex; flex-direction:column; gap:9px; margin:0 0 16px}
+  .summary div{display:flex; justify-content:space-between; gap:14px; font-size:13.5px; color:var(--muted); padding-bottom:8px; border-bottom:1px dashed #232a33}
+  .summary div:last-child{border-bottom:0}
+  .summary b{color:var(--ink); font-weight:500; font-family:var(--mono); font-size:13px}
+  .steps{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px}
+  .step{display:flex; align-items:center; gap:11px; font-size:13.5px; color:var(--faint)}
+  .step .bul{width:20px; height:20px; border-radius:50%; border:1px solid var(--line-2); display:grid; place-items:center; font:600 10px var(--mono); flex:0 0 auto}
+  .step[data-state="run"]{color:var(--ink)}
+  .step[data-state="run"] .bul{border-color:var(--accent); color:var(--accent); animation:spin 1s linear infinite; border-right-color:transparent}
+  .step[data-state="done"]{color:var(--muted)}
+  .step[data-state="done"] .bul{border-color:var(--accent-dim); background:#14453f; color:var(--accent)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .deploy-done{margin:16px 0 0; padding:14px; border-radius:10px; background:#12211f; border:1px solid #1f4a42; font-size:13.5px; color:#a9eadd; line-height:1.6}
+  .deploy-done b{display:block; color:var(--ink); font:600 13px var(--mono); margin-bottom:3px}
+  .modal__foot{display:flex; gap:9px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--line); background:#131820}
+  .toasts{position:fixed; right:18px; bottom:18px; z-index:90; display:flex; flex-direction:column; gap:8px; max-width:340px}
+  .toast{display:flex; align-items:center; gap:9px; padding:11px 14px; border-radius:10px; background:#e8edf2; color:#0f1216; font-size:13.5px; box-shadow:0 14px 34px rgba(0,0,0,.5); animation:toast-in .22s ease both}
+  .toast svg{color:#0f7d68}
+  @keyframes toast-in{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+
+  @media (max-width:980px){
+    .config__body{grid-template-columns:minmax(0,1fr)}
+    .config__price{border-left:0; border-top:1px solid var(--line)}
+    .plans{grid-template-columns:repeat(2,1fr)}
+    .features{grid-template-columns:repeat(2,1fr)}
+    .net{grid-template-columns:minmax(0,1fr)}
+    .quotes{grid-template-columns:1fr}
+    .footer__in{grid-template-columns:1fr 1fr}
+    .nav{display:none}
+    .burger{display:flex}
+    .status-pill{display:none}
+  }
+  @media (max-width:640px){
+    .hero__in{padding:52px 18px 38px}
+    .stat-strip{grid-template-columns:1fr 1fr}
+    .stat-strip div{border-left:0; padding:12px 0; border-top:1px solid var(--line)}
+    .stat-strip div:nth-child(1),.stat-strip div:nth-child(2){border-top:0}
+    .plans{grid-template-columns:1fr}
+    .features{grid-template-columns:1fr}
+    .config__controls{padding:18px}
+    .config__price{padding:18px}
+    .cta-band{padding:24px 20px}
+    .footer__in{grid-template-columns:1fr}
+  }
+  .mobile-nav{display:flex; position:absolute; left:0; right:0; top:64px; flex-direction:column; gap:4px; padding:12px 18px 16px; background:var(--panel); border-bottom:1px solid var(--line); box-shadow:0 20px 40px rgba(0,0,0,.5)}
+  .mobile-nav[hidden]{display:none !important}
+  @media (min-width:981px){ .mobile-nav{display:none} }
+  .mobile-nav a{padding:10px 10px; border-radius:8px; text-decoration:none; font-size:14.5px; color:var(--ink)}
+  .mobile-nav a:hover{background:#1a1f26}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:.001ms !important; transition-duration:.001ms !important}
+  }
 </style>
 </head>
 <body>
-<div class="nav">
-  <div class="logo">Layer<i>.</i></div>
-  <a href="#">Серверы</a><a href="#">Сеть</a><a href="#">Документация</a>
-  <div class="me">панель управления</div>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="brand" href="#top" aria-label="Basalt Cloud home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f1216"/><path d="M16 6l9 5.5v9L16 26l-9-5.5v-9z" fill="none" stroke="#35e0c8" stroke-width="2.4" stroke-linejoin="round"/></svg>
+      <span>Basalt</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#products">Products</a>
+      <a href="#network">Network</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#" data-toast="Docs open after you create a project">Docs</a>
+    </nav>
+    <a class="status-pill" href="#status"><span class="dot" aria-hidden="true"></span> All systems operational</a>
+    <button class="btn btn--ghost btn--sm" type="button" data-toast="Sign-in opens after your first deploy">Log in</button>
+    <button class="btn btn--primary btn--sm" type="button" id="go-deploy">Deploy</button>
+    <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div class="mobile-nav" id="mobile-nav" hidden>
+    <a href="#products">Products</a>
+    <a href="#network">Network</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#status">Status</a>
+    <button class="btn btn--primary btn--sm" type="button" id="go-deploy-m" style="margin-top:8px">Deploy a server</button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="top">
+    <div class="hero__in">
+      <p class="kicker">Cloud VPS · EU &amp; US</p>
+      <h1>Cheap is not the point. Fast and boring is.</h1>
+      <p class="lead">Basalt rents single-purpose virtual machines on local NVMe, at prices that do not change when you walk away. No egress traps, no “contact sales”, no dashboard that needs a course.</p>
+      <div class="hero__cta">
+        <button class="btn btn--primary" type="button" id="hero-deploy">Deploy a server</button>
+        <a class="btn" href="#pricing">See pricing</a>
+      </div>
+      <div class="stat-strip">
+        <div><b>14</b><small>regions</small></div>
+        <div><b>99.99%</b><small>uptime, 12 months</small></div>
+        <div><b>55s</b><small>median provision</small></div>
+        <div><b>25 Tbps</b><small>network capacity</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="products">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Configure it here, not in a meeting</h2>
+          <p>Prices update as you move the sliders. Everything is monthly, billed from the day you deploy, cancel whenever.</p>
+        </div>
+        <div class="latency mono">prices in EUR · excl. VAT</div>
+      </div>
+
+      <div class="config">
+        <div class="config__tabs" role="tablist" aria-label="Product">
+          <button type="button" role="tab" data-tab="vps" aria-selected="true">Cloud VPS</button>
+          <button type="button" role="tab" data-tab="bare" aria-selected="false">Dedicated</button>
+          <button type="button" role="tab" data-tab="store" aria-selected="false">Object storage</button>
+        </div>
+        <div class="config__body">
+          <div class="config__controls">
+            <div class="panel" data-panel="vps">
+              <div class="ctl">
+                <div class="ctl__top"><span class="ctl__label">vCPU</span><span class="ctl__val" id="v-vcpu">2 <small>cores</small></span></div>
+                <input class="slider" id="s-vcpu" type="range" min="1" max="16" step="1" value="2" aria-label="vCPU cores">
+                <div class="ticks"><span>1</span><span>16</span></div>
+              </div>
+              <div class="ctl">
+                <div class="ctl__top"><span class="ctl__label">Memory</span><span class="ctl__val" id="v-ram">4 <small>GB</small></span></div>
+                <input class="slider" id="s-ram" type="range" min="1" max="64" step="1" value="4" aria-label="Memory in gigabytes">
+                <div class="ticks"><span>1 GB</span><span>64 GB</span></div>
+              </div>
+              <div class="ctl">
+                <div class="ctl__top"><span class="ctl__label">NVMe storage</span><span class="ctl__val" id="v-disk">50 <small>GB</small></span></div>
+                <input class="slider" id="s-disk" type="range" min="10" max="400" step="10" value="50" aria-label="Storage in gigabytes">
+                <div class="ticks"><span>10 GB</span><span>400 GB</span></div>
+              </div>
+              <div class="ctl">
+                <div class="region-row">
+                  <label class="ctl__label" for="region">Region</label>
+                  <span class="latency" id="v-lat">12 ms to Berlin</span>
+                </div>
+                <select class="select" id="region" aria-label="Region">
+                  <option value="ams">Amsterdam, NL · AMS1</option>
+                  <option value="fra">Frankfurt, DE · FRA2</option>
+                  <option value="hel">Helsinki, FI · HEL1</option>
+                  <option value="ash">Ashburn, US · IAD1</option>
+                  <option value="sgp">Singapore, SG · SIN1</option>
+                </select>
+              </div>
+              <div class="toggles">
+                <label class="toggle"><input type="checkbox" id="t-ipv4" checked><span class="sw"></span> Public IPv4 <span class="price-tag">+€1.50</span></label>
+                <label class="toggle"><input type="checkbox" id="t-backup"><span class="sw"></span> Daily snapshots <span class="price-tag">+10%</span></label>
+              </div>
+            </div>
+
+            <div class="panel" data-panel="bare" hidden>
+              <div class="ctl">
+                <div class="ctl__top"><span class="ctl__label">Machine</span><span class="ctl__val" id="v-plan">8c / 32 GB</span></div>
+                <select class="select" id="bare-plan">
+                  <option value="0">8 cores · 32 GB · 1 TB NVMe · €89/mo</option>
+                  <option value="1">16 cores · 64 GB · 2 TB NVMe · €159/mo</option>
+                  <option value="2">24 cores · 96 GB · 4 TB NVMe · €239/mo</option>
+                </select>
+              </div>
+              <div class="ctl">
+                <div class="region-row">
+                  <label class="ctl__label" for="region2">Location</label>
+                  <span class="latency" id="v-lat2">12 ms to Berlin</span>
+                </div>
+                <select class="select" id="region2" aria-label="Dedicated location">
+                  <option value="ams">Amsterdam, NL · AMS1</option>
+                  <option value="fra">Frankfurt, DE · FRA2</option>
+                  <option value="hel">Helsinki, FI · HEL1</option>
+                  <option value="ash">Ashburn, US · IAD1</option>
+                </select>
+              </div>
+              <p class="price-note" style="margin-top:16px">Dedicated machines are provisioned by hand — usually within two hours. <strong>Two IP addresses included.</strong> No setup fee until the end of March.</p>
+            </div>
+
+            <div class="panel" data-panel="store" hidden>
+              <div class="ctl">
+                <div class="ctl__top"><span class="ctl__label">Storage</span><span class="ctl__val" id="v-store">500 <small>GB</small></span></div>
+                <input class="slider" id="s-store" type="range" min="500" max="20000" step="500" value="500" aria-label="Storage size in gigabytes">
+                <div class="ticks"><span>500 GB</span><span>20 TB</span></div>
+              </div>
+              <div class="ctl">
+                <div class="ctl__top"><span class="ctl__label">Class</span><span class="ctl__val" id="v-class">Standard</span></div>
+                <select class="select" id="store-class">
+                  <option value="std">Standard · €0.012 / GB / mo</option>
+                  <option value="ia">Infrequent access · €0.007 / GB / mo</option>
+                  <option value="glacier">Cold archive · €0.003 / GB / mo</option>
+                </select>
+              </div>
+              <p class="price-note" style="margin-top:16px">S3-compatible. Ingress is free; egress is €0.008 / GB after the first 100 GB each month. Buckets are private by default.</p>
+            </div>
+          </div>
+
+          <div class="config__price">
+            <div>
+              <div class="price-total"><b id="total">€14.30</b><span>per month</span></div>
+              <div class="price-hourly mono" id="hourly">€0.0196 / hour</div>
+            </div>
+            <div class="breakdown" id="breakdown"></div>
+            <p class="price-note" id="price-note">Billed monthly · <strong>cancel anytime</strong> · no setup fee</p>
+            <button class="btn btn--primary" type="button" id="deploy-btn">Deploy in 55s</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="pricing">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Plans, if you would rather not think</h2>
+          <p>Same platform, same network. Pick a size and we set the configurator for you.</p>
+        </div>
+      </div>
+      <div class="plans">
+        <div class="plan">
+          <h3>Starter</h3>
+          <div class="amount">€4.50 <span>/mo</span></div>
+          <ul>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 1 vCPU · 2 GB RAM</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 25 GB NVMe</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 1 TB transfer</li>
+          </ul>
+          <button class="btn btn--sm" type="button" data-plan="1,2,25" data-price="4.5">Configure</button>
+        </div>
+        <div class="plan plan--hero">
+          <h3>Growth <span class="tagpill">most chosen</span></h3>
+          <div class="amount">€9.00 <span>/mo</span></div>
+          <ul>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 2 vCPU · 4 GB RAM</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 50 GB NVMe</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 2 TB transfer</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> daily snapshots</li>
+          </ul>
+          <button class="btn btn--sm btn--primary" type="button" data-plan="2,4,50" data-price="9">Configure</button>
+        </div>
+        <div class="plan">
+          <h3>Scale</h3>
+          <div class="amount">€18.00 <span>/mo</span></div>
+          <ul>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 4 vCPU · 8 GB RAM</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 80 GB NVMe</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 4 TB transfer</li>
+          </ul>
+          <button class="btn btn--sm" type="button" data-plan="4,8,80" data-price="18">Configure</button>
+        </div>
+        <div class="plan">
+          <h3>Max</h3>
+          <div class="amount">€36.00 <span>/mo</span></div>
+          <ul>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 8 vCPU · 16 GB RAM</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 160 GB NVMe</li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg> 8 TB transfer</li>
+          </ul>
+          <button class="btn btn--sm" type="button" data-plan="8,16,160" data-price="36">Configure</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="network">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Fourteen regions, one flat network</h2>
+          <p>Traffic between our regions is free, private and routed over our own backbone. Click a marker to see the round trip from Berlin.</p>
+        </div>
+      </div>
+      <div class="net">
+        <div class="net__map">
+          <svg viewBox="0 0 760 340" role="img" aria-label="Basalt Cloud regions on a simplified world map">
+            <defs>
+              <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#111820"/><stop offset="1" stop-color="#0e1318"/>
+              </linearGradient>
+            </defs>
+            <rect width="760" height="340" fill="url(#sea)"/>
+            <g fill="none" stroke="#202932" stroke-width="1">
+              <path d="M0 86h760M0 172h760M0 258h760M126 0v340M253 0v340M380 0v340M507 0v340M634 0v340"/>
+            </g>
+            <g fill="#1d262f" stroke="#2b3541" stroke-width="1">
+              <path d="M96 78l52-16 46 10 22 22-14 26-34 8-26-6-22-18z"/>
+              <path d="M150 128l30 10 14 30-10 46-20 26-14-12 6-32-16-30z"/>
+              <path d="M292 60l40-14 58 6 30 22-8 26-40 10-42-4-34-20z"/>
+              <path d="M300 118l44 8 18 34-16 44-30 22-22-20 8-42z"/>
+              <path d="M404 70l56-8 52 18 22 28-18 24-48 6-46-16-24-26z"/>
+              <path d="M470 148l42 8 18 30-22 26-36-6-14-28z"/>
+              <path d="M598 92l54 8 22 26-14 24-40 4-28-18z"/>
+              <path d="M632 176l34 8 12 22-18 16-30-6z"/>
+              <path d="M512 230l54-6 30 18-14 22-46 6-26-14z"/>
+            </g>
+            <g class="pins">
+              <g class="pin" data-region="ams" tabindex="0" role="button" aria-pressed="true" aria-label="Amsterdam, Netherlands">
+                <circle class="ring" cx="352" cy="92" r="14"/><circle class="core" cx="352" cy="92" r="4.6"/>
+                <text x="372" y="96">AMS</text>
+              </g>
+              <g class="pin" data-region="fra" tabindex="0" role="button" aria-pressed="false" aria-label="Frankfurt, Germany">
+                <circle class="ring" cx="368" cy="104" r="13"/><circle class="core" cx="368" cy="104" r="4.2"/>
+                <text x="386" y="109">FRA</text>
+              </g>
+              <g class="pin" data-region="hel" tabindex="0" role="button" aria-pressed="false" aria-label="Helsinki, Finland">
+                <circle class="ring" cx="404" cy="62" r="13"/><circle class="core" cx="404" cy="62" r="4.2"/>
+                <text x="422" y="67">HEL</text>
+              </g>
+              <g class="pin" data-region="ash" tabindex="0" role="button" aria-pressed="false" aria-label="Ashburn, United States">
+                <circle class="ring" cx="196" cy="120" r="14"/><circle class="core" cx="196" cy="120" r="4.6"/>
+                <text x="216" y="125">IAD</text>
+              </g>
+              <g class="pin" data-region="sgp" tabindex="0" role="button" aria-pressed="false" aria-label="Singapore">
+                <circle class="ring" cx="660" cy="196" r="14"/><circle class="core" cx="660" cy="196" r="4.6"/>
+                <text x="608" y="181">SIN</text>
+              </g>
+            </g>
+          </svg>
+          <div class="map-foot">
+            <span><b>14</b> regions total</span>
+            <span><b>free</b> inter-region traffic</span>
+            <span><b>25 Tbps</b> backbone</span>
+            <span><b>1.2 Tbps</b> scrub capacity</span>
+          </div>
+        </div>
+        <div class="net__side">
+          <h3><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> <span id="net-name">Amsterdam, NL</span></h3>
+          <div class="kv"><span>Round trip from Berlin</span><b id="net-lat">12 ms</b></div>
+          <div class="kv"><span>Peering</span><b>AMS-IX · 2×100G</b></div>
+          <div class="kv"><span>Availability zone</span><b>AMS1-a, AMS1-b</b></div>
+          <div class="kv"><span>Price factor</span><b id="net-mult">1.00×</b></div>
+          <p id="net-note">Our original region. Two independent power feeds, NVMe-only hosts, and the shortest path to most of western Europe.</p>
+          <button class="btn btn--sm" type="button" data-toast="Latency probes run from our Berlin looking glass — allow ICMP to see them">Run latency test</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="status">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Status</h2>
+          <p>Last 90 days. Incidents are published within fifteen minutes, including the boring ones.</p>
+        </div>
+      </div>
+      <div class="status-card">
+        <div style="display:flex; align-items:center; gap:10px; font-size:14px">
+          <span class="dot" aria-hidden="true"></span> All systems operational
+          <span class="latency" style="margin-left:auto">updated 4 minutes ago</span>
+        </div>
+        <div class="status-bars" id="status-bars" role="img" aria-label="Uptime for the last 90 days, two degraded days"></div>
+        <div class="status-legend">
+          <span><em></em> operational</span>
+          <span><em class="warn"></em> degraded</span>
+          <span>90 days · 99.99% uptime</span>
+        </div>
+        <p class="status-note"><b>Oct 12</b> — one host in FRA2 lost NVMe for 14 minutes. Affected instances were migrated automatically; two needed a reboot. Post-mortem published the same day.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>What you actually get</h2>
+          <p>Boring infrastructure, documented. Nothing here is a beta feature behind a waitlist.</p>
+        </div>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="ico"><svg class="icon icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 4.4-3.4 8.2-8 9-4.6-.8-8-4.6-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Anti-DDoS, always on</h3>
+          <p>Volumetric scrubbing at every edge, up to 1.2 Tbps. No toggle, no extra line on the invoice.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg class="icon icon-lg" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 5v14M16 5v14"/></svg></div>
+          <h3>Snapshots in 20 seconds</h3>
+          <p>Consistent images while the machine runs, kept for seven days on every plan. Restore is one API call.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg class="icon icon-lg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="19" cy="15" r="2"/><path d="M7 16.5l4-8.4M13.4 7.4l4.2 6.2"/></svg></div>
+          <h3>Private networking</h3>
+          <p>Free VPC between your instances and regions. No NAT gateway to rent, no traffic charges inside the VPC.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg class="icon icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg></div>
+          <h3>Real API and CLI</h3>
+          <p>One endpoint per object, tokens scoped per project. The CLI is a single binary; the docs fit on two pages.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg class="icon icon-lg" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 14v5M14 16.5h5"/></svg></div>
+          <h3>Terraform provider</h3>
+          <p>Official provider, kept in step with the API. Import existing machines instead of recreating them.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg class="icon icon-lg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.4 2.5 13.6 0 16M12 4c-2.5 2.4-2.5 13.6 0 16"/></svg></div>
+          <h3>IPv6 by default</h3>
+          <p>Every instance gets a /64 at boot. No extra charge, no config, no “IPv6 coming soon” slide.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head"><div><h2>Two people who moved their work here</h2></div></div>
+      <div class="quotes">
+        <div class="quote">
+          <p>“We ran the numbers: the same six machines cost us 40% less here, and the egress line finally stopped being a monthly surprise. Support answered in eleven minutes at 2 a.m. on a Sunday.”</p>
+          <footer><span class="who">TM</span><span><strong>Tomás Meireles</strong>infrastructure lead, twelve-person SaaS</span></footer>
+        </div>
+        <div class="quote">
+          <p>“I deploy one instance per client and forget about it. The API is small enough to wrap in an afternoon, and nothing has ever needed a rescue reboot. That is the whole review.”</p>
+          <footer><span class="who">AK</span><span><strong>Anja Keller</strong>freelance backend developer</span></footer>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head"><div><h2>Questions we get every week</h2></div></div>
+      <div class="faq" id="faq">
+        <div class="faq__item" data-open="true">
+          <button class="faq__q" type="button" aria-expanded="true">How long does provisioning actually take?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq__a">Median 55 seconds from API call to SSH banner, measured over the last quarter. Busy hours push it to about two minutes; dedicated machines are placed by hand within two hours.</div>
+        </div>
+        <div class="faq__item" data-open="false">
+          <button class="faq__q" type="button" aria-expanded="false">What happens if I go over the transfer allowance?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq__a" hidden>Nothing dramatic: the next 1 TB is billed at €0.004 / GB and we email you before it starts. Traffic between your own instances is never billed.</div>
+        </div>
+        <div class="faq__item" data-open="false">
+          <button class="faq__q" type="button" aria-expanded="false">Do you allow tor relays, crawlers, game servers?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq__a" hidden>Yes, all three, as long as abuse complaints do not stack up. What we do not allow is outbound scanning and anything that turns into a spam source — that gets an instance suspended in minutes, not weeks.</div>
+        </div>
+        <div class="faq__item" data-open="false">
+          <button class="faq__q" type="button" aria-expanded="false">Can I bring my own ISO?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq__a" hidden>On dedicated machines, yes, through IPMI. On cloud VPS the boot set is Debian, Ubuntu, Alpine, Rocky and Windows Server; custom images can be uploaded as qcow2 up to 40 GB.</div>
+        </div>
+        <div class="faq__item" data-open="false">
+          <button class="faq__q" type="button" aria-expanded="false">Where is the company and who holds the data?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq__a" hidden>Basalt Cloud B.V., registered in Amsterdam. EU instances stay in the EU; US instances stay in Ashburn. Backups never leave the region they were taken in unless you ask.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Fifty-five seconds from here to a shell</h2>
+          <p>Pick a size, pick a region. The first invoice arrives a month later, and it is the number you saw.</p>
+        </div>
+        <button class="btn btn--primary" type="button" id="cta-deploy">Deploy a server</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="footer__in">
+    <div>
+      <a class="brand" href="#top" style="margin-bottom:10px">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f1216"/><path d="M16 6l9 5.5v9L16 26l-9-5.5v-9z" fill="none" stroke="#35e0c8" stroke-width="2.4" stroke-linejoin="round"/></svg>
+        <span>Basalt Cloud</span>
+      </a>
+      <p>Small European cloud. Fifteen people, fourteen regions, no sales department.</p>
+      <p class="mono" style="font-size:12px">Keizersgracht 241 · 1016 EA Amsterdam</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#products">Cloud VPS</a></li>
+        <li><a href="#products">Dedicated</a></li>
+        <li><a href="#products">Object storage</a></li>
+        <li><a href="#network">Network</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Resources</h4>
+      <ul>
+        <li><a href="#" data-toast="Documentation is emailed with your first invoice">Documentation</a></li>
+        <li><a href="#" data-toast="API reference needs a project token">API reference</a></li>
+        <li><a href="#status">Status</a></li>
+        <li><a href="#" data-toast="Changelog goes out to customers every second Tuesday">Changelog</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#" data-toast="Fifteen people: six in Amsterdam, the rest remote">About</a></li>
+        <li><a href="#" data-toast="Terms are attached to the first invoice">Terms</a></li>
+        <li><a href="#" data-toast="Data protection questions: dpo@basalt.example">Privacy</a></li>
+        <li><a href="#" data-toast="Two open roles — network engineer and support">Jobs (2)</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer__bottom">
+    <span>© 2026 Basalt Cloud B.V. · all prices exclude VAT</span>
+    <span class="mono">status.basalt.example · abuse@basalt.example</span>
+  </div>
+</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+  <div class="modal__box">
+    <div class="modal__head">
+      <h2 id="modal-title">Deploy a server</h2>
+      <button type="button" data-close aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal__body" id="modal-body"></div>
+    <div class="modal__foot" id="modal-foot"></div>
+  </div>
 </div>
-<div class="hero">
-  <h1>Серверы, которые не мешают работать</h1>
-  <p>KVM, локальный диск NVMe, честный канал. Поднимается за минуту,
-     оплата по часам.</p>
-  <div class="row"><a class="btn" href="#">Поднять сервер</a><a class="btn ghost" href="#">Тарифы</a></div>
-</div>
-<div class="plans">
-  <div class="plan"><div class="n">Start</div><div class="p">390 ₽<span>/мес</span></div><ul><li>1 vCPU</li><li>1 ГБ RAM</li><li>20 ГБ NVMe</li></ul></div>
-  <div class="plan hot"><div class="n">Work</div><div class="p">890 ₽<span>/мес</span></div><ul><li>2 vCPU</li><li>4 ГБ RAM</li><li>60 ГБ NVMe</li></ul></div>
-  <div class="plan"><div class="n">Scale</div><div class="p">1 790 ₽<span>/мес</span></div><ul><li>4 vCPU</li><li>8 ГБ RAM</li><li>120 ГБ NVMe</li></ul></div>
-</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<noscript><p style="max-width:640px;margin:24px auto;padding:0 20px;color:#93a0ae">The configurator needs JavaScript. Prices from the plans table are still valid — write to sales@basalt.example and a human will provision it.</p></noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  var REGIONS = {
+    ams: { name: 'Amsterdam, NL', lat: 12, mult: 1.00, note: 'Our original region. Two independent power feeds, NVMe-only hosts, and the shortest path to most of western Europe.', peering: 'AMS-IX · 2×100G', az: 'AMS1-a, AMS1-b', ip: '203.0.113.42' },
+    fra: { name: 'Frankfurt, DE', lat: 18, mult: 1.05, note: 'The busiest region. Direct peering with DE-CIX and four transit providers, useful when AMS maintenance windows bite.', peering: 'DE-CIX · 2×100G', az: 'FRA2-a, FRA2-c', ip: '198.51.100.17' },
+    hel: { name: 'Helsinki, FI', lat: 31, mult: 0.95, note: 'Cheapest power in the network, so the cheapest machines. Good for batch work and anything that does not need low latency to Berlin.', peering: 'FICIX · 1×100G', az: 'HEL1-a', ip: '192.0.2.88' },
+    ash: { name: 'Ashburn, US', lat: 96, mult: 1.08, note: 'US east coast, inside the Equinix campus. Cross-region traffic to AMS rides our own backbone and is not billed.', peering: 'Equinix IX · 1×100G', az: 'IAD1-a, IAD1-b', ip: '203.0.113.201' },
+    sgp: { name: 'Singapore, SG', lat: 174, mult: 1.12, note: 'Asia-Pacific entry point. Slightly higher price because of rack costs, same hardware and same flat egress rules.', peering: 'SGIX · 1×100G', az: 'SIN1-a', ip: '198.51.100.240' }
+  };
+
+  var BARE = [
+    { label: '8 cores · 32 GB · 1 TB NVMe', price: 89 },
+    { label: '16 cores · 64 GB · 2 TB NVMe', price: 159 },
+    { label: '24 cores · 96 GB · 4 TB NVMe', price: 239 }
+  ];
+
+  var CLASS = {
+    std: { label: 'Standard', rate: 0.012 },
+    ia: { label: 'Infrequent access', rate: 0.007 },
+    glacier: { label: 'Cold archive', rate: 0.003 }
+  };
+
+  var state = {
+    tab: 'vps', vcpu: 2, ram: 4, disk: 50,
+    ipv4: true, backup: false,
+    region: 'ams', barePlan: 0, region2: 'ams',
+    store: 500, storeClass: 'std',
+    plan: null
+  };
+
+  var euro = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function price() {
+    var lines = [];
+    var total = 0;
+    if (state.tab === 'vps') {
+      var planMatch = state.plan && state.plan.vcpu === state.vcpu && state.plan.ram === state.ram && state.plan.disk === state.disk;
+      if (planMatch) {
+        var planTotal = state.plan.price * REGIONS[state.region].mult;
+        lines.push(['Plan price · ' + state.vcpu + ' vCPU / ' + state.ram + ' GB / ' + state.disk + ' GB', planTotal]);
+        total = planTotal;
+        return { total: total, hourly: total / 730, lines: lines };
+      }
+      var base = 3.20;
+      var cpu = state.vcpu * 1.10;
+      var ram = state.ram * 0.55;
+      var disk = state.disk * 0.03;
+      lines.push(['Base instance', base]);
+      lines.push([state.vcpu + ' vCPU', cpu]);
+      lines.push([state.ram + ' GB memory', ram]);
+      lines.push([state.disk + ' GB NVMe', disk]);
+      total = base + cpu + ram + disk;
+      if (state.ipv4) { lines.push(['Public IPv4', 1.50]); total += 1.50; }
+      if (state.backup) { lines.push(['Daily snapshots', total * 0.10]); total *= 1.10; }
+      total *= REGIONS[state.region].mult;
+    } else if (state.tab === 'bare') {
+      var plan = BARE[state.barePlan];
+      lines.push([plan.label, plan.price]);
+      total = plan.price * REGIONS[state.region2].mult;
+    } else {
+      var rate = CLASS[state.storeClass].rate;
+      lines.push([state.store + ' GB · ' + CLASS[state.storeClass].label, state.store * rate]);
+      total = state.store * rate;
+    }
+    return { total: total, hourly: total / 730, lines: lines };
+  }
+
+  function renderPrice() {
+    var p = price();
+    document.getElementById('total').textContent = euro.format(p.total);
+    document.getElementById('hourly').textContent = '€' + p.hourly.toFixed(4) + ' / hour';
+    document.getElementById('breakdown').innerHTML = p.lines.map(function (line) {
+      return '<div><span>' + line[0] + '</span><b>' + euro.format(line[1]) + '</b></div>';
+    }).join('') + '<div class="sum"><span>Total per month</span><b>' + euro.format(p.total) + '</b></div>';
+    var note = document.getElementById('price-note');
+    if (state.tab === 'store') {
+      note.innerHTML = 'Billed monthly · <strong>egress €0.008/GB</strong> after 100 GB free';
+    } else if (state.tab === 'bare') {
+      note.innerHTML = 'Billed monthly · <strong>no setup fee</strong> · hand-provisioned';
+    } else if (state.plan && state.plan.vcpu === state.vcpu && state.plan.ram === state.ram && state.plan.disk === state.disk) {
+      note.innerHTML = 'Plan price · <strong>locked</strong> until you move a slider';
+    } else {
+      note.innerHTML = 'Billed monthly · <strong>cancel anytime</strong> · no setup fee';
+    }
+  }
+
+  function syncLabels() {
+    document.getElementById('v-vcpu').innerHTML = state.vcpu + ' <small>cores</small>';
+    document.getElementById('v-ram').innerHTML = state.ram + ' <small>GB</small>';
+    document.getElementById('v-disk').innerHTML = state.disk + ' <small>GB</small>';
+    document.getElementById('v-store').innerHTML = state.store + ' <small>GB</small>';
+    document.getElementById('v-class').textContent = CLASS[state.storeClass].label;
+    document.getElementById('v-plan').textContent = BARE[state.barePlan].label.split(' · ').slice(0, 2).join(' / ');
+    document.getElementById('v-lat').textContent = REGIONS[state.region].lat + ' ms to Berlin';
+    document.getElementById('v-lat2').textContent = REGIONS[state.region2].lat + ' ms to Berlin';
+  }
+
+  function fillSlider(el) {
+    var min = Number(el.min), max = Number(el.max), val = Number(el.value);
+    var pct = ((val - min) / (max - min)) * 100;
+    el.style.setProperty('--fill', pct.toFixed(1) + '%');
+  }
+
+  function syncSliders() {
+    ['s-vcpu', 's-ram', 's-disk', 's-store'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) fillSlider(el);
+    });
+  }
+
+  function setTab(tab) {
+    state.tab = tab;
+    var tabs = document.querySelectorAll('[data-tab]');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].setAttribute('aria-selected', String(tabs[i].getAttribute('data-tab') === tab));
+    }
+    var panels = document.querySelectorAll('[data-panel]');
+    for (var j = 0; j < panels.length; j++) {
+      if (panels[j].getAttribute('data-panel') === tab) panels[j].hidden = false;
+      else panels[j].hidden = true;
+    }
+    renderPrice();
+  }
+
+  function setRegion(region, which) {
+    var key = which === 'region2' ? 'region2' : 'region';
+    state[key] = region;
+    var select = document.getElementById(key);
+    if (select) select.value = region;
+    // map and side panel follow the Cloud VPS region at all times
+    var active = state.region;
+    renderMap(active);
+    renderMapPanel(active);
+    syncLabels();
+    renderPrice();
+  }
+
+  function renderMap(active) {
+    var pins = document.querySelectorAll('.pin');
+    for (var i = 0; i < pins.length; i++) {
+      pins[i].setAttribute('aria-pressed', String(pins[i].getAttribute('data-region') === active));
+    }
+  }
+
+  function renderMapPanel(region) {
+    var r = REGIONS[region];
+    if (!r) return;
+    document.getElementById('net-name').textContent = r.name;
+    document.getElementById('net-lat').textContent = r.lat + ' ms';
+    document.getElementById('net-mult').textContent = r.mult.toFixed(2) + '×';
+    document.getElementById('net-note').textContent = r.note;
+    var kvs = document.querySelectorAll('.net__side .kv');
+    if (kvs[1]) kvs[1].innerHTML = '<span>Peering</span><b>' + r.peering + '</b>';
+    if (kvs[2]) kvs[2].innerHTML = '<span>Availability zone</span><b>' + r.az + '</b>';
+  }
+
+  /* ---------- deploy modal ---------- */
+  var modal = document.getElementById('modal');
+  var modalBody = document.getElementById('modal-body');
+  var modalFoot = document.getElementById('modal-foot');
+  var toasts = document.getElementById('toasts');
+  var deployState = { running: false, done: false };
+
+  function toast(text) {
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg><span>' + text + '</span>';
+    toasts.appendChild(el);
+    setTimeout(function () { el.remove(); }, 3200);
+  }
+
+  function summaryRows() {
+    var p = price();
+    var rows = [];
+    if (state.tab === 'vps') {
+      var r = REGIONS[state.region];
+      rows.push(['Product', 'Cloud VPS']);
+      rows.push(['Region', r.name]);
+      rows.push(['Shape', state.vcpu + ' vCPU · ' + state.ram + ' GB RAM · ' + state.disk + ' GB NVMe']);
+      rows.push(['Public IPv4', state.ipv4 ? 'included' : 'IPv6 only']);
+      rows.push(['Daily snapshots', state.backup ? 'on' : 'off']);
+      rows.push(['Price', euro.format(p.total) + ' / month']);
+    } else if (state.tab === 'bare') {
+      rows.push(['Product', 'Dedicated machine']);
+      rows.push(['Region', REGIONS[state.region2].name]);
+      rows.push(['Shape', BARE[state.barePlan].label]);
+      rows.push(['Price', euro.format(p.total) + ' / month']);
+    } else {
+      rows.push(['Product', 'Object storage']);
+      rows.push(['Size', state.store + ' GB']);
+      rows.push(['Class', CLASS[state.storeClass].label]);
+      rows.push(['Price', euro.format(p.total) + ' / month']);
+    }
+    return rows;
+  }
+
+  function openModal() {
+    deployState.running = false;
+    deployState.done = false;
+    modalBody.innerHTML = '<div class="summary">' + summaryRows().map(function (row) {
+      return '<div><span>' + row[0] + '</span><b>' + row[1] + '</b></div>';
+    }).join('') + '</div><p class="price-note">Provisioning takes about a minute. Billing starts the moment the machine boots.</p>';
+    modalFoot.innerHTML = '<button class="btn" type="button" data-close>Cancel</button>' +
+      '<button class="btn btn--primary" type="button" id="confirm-deploy">Deploy server</button>';
+    modal.hidden = false;
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    var btn = document.getElementById('confirm-deploy');
+    if (btn) btn.focus();
+  }
+
+  function closeModal() {
+    modal.classList.remove('is-open');
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function runDeploy() {
+    if (deployState.running) return;
+    deployState.running = true;
+    var steps = [
+      'Verifying project quota',
+      'Allocating NVMe on ' + (state.tab === 'bare' ? REGIONS[state.region2] : REGIONS[state.region]).name,
+      'Booting image and installing keys'
+    ];
+    modalBody.innerHTML = '<ul class="steps" id="steps">' + steps.map(function (s, i) {
+      return '<li class="step" data-step="' + i + '" data-state="' + (i === 0 ? 'run' : 'wait') + '"><span class="bul">' + (i + 1) + '</span><span>' + s + '</span></li>';
+    }).join('') + '</ul><p class="price-note" style="margin-top:16px">Usually 55 seconds. Keep this window open.</p>';
+    modalFoot.innerHTML = '<button class="btn" type="button" data-close>Hide</button>';
+
+    var order = [0, 1, 2];
+    var delay = 650;
+    order.forEach(function (index) {
+      setTimeout(function () {
+        var el = document.querySelector('[data-step="' + index + '"]');
+        if (!el) return;
+        el.setAttribute('data-state', 'done');
+        el.querySelector('.bul').innerHTML = '&#10003;';
+        var next = document.querySelector('[data-step="' + (index + 1) + '"]');
+        if (next) next.setAttribute('data-state', 'run');
+      }, delay * (index + 1));
+    });
+
+    setTimeout(finishDeploy, delay * 3 + 500);
+  }
+
+  function finishDeploy() {
+    if (deployState.done) return;
+    deployState.done = true;
+    var region = REGIONS[state.tab === 'bare' ? state.region2 : state.region];
+    var name = 'basalt-' + Math.floor(Math.random() * 900 + 100);
+    var ip = region.ip;
+    modalBody.innerHTML = '<div class="deploy-done"><b>' + name + ' · ' + ip + '</b>' +
+      'Provisioned in 58 seconds in ' + region.name + '. Root password and SSH key are in the project dashboard; the instance is reachable on port 22 already.</div>' +
+      '<ul class="steps" style="margin-top:16px">' +
+      '<li class="step" data-state="done"><span class="bul">&#10003;</span><span>Image written</span></li>' +
+      '<li class="step" data-state="done"><span class="bul">&#10003;</span><span>Network configured (IPv4 + /64)</span></li>' +
+      '<li class="step" data-state="done"><span class="bul">&#10003;</span><span>SSH ready on ' + ip + ':22</span></li>' +
+      '</ul>';
+    modalFoot.innerHTML = '<button class="btn" type="button" data-toast="Credentials are emailed to the billing address">Copy credentials</button>' +
+      '<button class="btn btn--primary" type="button" data-close>Done</button>';
+    toast(name + ' is online');
+  }
+
+  /* ---------- wiring ---------- */
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    var tab = t.closest ? t.closest('[data-tab]') : null;
+    if (tab) { setTab(tab.getAttribute('data-tab')); return; }
+
+    var plan = t.closest ? t.closest('[data-plan]') : null;
+    if (plan) {
+      var parts = plan.getAttribute('data-plan').split(',');
+      state.vcpu = Number(parts[0]);
+      state.ram = Number(parts[1]);
+      state.disk = Number(parts[2]);
+      state.plan = { vcpu: state.vcpu, ram: state.ram, disk: state.disk, price: Number(plan.getAttribute('data-price')) || 0 };
+      document.getElementById('s-vcpu').value = state.vcpu;
+      document.getElementById('s-ram').value = state.ram;
+      document.getElementById('s-disk').value = state.disk;
+      setTab('vps');
+      syncSliders();
+      syncLabels();
+      renderPrice();
+      document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast('Configurator set to ' + state.vcpu + ' vCPU / ' + state.ram + ' GB at the plan price');
+      return;
+    }
+
+    var pin = t.closest ? t.closest('.pin') : null;
+    if (pin) {
+      setRegion(pin.getAttribute('data-region'), 'region');
+      return;
+    }
+
+    var toaster = t.closest ? t.closest('[data-toast]') : null;
+    if (toaster) {
+      ev.preventDefault();
+      toast(toaster.getAttribute('data-toast'));
+      return;
+    }
+
+    var closeBtn = t.closest ? t.closest('[data-close]') : null;
+    if (closeBtn) { ev.preventDefault(); closeModal(); return; }
+
+    if (t.id === 'confirm-deploy') { ev.preventDefault(); runDeploy(); return; }
+
+    var deployTrigger = t.closest ? t.closest('#deploy-btn, #hero-deploy, #go-deploy, #go-deploy-m, #cta-deploy') : null;
+    if (deployTrigger) { ev.preventDefault(); closeMobile(); openModal(); return; }
+
+    if (t === modal) { closeModal(); return; }
+    if (!t.closest || !t.closest('#mobile-nav') && !t.closest('#burger')) closeMobile();
+  });
+
+  document.getElementById('s-vcpu').addEventListener('input', function (e) {
+    state.vcpu = Number(e.target.value); state.plan = null; fillSlider(e.target); syncLabels(); renderPrice();
+  });
+  document.getElementById('s-ram').addEventListener('input', function (e) {
+    state.ram = Number(e.target.value); state.plan = null; fillSlider(e.target); syncLabels(); renderPrice();
+  });
+  document.getElementById('s-disk').addEventListener('input', function (e) {
+    state.disk = Number(e.target.value); state.plan = null; fillSlider(e.target); syncLabels(); renderPrice();
+  });
+  document.getElementById('s-store').addEventListener('input', function (e) {
+    state.store = Number(e.target.value); fillSlider(e.target); syncLabels(); renderPrice();
+  });
+  document.getElementById('t-ipv4').addEventListener('change', function (e) {
+    state.ipv4 = e.target.checked; state.plan = null; renderPrice();
+  });
+  document.getElementById('t-backup').addEventListener('change', function (e) {
+    state.backup = e.target.checked; state.plan = null; renderPrice();
+  });
+  document.getElementById('region').addEventListener('change', function (e) { setRegion(e.target.value, 'region'); });
+  document.getElementById('region2').addEventListener('change', function (e) { setRegion(e.target.value, 'region2'); });
+  document.getElementById('bare-plan').addEventListener('change', function (e) { state.barePlan = Number(e.target.value); syncLabels(); renderPrice(); });
+  document.getElementById('store-class').addEventListener('change', function (e) { state.storeClass = e.target.value; syncLabels(); renderPrice(); });
+
+  document.getElementById('faq').addEventListener('click', function (ev) {
+    var q = ev.target.closest('.faq__q');
+    if (!q) return;
+    var item = q.closest('.faq__item');
+    var open = item.getAttribute('data-open') === 'true';
+    item.setAttribute('data-open', String(!open));
+    q.setAttribute('aria-expanded', String(!open));
+    var panel = item.querySelector('.faq__a');
+    if (panel) panel.hidden = open;
+  });
+
+  var burger = document.getElementById('burger');
+  var mobileNav = document.getElementById('mobile-nav');
+  function closeMobile() {
+    mobileNav.hidden = true;
+    burger.setAttribute('aria-expanded', 'false');
+  }
+  burger.addEventListener('click', function (ev) {
+    ev.stopPropagation();
+    var open = mobileNav.hidden;
+    mobileNav.hidden = !open;
+    burger.setAttribute('aria-expanded', String(open));
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') {
+      if (!modal.hidden) closeModal();
+      closeMobile();
+    }
+    var pin = document.activeElement;
+    if (pin && pin.classList && pin.classList.contains('pin') && (ev.key === 'Enter' || ev.key === ' ')) {
+      ev.preventDefault();
+      setRegion(pin.getAttribute('data-region'), 'region');
+    }
+  });
+
+  /* status bars */
+  var bars = document.getElementById('status-bars');
+  var html = '';
+  for (var i = 0; i < 90; i++) {
+    var cls = '';
+    if (i === 76 || i === 77) cls = 'warn';
+    if (i === 45) cls = '';
+    html += '<i class="' + cls + '" title="Day ' + (i + 1) + ': ' + (cls ? 'degraded 14 min' : 'operational') + '"></i>';
+  }
+  bars.innerHTML = html;
+
+  setTab('vps');
+  syncSliders();
+  syncLabels();
+  renderPrice();
+  renderMapPanel('ams');
+})();
+</script>
 </body>
 </html>

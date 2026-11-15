@@ -52,8 +52,8 @@ load_templates() { # список сайтов из templates/manifest.tsv
     rm -f "$tmp"
     if [ "${#TEMPLATE_KEYS[@]}" -eq 0 ]; then
         warn "не удалось получить список шаблонов (нет сети?)"
-        TEMPLATE_KEYS=(landing)
-        TEMPLATE_DESCS=("лендинг — визитка небольшой компании")
+        TEMPLATE_KEYS=(shop)
+        TEMPLATE_DESCS=("магазин керамики — каталог, фильтры, корзина")
     fi
 }
 
@@ -291,7 +291,7 @@ show_status() {
     say "  ${C_BLD}Порты:${C_OFF}"
     say "    панель: ${PANEL_IP:-—}   порт ноды: ${NODE_PORT:-—} (только с IP панели)"
     if [ "$USE_SELFSTEAL" = "yes" ]; then
-        say "    selfsteal: ${DOMAIN:-—} (80/443 → 127.0.0.1:${SELFSTEAL_PORT:-9443}), шаблон: ${TEMPLATE:-landing}"
+        say "    selfsteal: ${DOMAIN:-—} (80/443 → 127.0.0.1:${SELFSTEAL_PORT:-9443}), шаблон: ${TEMPLATE:-shop}"
     else
         say "    selfsteal: выключен"
     fi
@@ -383,10 +383,12 @@ change_preset() {
         pause; return
     fi
     load_templates
-    local i choice key tmp
+    local i choice key tmp cur
     say "  ${C_BLD}Доступные сайты (введите номер):${C_OFF}"
     for i in "${!TEMPLATE_KEYS[@]}"; do
-        printf "    %2d) %-12s — %s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}"
+        cur=""
+        [ "${TEMPLATE_KEYS[$i]}" = "${TEMPLATE:-}" ] && cur=" ${C_DIM}← стоит сейчас${C_OFF}"
+        printf "    %2d) %-12s — %s%s\n" "$((i+1))" "${TEMPLATE_KEYS[$i]}" "${TEMPLATE_DESCS[$i]}" "$cur"
     done
     say ""
     read -r -p "$(echo -e "${C_BLD}Выбор [1-${#TEMPLATE_KEYS[@]}, Enter — отмена]${C_OFF}: ")" choice || true

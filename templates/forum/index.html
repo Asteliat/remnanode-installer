@@ -3,103 +3,1334 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lattice — Community forum</title>
+<title>Tinker — a forum for people who build and repair things</title>
+<meta name="description" content="Tinker is a small, friendly forum about electronics repair, machining, 3D printing and keeping old hardware alive. 2,148 members, 9,400 threads.">
+<meta name="theme-color" content="#6d5efc">
+<meta property="og:title" content="Tinker — a forum for people who build and repair things">
+<meta property="og:description" content="Repair threads, tool advice and projects that actually got finished. 2,148 builders.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tinker">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236d5efc'/%3E%3Cpath d='M9 22l7-12 7 12M12 17h8' stroke='%23fff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
-  :root { color-scheme: light dark; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:#f5f6f8; color:#191c21;
-         font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
-  @media (prefers-color-scheme: dark) {
-    body { background:#0e1116; color:#d5d9e0; }
-    .top, .card, .thread, .cat { background:#141a21 !important; border-color:#202833 !important; }
-    .crumb a { color:#8ab4ff; }
+  :root{
+    --bg:#f7f7fb; --surface:#fff; --ink:#16181f; --muted:#5f6472; --faint:#8b90a0;
+    --line:#e6e7ef; --line-2:#d7d9e6;
+    --accent:#6d5efc; --accent-ink:#4a3bd0; --accent-soft:#eee9ff; --accent-hover:#5b4bf0;
+    --up:#f97316; --down:#3f8cff; --green:#0f9d63; --green-soft:#e6f6ee;
+    --radius:14px; --radius-sm:10px;
+    --shadow-1:0 1px 2px rgba(20,18,50,.05);
+    --shadow-2:0 10px 30px rgba(20,18,50,.09);
+    --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
   }
-  .top { background:#fff; border-bottom:1px solid #e6e8ee; padding:14px 22px; display:flex; gap:18px; align-items:center; }
-  .brand { font-weight:700; letter-spacing:-.01em; }
-  .brand span { color:#2563eb; }
-  .search { flex:1; max-width:420px; }
-  .search input { width:100%; padding:9px 13px; border:1px solid #dfe3ea; border-radius:9px; font:inherit; background:transparent; color:inherit; }
-  .user { margin-left:auto; font-size:14px; opacity:.65; }
-  .wrap { max-width:1000px; margin:0 auto; padding:24px 20px 70px; }
-  .crumb { font-size:13px; opacity:.6; margin-bottom:14px; }
-  .crumb a { color:#2563eb; text-decoration:none; }
-  h1 { font-size:21px; margin:0 0 4px; }
-  .sub { font-size:13.5px; opacity:.6; margin-bottom:20px; }
-  .cat { background:#fff; border:1px solid #e6e8ee; border-radius:12px; overflow:hidden; margin-bottom:22px; }
-  .cat h2 { font-size:12px; letter-spacing:.1em; text-transform:uppercase; padding:12px 16px; margin:0;
-            background:rgba(127,127,127,.06); border-bottom:1px solid #e6e8ee; opacity:.7; }
-  .thread { display:grid; grid-template-columns: 1fr 90px 120px; gap:10px; padding:12px 16px; border-bottom:1px solid #eef0f4; align-items:center; }
-  .thread:last-child { border-bottom:0; }
-  .thread .t { font-weight:600; font-size:14.5px; }
-  .thread .t a { color:inherit; text-decoration:none; }
-  .thread .t a:hover { color:#2563eb; }
-  .thread .d { font-size:13px; opacity:.6; }
-  .thread .n { text-align:right; font-size:13px; opacity:.55; }
-  .pill { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; background:#eef2ff; color:#2545c8; margin-right:7px; }
-  .btn { display:inline-block; margin-top:6px; padding:9px 14px; border-radius:9px; background:#2563eb; color:#fff;
-         text-decoration:none; font-size:14px; font-weight:600; }
-  .stats { display:flex; gap:22px; font-size:13px; opacity:.6; margin-bottom:18px; }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  button{font:inherit;color:inherit}
+  .skip{position:absolute; left:-9999px; top:0; background:var(--ink); color:#fff; padding:10px 14px; border-radius:0 0 10px 0; z-index:100}
+  .skip:focus{left:0}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+  .icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .icon-sm{width:14px;height:14px}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky; top:0; z-index:40; background:rgba(255,255,255,.86); border-bottom:1px solid var(--line); backdrop-filter:saturate(1.2) blur(8px)}
+  .topbar__in{max-width:1120px; margin:0 auto; padding:0 20px; height:62px; display:flex; align-items:center; gap:18px}
+  .brand{display:flex; align-items:center; gap:9px; text-decoration:none; font-weight:650; letter-spacing:-.02em; font-size:17px}
+  .brand svg{width:26px;height:26px;border-radius:8px;flex:0 0 auto}
+  .nav{display:flex; gap:4px; margin-left:6px}
+  .nav a{padding:7px 11px; border-radius:8px; text-decoration:none; font-size:14px; font-weight:500; color:var(--muted)}
+  .nav a:hover{background:#f1f0f9; color:var(--ink)}
+  .nav a[aria-current="page"]{color:var(--accent-ink); background:var(--accent-soft)}
+  .search{margin-left:auto; position:relative; display:flex; align-items:center}
+  .search svg{position:absolute; left:11px; color:var(--faint); pointer-events:none}
+  .search input{
+    width:230px; height:38px; padding:0 42px 0 34px; border:1px solid var(--line);
+    background:var(--surface); border-radius:10px; font:14px var(--sans); color:var(--ink);
+    transition:border-color .15s, box-shadow .15s, width .2s;
+  }
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(109,94,252,.14); width:280px}
+  .search kbd{
+    position:absolute; right:9px; font:600 11px/1 var(--mono); color:var(--faint);
+    border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:3px 5px; background:#fbfbfe;
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:7px; height:38px; padding:0 15px; border-radius:10px;
+    border:1px solid var(--line); background:var(--surface); font-size:14px; font-weight:500;
+    cursor:pointer; text-decoration:none; white-space:nowrap; transition:background .15s, border-color .15s, transform .12s;
+  }
+  .btn:hover{background:#f6f6fc; border-color:var(--line-2)}
+  .btn:active{transform:translateY(1px)}
+  .btn--primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; box-shadow:0 1px 2px rgba(74,59,208,.25)}
+  .btn--primary:hover{background:var(--accent-hover); border-color:var(--accent-hover)}
+  .btn--ghost{background:none; border-color:transparent; color:var(--muted)}
+  .btn--ghost:hover{background:#f1f0f9; color:var(--ink)}
+  .btn--block{width:100%; justify-content:center}
+  .me{position:relative; margin-left:2px}
+  .me__btn{width:38px;height:38px;border:0;background:none;padding:0;cursor:pointer;border-radius:50%}
+  .avatar{
+    display:grid; place-items:center; width:30px; height:30px; border-radius:50%;
+    background:var(--accent); color:#fff; font:600 11px/1 var(--sans); letter-spacing:.03em; flex:0 0 auto;
+  }
+  .avatar--sm{width:26px;height:26px;font-size:10px}
+  .avatar--lg{width:44px;height:44px;font-size:15px}
+  .me__btn:hover .avatar{box-shadow:0 0 0 3px rgba(109,94,252,.18)}
+  .menu{
+    position:absolute; right:0; top:46px; min-width:212px; background:var(--surface);
+    border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-2); padding:6px; z-index:50;
+  }
+  .menu__head{padding:9px 10px 11px; border-bottom:1px solid var(--line); margin-bottom:5px}
+  .menu__head strong{display:block; font-size:13.5px}
+  .menu__head span{font-size:12px; color:var(--muted)}
+  .menu button, .menu a{
+    display:flex; align-items:center; gap:9px; width:100%; padding:8px 10px; border:0; background:none;
+    border-radius:8px; font-size:13.5px; text-align:left; cursor:pointer; text-decoration:none; color:var(--ink);
+  }
+  .menu button:hover, .menu a:hover{background:#f4f4fb}
+  .menu .sep{height:1px; background:var(--line); margin:5px 0}
+  .burger{display:none; width:38px; height:38px; border:1px solid var(--line); background:var(--surface); border-radius:10px; cursor:pointer; align-items:center; justify-content:center}
+  .mobile-nav{display:none}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1120px; margin:0 auto; padding:26px 20px 72px}
+  .layout{display:grid; grid-template-columns:minmax(0,1fr) 296px; gap:26px; align-items:start}
+  .view-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px}
+  h1{font-size:26px; line-height:1.2; letter-spacing:-.025em; margin:0; font-weight:680}
+  .sub{margin:5px 0 0; font-size:14px; color:var(--muted)}
+  .tools{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .tabs{display:inline-flex; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px; gap:2px; box-shadow:var(--shadow-1)}
+  .tabs button{
+    border:0; background:none; padding:7px 13px; border-radius:999px; font-size:13.5px; font-weight:500;
+    color:var(--muted); cursor:pointer; transition:background .15s, color .15s;
+  }
+  .tabs button:hover{color:var(--ink)}
+  .tabs button[aria-selected="true"]{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+  .select{
+    appearance:none; height:38px; padding:0 32px 0 12px; border:1px solid var(--line); border-radius:10px;
+    background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%235f6472' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 11px center;
+    font:13.5px var(--sans); color:var(--ink); cursor:pointer;
+  }
+  .filter-note{
+    display:none; align-items:center; gap:8px; margin:0 0 12px; padding:9px 12px;
+    background:var(--accent-soft); border:1px solid #ded5ff; border-radius:10px; font-size:13.5px; color:var(--accent-ink);
+  }
+  .filter-note.is-on{display:flex}
+  .filter-note button{margin-left:auto; border:0; background:none; color:var(--accent-ink); font-weight:600; cursor:pointer; text-decoration:underline; padding:4px}
+
+  /* ---------- thread list ---------- */
+  .threads{display:flex; flex-direction:column; gap:10px}
+  .thread{
+    display:grid; grid-template-columns:44px minmax(0,1fr) 152px; gap:14px; align-items:start;
+    padding:15px 16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-1); cursor:pointer; transition:box-shadow .16s, border-color .16s, transform .16s;
+  }
+  .thread:hover{border-color:#d9d3ff; box-shadow:var(--shadow-2); transform:translateY(-1px)}
+  .vote{display:flex; flex-direction:column; align-items:center; gap:1px}
+  .vote__btn{
+    width:32px; height:26px; padding:0; border:0; background:none; color:var(--faint);
+    display:grid; place-items:center; border-radius:7px; cursor:pointer; transition:background .14s, color .14s;
+  }
+  .vote__btn:hover{background:#f1f0f9; color:var(--accent)}
+  .vote__btn[aria-pressed="true"]{color:var(--up); background:#fff3e8}
+  .vote__btn--down[aria-pressed="true"]{color:var(--down); background:#eaf2ff}
+  .vote__n{font:650 13px/1.4 var(--sans); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .thread__top{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .cat{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; letter-spacing:.01em; color:var(--muted)}
+  .cat i{width:7px; height:7px; border-radius:50%; background:currentColor; display:block}
+  .thread__title{display:block; margin:3px 0 0; font-size:16.5px; line-height:1.35; letter-spacing:-.012em; font-weight:620; text-decoration:none; color:var(--ink)}
+  .thread__title:hover{color:var(--accent-ink)}
+  .thread__excerpt{
+    margin:6px 0 0; font-size:13.5px; line-height:1.55; color:var(--muted);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .thread__tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:9px}
+  .tag{font-size:11.5px; padding:3px 8px; border-radius:6px; background:#f4f4fa; color:#545a6b; text-decoration:none}
+  .tag:hover{background:#ebeafa; color:var(--accent-ink)}
+  .thread__meta{display:flex; flex-direction:column; align-items:flex-end; gap:7px; font-size:12.5px; color:var(--muted); text-align:right}
+  .who{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink); font-weight:550}
+  .meta-row{display:flex; align-items:center; gap:10px; color:var(--muted)}
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:999px;
+    font-size:11.5px; font-weight:600; letter-spacing:.01em;
+  }
+  .badge--solved{background:var(--green-soft); color:var(--green)}
+  .badge--new{background:#ffefe2; color:#c2410c}
+  .empty{
+    padding:44px 20px; text-align:center; background:var(--surface); border:1px dashed var(--line-2);
+    border-radius:var(--radius); color:var(--muted);
+  }
+  .empty strong{display:block; color:var(--ink); font-size:15px; margin-bottom:5px}
+  .pager{display:flex; gap:6px; justify-content:center; margin-top:22px; align-items:center}
+  .pager button{
+    min-width:36px; height:36px; padding:0 11px; border:1px solid var(--line); background:var(--surface);
+    border-radius:9px; font-size:13.5px; cursor:pointer; color:var(--ink); transition:background .15s, border-color .15s;
+  }
+  .pager button:hover{border-color:var(--line-2); background:#f7f7fc}
+  .pager button[aria-current="page"]{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+  .pager button[disabled]{opacity:.45; cursor:default}
+  .pager__info{margin-left:8px; font-size:12.5px; color:var(--faint)}
+
+  /* ---------- sidebar ---------- */
+  .side{display:flex; flex-direction:column; gap:14px; position:sticky; top:80px}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow-1)}
+  .card h2{font:600 11.5px/1 var(--sans); letter-spacing:.09em; text-transform:uppercase; color:var(--faint); margin:0 0 12px}
+  .card p{margin:0 0 11px; font-size:13.5px; line-height:1.6; color:var(--muted)}
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin:0 0 4px}
+  .stat-grid div span{display:block; font:650 17px/1.2 var(--sans); letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .stat-grid div small{font-size:11.5px; color:var(--faint)}
+  .people{display:flex; flex-direction:column; gap:9px; margin:0; padding:0; list-style:none}
+  .people li{display:flex; align-items:center; gap:9px; font-size:13.5px}
+  .people .rep{margin-left:auto; font-size:12px; color:var(--faint); font-variant-numeric:tabular-nums}
+  .people a{color:var(--ink); text-decoration:none; font-weight:550}
+  .people a:hover{color:var(--accent-ink)}
+  .tagcloud{display:flex; flex-wrap:wrap; gap:6px}
+  .tagcloud a{font-size:12px}
+  .rule-teaser{display:flex; flex-direction:column; gap:8px; margin:0; padding:0; list-style:none; font-size:13px; color:var(--muted)}
+  .rule-teaser li{display:flex; gap:8px; align-items:flex-start}
+  .rule-teaser b{color:var(--accent-ink); font-weight:650; font-variant-numeric:tabular-nums}
+  .side .cta{background:linear-gradient(160deg,#f2efff,#e9f6f4); border-color:#ded5ff}
+
+  /* ---------- thread view ---------- */
+  .back{display:inline-flex; align-items:center; gap:7px; font-size:13.5px; color:var(--muted); text-decoration:none; margin-bottom:14px}
+  .back:hover{color:var(--ink)}
+  .post{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-1); overflow:hidden}
+  .post__head{display:flex; align-items:center; gap:11px; padding:16px 20px; border-bottom:1px solid var(--line)}
+  .post__who{display:flex; flex-direction:column; gap:1px}
+  .post__who strong{font-size:14px; font-weight:620}
+  .post__who span{font-size:12px; color:var(--muted)}
+  .post__head .badge{margin-left:auto}
+  .post__body{padding:20px; font-size:15px; line-height:1.68}
+  .post__body p{margin:0 0 14px}
+  .post__body p:last-child{margin:0}
+  .post__foot{display:flex; align-items:center; gap:8px; padding:12px 20px; border-top:1px solid var(--line); background:#fcfcff}
+  .post__foot .vote{flex-direction:row; gap:2px; margin-right:4px}
+  .post__foot .spacer{flex:1}
+  .post-title{display:flex; gap:14px; align-items:flex-start; margin:0 0 14px}
+  .post-title h1{font-size:27px; line-height:1.25; flex:1}
+  .replies-head{display:flex; align-items:center; gap:10px; margin:26px 0 12px}
+  .replies-head h2{font-size:15px; margin:0; font-weight:640}
+  .replies-head span{font-size:12.5px; color:var(--faint); font-variant-numeric:tabular-nums}
+  .replies{display:flex; flex-direction:column; gap:10px}
+  .reply{display:grid; grid-template-columns:34px minmax(0,1fr); gap:12px; padding:15px 16px; background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-1)}
+  .reply--nested{margin-left:26px; background:#fcfcff}
+  .reply__head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--muted)}
+  .reply__head strong{color:var(--ink); font-size:13.5px; font-weight:600}
+  .reply__head .badge{font-size:11px; padding:2px 7px}
+  .reply__body{margin:7px 0 0; font-size:14px; line-height:1.62; color:#252833}
+  .reply__foot{display:flex; align-items:center; gap:10px; margin-top:10px; font-size:12.5px; color:var(--muted)}
+  .helpful{
+    display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border:1px solid var(--line);
+    background:var(--surface); border-radius:8px; font-size:12.5px; cursor:pointer; color:var(--muted);
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .helpful:hover{border-color:var(--line-2); color:var(--ink)}
+  .helpful[aria-pressed="true"]{background:var(--green-soft); border-color:#bfe8d2; color:#0b7d4f}
+  .editor{margin-top:18px; background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-1); overflow:hidden}
+  .editor__bar{display:flex; align-items:center; gap:4px; padding:8px 10px; border-bottom:1px solid var(--line); background:#fcfcff}
+  .editor__bar button{
+    width:30px; height:28px; border:1px solid transparent; background:none; border-radius:6px;
+    font:600 13px var(--sans); color:var(--muted); cursor:pointer;
+  }
+  .editor__bar button:hover{background:#f1f0f9; color:var(--ink)}
+  .editor__bar .hint{margin-left:auto; font-size:12px; color:var(--faint)}
+  .editor textarea{
+    display:block; width:100%; min-height:104px; padding:13px 15px; border:0; resize:vertical;
+    font:14px/1.6 var(--sans); color:var(--ink); background:none;
+  }
+  .editor textarea:focus{outline:none}
+  .editor__foot{display:flex; align-items:center; gap:12px; padding:10px 14px; border-top:1px solid var(--line); background:#fcfcff}
+  .editor__count{font-size:12px; color:var(--faint); font-variant-numeric:tabular-nums}
+  .editor__foot .btn{margin-left:auto}
+  .err{color:#c81e3d; font-size:12.5px; margin-left:auto}
+
+  /* ---------- members / rules / categories ---------- */
+  .people-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px}
+  .member{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow-1); text-align:center}
+  .member .avatar--lg{margin:0 auto 9px}
+  .member strong{display:block; font-size:14.5px; font-weight:620}
+  .member span{display:block; font-size:12.5px; color:var(--muted); margin-top:2px}
+  .member .member-stats{display:flex; justify-content:center; gap:14px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); font-size:11.5px; color:var(--faint)}
+  .member .member-stats b{display:block; color:var(--ink); font-size:13px; font-variant-numeric:tabular-nums}
+  .badges{display:flex; justify-content:center; gap:4px; margin-top:10px; flex-wrap:wrap}
+  .prose{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow-1); max-width:74ch}
+  .prose h2{font-size:16px; margin:22px 0 8px; letter-spacing:-.01em}
+  .prose h2:first-child{margin-top:0}
+  .prose p{margin:0 0 12px; font-size:14.5px; line-height:1.7; color:#2a2d38}
+  .prose ol,.prose ul{margin:0 0 14px; padding-left:20px; font-size:14.5px; line-height:1.7; color:#2a2d38}
+  .prose li{margin-bottom:6px}
+  .prose .muted{color:var(--muted); font-size:13px}
+  .cat-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px}
+  .cat-card{display:flex; flex-direction:column; gap:6px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px; text-decoration:none; box-shadow:var(--shadow-1); transition:transform .15s, box-shadow .15s, border-color .15s}
+  .cat-card:hover{transform:translateY(-1px); box-shadow:var(--shadow-2); border-color:#d9d3ff}
+  .cat-card .cat{font-size:12px}
+  .cat-card strong{font-size:15px; font-weight:620; letter-spacing:-.01em}
+  .cat-card span{font-size:12.5px; color:var(--faint)}
+
+  /* ---------- modal / toast ---------- */
+  .modal{position:fixed; inset:0; z-index:70; display:none; place-items:center; padding:20px; background:rgba(18,16,42,.46); backdrop-filter:blur(4px)}
+  .modal.is-open{display:grid}
+  .modal__box{width:min(560px,100%); max-height:90vh; overflow:auto; background:var(--surface); border-radius:16px; box-shadow:0 30px 80px rgba(15,12,50,.3)}
+  .modal__head{display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--line)}
+  .modal__head h2{margin:0; font-size:16px; font-weight:640}
+  .modal__head button{margin-left:auto; width:32px; height:32px; border:0; background:none; border-radius:8px; cursor:pointer; color:var(--muted); display:grid; place-items:center}
+  .modal__head button:hover{background:#f1f0f9; color:var(--ink)}
+  .modal__body{padding:18px 20px}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:12.5px; font-weight:600; margin-bottom:5px; color:#3a3d49}
+  .field input,.field select,.field textarea{
+    width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 11px;
+    font:14px var(--sans); color:var(--ink); background:var(--surface);
+  }
+  .field textarea{min-height:120px; resize:vertical; line-height:1.6}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(109,94,252,.14)}
+  .field .hint{display:block; font-size:11.5px; color:var(--faint); margin-top:5px}
+  .field .field-err{display:none; color:#c81e3d; font-size:12px; margin-top:5px}
+  .field.is-bad input,.field.is-bad textarea,.field.is-bad select{border-color:#e7a3b1; box-shadow:0 0 0 3px rgba(200,30,61,.08)}
+  .field.is-bad .field-err{display:block}
+  .modal__foot{display:flex; gap:9px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--line); background:#fcfcff}
+  .toasts{position:fixed; right:18px; bottom:18px; z-index:90; display:flex; flex-direction:column; gap:8px; max-width:340px}
+  .toast{
+    display:flex; align-items:center; gap:9px; padding:11px 14px; border-radius:10px; background:#1c1a2e; color:#f4f3ff;
+    font-size:13.5px; box-shadow:0 12px 30px rgba(15,12,50,.28); animation:toast-in .22s ease both;
+  }
+  .toast svg{color:#8fe3b8}
+  @keyframes toast-in{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+  .footer{border-top:1px solid var(--line); background:var(--surface); margin-top:20px}
+  .footer__in{max-width:1120px; margin:0 auto; padding:34px 20px 40px; display:grid; grid-template-columns:1.4fr repeat(3,1fr); gap:26px}
+  .footer h3{font:600 11.5px/1 var(--sans); letter-spacing:.09em; text-transform:uppercase; color:var(--faint); margin:0 0 11px}
+  .footer ul{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px}
+  .footer a{font-size:13.5px; color:var(--muted); text-decoration:none}
+  .footer a:hover{color:var(--ink)}
+  .footer p{font-size:13px; color:var(--muted); margin:0 0 8px; max-width:34ch; line-height:1.6}
+  .footer small{display:block; max-width:1120px; margin:0 auto; padding:0 20px 28px; color:var(--faint); font-size:12px}
+
+  @media (max-width:980px){
+    .layout{grid-template-columns:minmax(0,1fr)}
+    .side{position:static; order:2}
+    .footer__in{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:820px){
+    .nav,.search{display:none}
+    .burger{display:flex}
+    .mobile-nav{display:flex; position:absolute; left:0; right:0; top:62px; flex-direction:column; gap:4px; padding:12px 16px 16px; background:var(--surface); border-bottom:1px solid var(--line); box-shadow:var(--shadow-2)}
+    .mobile-nav[hidden]{display:none}
+    .mobile-nav a{padding:9px 11px; border-radius:8px; text-decoration:none; font-size:14.5px; color:var(--ink)}
+    .mobile-nav a:hover{background:#f4f4fb}
+    .mobile-nav .search{display:flex; margin:4px 0 6px}
+    .mobile-nav .search input{width:100%}
+    .mobile-nav .search input:focus{width:100%}
+  }
+  @media (max-width:640px){
+    .topbar__in{height:58px; gap:10px; padding:0 14px}
+    .wrap{padding:18px 14px 60px}
+    h1{font-size:23px}
+    .thread{grid-template-columns:minmax(0,1fr); gap:10px; padding:14px}
+    .vote{flex-direction:row; justify-content:flex-start; gap:4px; order:-1}
+    .vote__btn{width:34px; height:30px}
+    .thread__meta{flex-direction:row; align-items:center; justify-content:space-between; width:100%; border-top:1px solid var(--line); padding-top:10px; margin-top:2px}
+    .post-title{flex-direction:column-reverse; gap:8px}
+    .post-title h1{font-size:22px}
+    .post__body,.post__head{padding-left:15px; padding-right:15px}
+    .reply{grid-template-columns:minmax(0,1fr); gap:8px}
+    .reply .avatar{display:none}
+    .reply--nested{margin-left:12px}
+    .footer__in{grid-template-columns:1fr; gap:20px}
+    .btn--primary span.hide-sm{display:none}
+    .tabs button{padding:7px 10px; font-size:13px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important}
+    .thread:hover{transform:none}
+  }
 </style>
 </head>
 <body>
-<div class="top">
-  <div class="brand">Lattice<span>.forum</span></div>
-  <div class="search"><input placeholder="Search discussions…" aria-label="search"></div>
-  <div class="user">sign in · register</div>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="brand" href="#/" aria-label="Tinker home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#6d5efc"/><path d="M9 22l7-12 7 12M12 17h8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Tinker</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/" data-nav="threads">Threads</a>
+      <a href="#/categories" data-nav="categories">Categories</a>
+      <a href="#/members" data-nav="members">Members</a>
+      <a href="#/rules" data-nav="rules">Rules</a>
+    </nav>
+    <div class="search">
+      <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      <input id="q" type="search" placeholder="Search threads" aria-label="Search threads" autocomplete="off">
+      <kbd>/</kbd>
+    </div>
+    <button class="btn btn--primary" id="new-thread" type="button">
+      <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span class="hide-sm">New thread</span>
+    </button>
+    <div class="me">
+      <button class="me__btn" id="me-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu">
+        <span class="avatar">MK</span>
+      </button>
+      <div class="menu" id="me-menu" role="menu" hidden>
+        <div class="menu__head"><strong>Mira Kalin</strong><span>mira@tinkerforum.example · member since Mar 2019</span></div>
+        <a href="#/members" role="menuitem">Your profile</a>
+        <a href="#/categories" role="menuitem">Categories</a>
+        <button type="button" data-toast="Drafts are saved locally in this browser" role="menuitem">Drafts</button>
+        <div class="sep"></div>
+        <button type="button" data-toast="Settings are managed by a workspace admin" role="menuitem">Settings</button>
+        <button type="button" data-toast="Signed out — this tab will stop updating" role="menuitem">Log out</button>
+      </div>
+    </div>
+    <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div class="mobile-nav" id="mobile-nav" hidden>
+    <a href="#/">Threads</a>
+    <a href="#/categories">Categories</a>
+    <a href="#/members">Members</a>
+    <a href="#/rules">Rules</a>
+    <div class="search">
+      <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      <input id="q-m" type="search" placeholder="Search threads" aria-label="Search threads" autocomplete="off">
+    </div>
+    <button class="btn btn--primary btn--block" type="button" data-action="new-thread">New thread</button>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap"><div id="view"></div></div>
+</main>
+
+<footer class="footer">
+  <div class="footer__in">
+    <div>
+      <a class="brand" href="#/" aria-label="Tinker home" style="margin-bottom:9px">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#6d5efc"/><path d="M9 22l7-12 7 12M12 17h8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Tinker</span>
+      </a>
+      <p>A small forum for people who build, fix and occasionally break things. No ads, no growth hacks, no algorithm.</p>
+      <p style="font-size:12px;color:var(--faint)">Run by volunteers since 2016 · Stockholm / Lisbon</p>
+    </div>
+    <div>
+      <h3>Community</h3>
+      <ul>
+        <li><a href="#/">Threads</a></li>
+        <li><a href="#/categories">Categories</a></li>
+        <li><a href="#/members">Members</a></li>
+        <li><a href="#/rules">Rules</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Categories</h3>
+      <ul>
+        <li><a href="#/c/Repair">Repair</a></li>
+        <li><a href="#/c/Electronics">Electronics</a></li>
+        <li><a href="#/c/Soldering">Soldering</a></li>
+        <li><a href="#/c/Projects">Projects</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Elsewhere</h3>
+      <ul>
+        <li><a href="#" data-toast="The wiki is members-only — ask in the thread">Wiki</a></li>
+        <li><a href="#" data-toast="The Atom feed requires an account">Atom feed</a></li>
+        <li><a href="#" data-toast="Mastodon is linked on the About page">Mastodon</a></li>
+        <li><a href="#" data-toast="We send one email a month, when there is something to say">Newsletter</a></li>
+      </ul>
+    </div>
+  </div>
+  <small>© 2026 Tinker Collective · privacy · moderation log · uptime</small>
+</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+  <div class="modal__box">
+    <div class="modal__head">
+      <h2 id="modal-title">New thread</h2>
+      <button type="button" data-close aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <form id="new-thread-form" novalidate>
+      <div class="modal__body">
+        <div class="field" data-field="title">
+          <label for="nt-title">Title</label>
+          <input id="nt-title" name="title" type="text" maxlength="120" placeholder="Be specific — “ESP32-C6 deep sleep draws 240 µA”">
+          <span class="field-err">Give the thread a title (at least 8 characters).</span>
+        </div>
+        <div class="field" data-field="category">
+          <label for="nt-cat">Category</label>
+          <select id="nt-cat" name="category">
+            <option>Repair</option><option>Electronics</option><option>Soldering</option>
+            <option>Projects</option><option>3D printing</option><option>Buying advice</option>
+            <option>Technique</option><option>Workshop</option><option>Showcase</option>
+            <option>Opinion</option><option>Safety</option><option>Community</option>
+          </select>
+        </div>
+        <div class="field" data-field="tags">
+          <label for="nt-tags">Tags</label>
+          <input id="nt-tags" name="tags" type="text" placeholder="soldering, esp32 (comma separated, up to 4)">
+          <span class="hint">Tags help the right people find it. Lowercase, no spaces.</span>
+        </div>
+        <div class="field" data-field="body">
+          <label for="nt-body">Post</label>
+          <textarea id="nt-body" name="body" placeholder="What did you try? What are the numbers? Photos help — links are fine."></textarea>
+          <span class="field-err">Write at least a couple of sentences (40 characters).</span>
+        </div>
+      </div>
+      <div class="modal__foot">
+        <button class="btn" type="button" data-close>Cancel</button>
+        <button class="btn btn--primary" type="submit">Post thread</button>
+      </div>
+    </form>
+  </div>
 </div>
 
-<div class="wrap">
-  <div class="crumb"><a href="#">Home</a> › <a href="#">General</a> › All discussions</div>
-  <h1>All discussions</h1>
-  <div class="sub">Community for people who keep small systems running.</div>
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+<noscript><p style="max-width:640px;margin:24px auto;padding:0 20px;color:#5f6472">Tinker needs JavaScript for threads, voting and search. The forum itself is at <strong>tinkerforum.example</strong> — this static page is only a mirror.</p></noscript>
 
-  <div class="stats"><span>12 480 threads</span><span>38 912 posts</span><span>1 204 members</span></div>
+<script>
+(function () {
+  'use strict';
 
-  <section class="cat">
-    <h2>Latest</h2>
-    <div class="thread">
-      <div>
-        <div class="t"><span class="pill">pinned</span><a href="#">Read me first: posting guidelines</a></div>
-        <div class="d">by modteam · updated 2 days ago</div>
-      </div>
-      <div class="n">—</div>
-      <div class="n">14 replies</div>
-    </div>
-    <div class="thread">
-      <div>
-        <div class="t"><a href="#">Best way to rotate container logs without losing the tail?</a></div>
-        <div class="d">by ksh · 3 hours ago</div>
-      </div>
-      <div class="n">ops</div>
-      <div class="n">27 replies</div>
-    </div>
-    <div class="thread">
-      <div>
-        <div class="t"><a href="#">Nginx vs Caddy for a decoy site in 2026</a></div>
-        <div class="d">by mira · 8 hours ago</div>
-      </div>
-      <div class="n">web</div>
-      <div class="n">63 replies</div>
-    </div>
-    <div class="thread">
-      <div>
-        <div class="t"><a href="#">Conntrack table filled up — postmortem inside</a></div>
-        <div class="d">by aleks · yesterday</div>
-      </div>
-      <div class="n">net</div>
-      <div class="n">41 replies</div>
-    </div>
-    <div class="thread">
-      <div>
-        <div class="t"><a href="#">Show your homelab dashboards</a></div>
-        <div class="d">by pov · 2 days ago</div>
-      </div>
-      <div class="n">general</div>
-      <div class="n">158 replies</div>
-    </div>
-  </section>
+  /* ------------------------------------------------------------------ utils */
+  function readJSON(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function writeJSON(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* private mode */ }
+  }
+  function esc(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function initials(name) {
+    var parts = String(name).replace(/[._-]+/g, ' ').trim().split(/\s+/);
+    return (parts[0].charAt(0) + (parts[1] ? parts[1].charAt(0) : parts[0].charAt(1))).toUpperCase();
+  }
+  function tint(name) {
+    var hash = 0;
+    for (var i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) % 360;
+    return 'hsl(' + hash + ' 62% 46%)';
+  }
+  function avatar(name, cls) {
+    return '<span class="avatar ' + (cls || 'avatar--sm') + '" style="background:' + tint(name) + '" aria-hidden="true">' + esc(initials(name)) + '</span>';
+  }
+  function ago(min) {
+    if (min < 1) return 'just now';
+    if (min < 60) return Math.round(min) + 'm ago';
+    if (min < 1440) return Math.round(min / 60) + 'h ago';
+    return Math.round(min / 1440) + 'd ago';
+  }
 
-  <a class="btn" href="#">Start a new discussion</a>
-</div>
+  /* ------------------------------------------------------------------ icons */
+  var I = {
+    up: '<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+    down: '<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+    reply: '<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10V7l-5 5 5 5v-3c4 0 7 1.5 9 5-.5-4.5-3.5-8-9-9z"/></svg>',
+    check: '<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>',
+    chat: '<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a7 7 0 0 1-7 7H8l-4 3v-5.2A7 7 0 0 1 9 5h4a7 7 0 0 1 7 7z"/></svg>',
+    link: '<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>',
+    arrow: '<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
+    flag: '<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></svg>'
+  };
+
+  var ME = { name: 'Mira Kalin', rep: 412, posts: 96, joined: 'Mar 2019' };
+  var ME_KEY = 'Mira Kalin';
+
+  /* ------------------------------------------------------------------- data */
+  var CAT = {
+    'Repair': '#f97316', 'Electronics': '#6d5efc', 'Showcase': '#0d9488',
+    'Soldering': '#dc2626', '3D printing': '#16a34a', 'Projects': '#2563eb',
+    'Buying advice': '#9333ea', 'Opinion': '#64748b', 'Technique': '#0d9488',
+    'Workshop': '#b45309', 'Safety': '#be123c', 'Community': '#4f46e5'
+  };
+
+  var BASE = [
+    { id: 1, title: 'Replacing a 1987 Sony Walkman belt — where do you buy these?', excerpt: 'The original belt turned to tar. Everything else on the mechanism looks fine, so I would rather not bin it.', body: 'Picked up a WM-22 for €15 at a flea market. It spins, but the speed wanders badly, so the belt is gone.\n\nI measured the old one at roughly 1.4 mm square section and 96 mm inside circumference — though it is stretched, so that number is a guess. Does anyone have a reliable EU source for belts that small? I would buy three sizes and test rather than guess once.', tags: ['repair', 'audio'], author: 'kris_htz', replies: 12, votes: 34, cat: 'Repair', solved: true, age: 38 },
+    { id: 2, title: 'ESP32-C6 deep sleep draws 240 µA, not the 7 µA from the datasheet', excerpt: 'Bare module, no regulator, no LEDs, still an order of magnitude above the spec sheet. What am I missing?', body: 'Custom board, ESP32-C6-WROOM, powered straight from a lab supply at 3.3 V. Deep sleep with the radio off measures 240 µA.\n\nI removed the LDO and the RGB LED, disabled the RTC domain, and it barely moved. The datasheet says 7 µA typical. Feels like something is still clocking — maybe the USB-JTAG bridge?', tags: ['electronics', 'esp32'], author: 'nordlys', replies: 8, votes: 27, cat: 'Electronics', solved: false, age: 96 },
+    { id: 3, title: 'Show your bench: mine lives in a closet', excerpt: 'Rented flat, no workshop, one shelf. Curious how the rest of you survive without a dedicated room.', body: 'My whole bench is a 60 cm shelf inside a closet: soldering station, a small vice, and a drawer of parts sorted into pill boxes. It folds away in ten minutes when guests come.\n\nPost yours — especially the improvised ones. I am looking for ideas that do not involve renting a garage.', tags: ['workshop', 'showcase'], author: 'ferrite', replies: 21, votes: 88, cat: 'Showcase', solved: false, age: 182 },
+    { id: 4, title: 'Cheapest way to reflow a 0.5 mm pitch QFN at home', excerpt: 'Need to reflow a QFN-32 without a €400 hot air station. Hotplate, oven, or something stupider?', body: 'I have a €30 temperature-controlled hotplate and a €12 stencil. The first attempt lifted two pads because I moved the board too early.\n\nIs there a technique that does not need hot air at all, or am I buying a station?', tags: ['soldering', 'smd'], author: 'sarah_mk', replies: 15, votes: 41, cat: 'Soldering', solved: false, age: 264 },
+    { id: 5, title: 'ThinkPad X220: keyboard rows dead after a coffee spill', excerpt: 'Two rows of keys stopped working the morning after. Board looks clean, no corrosion visible.', body: 'I opened it, cleaned with isopropyl, let it dry a day — same two rows are dead.\n\nThe keyboard controller is on the mainboard, which makes me suspect a broken trace rather than the membrane. Before I start probing: has anyone mapped the X220 keyboard matrix?', tags: ['repair', 'laptops'], author: 'voldn', replies: 6, votes: 19, cat: 'Repair', solved: false, age: 342 },
+    { id: 6, title: '3D-printed gears that do not strip: which resin actually holds?', excerpt: 'PLA stripped in two weeks at moderate torque. Is there a resin that survives, or is this the wrong material entirely?', body: 'I am printing a 1:4 reduction gearbox for a small 12 V motor. PLA lived two weeks before the teeth rounded off.\n\nBefore I print in PETG and waste a spool: has anyone measured torque on printed gears at this size? Or should I be looking at nylon and machining it?', tags: ['3d-printing', 'mechanics'], author: 'petal_gears', replies: 9, votes: 23, cat: '3D printing', solved: true, age: 424 },
+    { id: 7, title: 'Scope shows 50 Hz hum on one channel only', excerpt: 'Channel 1 is clean, channel 2 picks up mains hum with the probe disconnected. Scope or environment?', body: 'Same probe, same ground point, swapped channels — the hum follows the channel, not the probe.\n\nIt appears when I touch the probe tip with nothing connected. Both channels should behave the same way. Any idea where to look first?', tags: ['testgear', 'electronics'], author: 'j_okoro', replies: 11, votes: 31, cat: 'Electronics', solved: false, age: 522 },
+    { id: 8, title: 'Open-source bench PSU: six months later', excerpt: 'I posted the design in spring. Now it has run continuously — here is what failed and what I would change.', body: 'Six months, zero failures, one firmware bug in the current readback that I fixed in October. The front panel is 3D printed; the case is an extruded aluminium box from a local shop.\n\nRipple sits around 8 mV at 2 A with the second-stage filter. Schematic, firmware and BOM are in the repo. Next revision gets a proper mains switch and shrouded binding posts.', tags: ['power', 'project'], author: 'mirek', replies: 18, votes: 76, cat: 'Projects', solved: false, age: 612 },
+    { id: 9, title: 'Old analog scope or cheap new one? Budget is €300', excerpt: 'Used Tek 2235 for €180 or a new 100 MHz digital for €290. I mostly debug audio and slow signals.', body: 'I am not chasing fast edges — audio circuits, small MCU timing, maybe some I2C. The analog one feels like a tank and costs less, but a digital one would let me capture a single event.\n\nWhat would you pick with €300 and no upgrade path for a few years?', tags: ['testgear', 'buying'], author: 'anon_4821', replies: 24, votes: 55, cat: 'Buying advice', solved: false, age: 702 },
+    { id: 10, title: 'Bricked ESP8266 after a power cut mid-flash', excerpt: 'Cut out during esptool write. Now it just prints garbage at 74880 baud and ignores resets.', body: 'The board is a bare ESP-12F module on a breakout. It boots into the bootloader sometimes, but esptool cannot sync.\n\nI have a 3.3 V FTDI and a scope. Is this recoverable without reballing, or is the module dead?', tags: ['esp8266', 'firmware'], author: 'lukas_b', replies: 2, votes: 9, cat: 'Electronics', solved: false, age: 822 },
+    { id: 11, title: 'Switch lube: is it snake oil?', excerpt: 'Half of the hobby says it transforms the sound, the other half says it is placebo with extra steps.', body: 'I lubed exactly one board and then spent a week with lubed fingers. On scratchy switches the difference was obvious; on smooth linears I could not feel a thing.\n\nIs there a measured effect, or are we all just enjoying the ritual?', tags: ['keyboards', 'opinion'], author: 'tess', replies: 31, votes: 44, cat: 'Opinion', solved: false, age: 902 },
+    { id: 12, title: 'Lathe tool-post grinder, amateur edition', excerpt: 'Built a grinder from a €22 spindle and a scrap tool holder. Results are better than I expected.', body: 'The spindle is a 400 W DC motor with an ER11 collet chuck, bolted to a tool holder I made from a block of steel and two clamps.\n\nRunout is about 0.03 mm, enough for rough grinding of HSS blanks. Not a surface grinder, but it saves me from buying new bits every month.', tags: ['machining', 'project'], author: 'h_bergstrom', replies: 7, votes: 38, cat: 'Projects', solved: false, age: 982 },
+    { id: 13, title: 'Soldering iron tips keep dying at 350 °C', excerpt: 'Three tips in four months. All eaten away at the very point, always on the same station.', body: 'The station is a decent brand, the tips are not the cheapest. I leave it idling at 350 °C most of the day, which I suspect is exactly the problem.\n\nDo people keep it lower and spike the temperature before each joint?', tags: ['soldering'], author: 'kolyan', replies: 0, votes: 12, cat: 'Soldering', solved: false, age: 1102 },
+    { id: 14, title: 'Cheapest logic analyzer that actually decodes I2C correctly', excerpt: 'The €8 clone drops packets on a 400 kHz bus. Need something that does not lie to me.', body: 'I am debugging a sensor that intermittently NACKs. The cheap 8-channel clone misinterprets long transactions, which makes the capture useless.\n\nI would rather pay once. What is the floor price for a device that decodes reliably at 400 kHz?', tags: ['tools'], author: 'nina_p', replies: 14, votes: 29, cat: 'Buying advice', solved: true, age: 1222 },
+    { id: 15, title: 'iPhone 11 water damage — worth attempting?', excerpt: 'Dropped in a sink, dried in rice for two days, now boots to a flickering logo and dies.', body: 'The phone is a spare, so nothing critical is on it. I have a hot air station, a microscope and a lot of patience.\n\nIs board-level water repair still worth it on this generation, or is the labour an order of magnitude past the phone value?', tags: ['repair', 'phones'], author: 'dmitri_v', replies: 19, votes: 33, cat: 'Repair', solved: false, age: 1342 },
+    { id: 16, title: 'Tinning stranded wire without making it stiff', excerpt: 'Every time I tin 0.5 mm² stranded wire, the strands weld into a rigid bar that cracks at the joint.', body: 'I use lead-free solder at 330 °C and a chisel tip. The wire tins nicely, but the result is a stiff stub.\n\nIs the trick lower temperature, more flux, or tinning only the very tip?', tags: ['soldering', 'technique'], author: 'mkb', replies: 0, votes: 6, cat: 'Technique', solved: false, age: 1462 },
+    { id: 17, title: 'Post your first PCB — mine took four revisions', excerpt: 'V1 had the footprint mirrored and a shorted ground plane. V4 finally boots without smoke.', body: 'Four revisions, eleven weeks, about €60 in fab and shipping. The final board is 30 mm square, does almost nothing useful, and I am absurdly proud of it.\n\nWhat was broken on your first one?', tags: ['pcb', 'showcase'], author: 'atlas_pcb', replies: 26, votes: 61, cat: 'Showcase', solved: false, age: 1582 },
+    { id: 18, title: 'Bench lighting: 4000 K or 5000 K for fine work?', excerpt: 'My old lamp makes green PCBs look grey. Buying a proper one — warm or cool?', body: 'I mostly do 0402 work and inspect solder joints with a loupe. Colour temperature seems to matter more than I expected.\n\nThose of you who stare at boards all day: which one is less fatiguing, 4000 K or 5000 K?', tags: ['workshop'], author: 'o_lind', replies: 8, votes: 17, cat: 'Workshop', solved: false, age: 1722 },
+    { id: 19, title: 'Rebuilding a dead Li-ion pack — the safe way', excerpt: 'Four-cell pack for a cordless drill, BMS dead, cells at 2.1 V. I want to do this without burning the bench.', body: 'I replaced the cells with matched 18650s, added a new protection board, and fused every tap with 1 A wire.\n\nCharged the first pack in a steel box on a concrete floor for a month before trusting it. Capacity is within 4% of nameplate after ten cycles.', tags: ['batteries', 'safety'], author: 'ravi_g', replies: 13, votes: 47, cat: 'Safety', solved: true, age: 1872 },
+    { id: 20, title: 'Go-to flux for lead-free?', excerpt: 'The flux pen I used for years is discontinued. Everything else I try either smokes or does nothing.', body: 'Lead-free at 340 °C, mostly drag soldering on 0.65 mm pitch. I need something that activates fast and cleans off easily.\n\nAny brand that is consistently available in the EU?', tags: ['soldering', 'supplies'], author: 'solderqueen', replies: 10, votes: 22, cat: 'Technique', solved: false, age: 1992 },
+    { id: 21, title: 'Cheap thermal camera modules in 2025 — actually usable?', excerpt: 'Looking at the €70–90 USB modules for finding hot spots on boards. Good enough, or toy-grade?', body: 'I want to find a shorted regulator on a dense board, so 0.1 °C resolution is not the point — spatial resolution is.\n\nDoes anyone have real experience with the 120×90 modules?', tags: ['tools', 'thermal'], author: 'bert', replies: 16, votes: 26, cat: 'Buying advice', solved: false, age: 2122 },
+    { id: 22, title: 'ATX PSU → bench supply, with proper current limiting', excerpt: 'Turned a spare ATX unit into a usable bench supply for €38. It has survived three years of abuse.', body: 'The 12 V rail feeds a buck converter with constant-current mode, wired to a pair of binding posts on a printed panel. The 5 V and 3.3 V rails go to banana sockets directly.\n\nThe whole thing is bolted to a €12 aluminium case. Notes and drilling template are in the comments — safety first, the mains side is fully enclosed.', tags: ['power', 'project'], author: 'chipmonk', replies: 22, votes: 58, cat: 'Projects', solved: false, age: 2282 },
+    { id: 23, title: 'Tinker meetup in Lisbon — anyone?', excerpt: 'Thinking of a Saturday afternoon in a co-working space: bring a broken thing and we fix it together.', body: 'I can book a room that fits about fifteen people, with tables and power. No talks, no sponsors, just repair and coffee.\n\nIf enough people reply, I will pick a date in February and post the details.', tags: ['community', 'meetups'], author: 'joao_f', replies: 4, votes: 11, cat: 'Community', solved: false, age: 2442 },
+    { id: 24, title: 'Tool wishlist thread (keep it under €200)', excerpt: 'What is the one tool you keep delaying because it feels indulgent, but would use weekly?', body: 'Mine is a decent flush cutter. I have been using a €6 pair for two years and I know exactly what a good one would save me.\n\nRules: under €200, must be justified by actual repetitive use.', tags: ['tools', 'opinion'], author: 'grey_owl', replies: 29, votes: 37, cat: 'Opinion', solved: false, age: 2622 }
+  ];
+
+  var REPLIES = {
+    1: [
+      { author: 'fuzzbox', age: 150, body: 'Try the German shop that sells flat belts by the metre — they list inside circumference and section. I replaced three belts this year, all still running.', helpful: 6 },
+      { author: 'kris_htz', age: 118, body: 'Found one at 95 mm × 1.2 mm, arrived in four days, speed is dead on now. Marking this solved — thank you.', helpful: 11 },
+      { author: 'voldn', age: 96, body: 'For what it is worth: clean the capstan with isopropyl while you have it open. That was the actual speed problem on mine.', helpful: 3 }
+    ],
+    4: [
+      { author: 'sarah_mk', age: 220, body: 'Hot air at 300 °C, 25 l/min, plus a €12 stencil from a local fab. The stencil matters more than the station, honestly.', helpful: 8 },
+      { author: 'j_okoro', age: 190, body: 'Preheat the board to 100 °C on a cheap hotplate first. Warping is what kills the joints, not the heat itself.', helpful: 5 },
+      { author: 'nordlys', age: 165, body: 'I did it in a toaster oven for two years. It works, it smells like regret, and you will burn one board learning.', helpful: 12 }
+    ],
+    8: [
+      { author: 'solderqueen', age: 540, body: 'The 3D printed front panel looks nicer than most commercial ones. Nice finish on the labels — printed or engraved?', helpful: 4 },
+      { author: 'j_okoro', age: 500, body: 'What is the noise floor at 2 A? Mine sits around 8 mV of ripple with a similar filter.', helpful: 7 },
+      { author: 'mirek', age: 470, body: 'Measured with a 20 MHz bandwidth limit: about 7 mV RMS, spikes to 15 mV when the load steps. Labels are engraved on an acrylic insert.', helpful: 9 }
+    ],
+    9: [
+      { author: 'j_okoro', age: 660, body: 'For €300 I would take a used 100 MHz analog over a new 50 MHz digital. Analog hides nothing, and where the trace sits tells you more than a number.', helpful: 9 },
+      { author: 'nina_p', age: 620, body: 'Depends what you debug. For serial protocols a cheap digital with a decoder saves hours; for noise and glitches analog wins.', helpful: 6 },
+      { author: 'anon_4821', age: 540, body: 'Bought a used 2235 for €180 and spent €40 on probes. Could not be happier — thanks, this thread saved me from a bad purchase.', helpful: 14 }
+    ],
+    11: [
+      { author: 'tess', age: 860, body: 'I lubed one board and then spent a week with lubed fingers. Difference is real for scratchy switches, imaginary for smooth ones.', helpful: 8 },
+      { author: 'grey_owl', age: 820, body: 'It is real. It is also 95% placebo for most people. Both can be true at the same time.', helpful: 21 },
+      { author: 'solderqueen', age: 780, body: 'Thin coat only — about 0.01 g per switch. Half the "snake oil" complaints come from people applying it like paint.', helpful: 12 }
+    ],
+    17: [
+      { author: 'mirek', age: 1520, body: 'Everyone\'s V1 is a disaster. Mine had a 7805 backwards and no silkscreen at all.', helpful: 11 },
+      { author: 'h_bergstrom', age: 1480, body: 'The two weeks between "design done" and "order placed" is where the real work happens. Reviewing your own board twice saves a fab run.', helpful: 9 },
+      { author: 'atlas_pcb', age: 1440, body: 'That is exactly what I learned. V4 has a checklist in the silkscreen: power, polarity, footprint match.', helpful: 7 }
+    ],
+    19: [
+      { author: 'bert', age: 1830, body: 'Please do not solder directly to cells. Spot welder or nothing — the heat does more damage than the joint does good.', helpful: 18 },
+      { author: 'nina_p', age: 1790, body: 'Capacity test each cell at 0.5 C and discard anything below 85% of nameplate. Two of my eight were junk.', helpful: 12 },
+      { author: 'ravi_g', age: 1740, body: 'Agreed on both. I used a €40 spot welder and a 5 A fuse per tap; the pack has done forty cycles without drift.', helpful: 9 }
+    ],
+    22: [
+      { author: 'chipmonk', age: 2200, body: 'Added a 10 A buck with constant-current mode and a proper binding post panel. Total cost €38, three years of abuse and still going.', helpful: 15 },
+      { author: 'fuzzbox', age: 2160, body: 'Mind the 5 V standby rail — it stays live when the supply is switched "off".', helpful: 22 },
+      { author: 'h_bergstrom', age: 2100, body: 'Put a 10 W / 10 Ω resistor on the 5 V rail as a dummy load, or cheaper units refuse to start properly.', helpful: 10 }
+    ]
+  };
+
+  var POOL = [
+    { author: 'fuzzbox', body: 'Following this — same problem on a slightly different unit, so I will be watching what comes back.' },
+    { author: 'voldn', body: 'Have you checked the service manual? The scans are usually readable and the schematics answer half of these questions.' },
+    { author: 'petal_gears', body: 'A photo of the board would help a lot — especially around the connector.' },
+    { author: 'nordlys', body: 'Cheap fix first: reflow the joints around the connector before spending money on parts.' },
+    { author: 'j_okoro', body: 'I have had good results with parts from a donor unit off the local classifieds. Cheaper than one new module.' },
+    { author: 'tess', body: 'Budget matters here — what are you willing to spend before deciding it is not worth it?' },
+    { author: 'solderqueen', body: 'Mine had a cracked solder joint in exactly that area. Took an hour to find with a loupe.' },
+    { author: 'nina_p', body: 'Not an expert, but that sounds like a grounding issue rather than a component failure.' },
+    { author: 'grey_owl', body: 'Add it to the wiki page once you get it working — this question comes back every month.' },
+    { author: 'h_bergstrom', body: 'The older the unit, the more it is worth fixing in my opinion. New ones are disposable on purpose.' },
+    { author: 'o_lind', body: 'If you are in the EU, check the surplus shops before the auction sites. Shipping is usually the expensive part.' },
+    { author: 'atlas_pcb', body: 'Keep us posted. This is a good thread and I would like to see the measured result, not just "it works now".' }
+  ];
+
+  var MEMBERS = [
+    { name: 'fuzzbox', rep: 4820, posts: 1204, joined: 'Jan 2016', badges: ['Veteran', 'Repair'], note: 'Bench repair since 1998 · Berlin' },
+    { name: 'j_okoro', rep: 3910, posts: 986, joined: 'Sep 2017', badges: ['Mentor'], note: 'Test equipment nerd · Manchester' },
+    { name: 'nina_p', rep: 3120, posts: 774, joined: 'Feb 2018', badges: ['Tools'], note: 'Firmware and protocols · Tallinn' },
+    { name: 'h_bergstrom', rep: 2740, posts: 691, joined: 'Jun 2016', badges: ['Machining'], note: 'Lathe, mill, patience · Gothenburg' },
+    { name: 'solderqueen', rep: 2280, posts: 588, joined: 'Mar 2019', badges: ['Soldering'], note: 'Assembly technician by day' },
+    { name: 'mirek', rep: 1960, posts: 502, joined: 'Nov 2018', badges: ['Open source'], note: 'Designs in KiCad, publishes everything' },
+    { name: 'petal_gears', rep: 1540, posts: 431, joined: 'Apr 2021', badges: ['3D printing'], note: 'Mechanical parts that survive' },
+    { name: 'grey_owl', rep: 1290, posts: 388, joined: 'Aug 2020', badges: ['Opinion'], note: 'Retired, opinionated, usually right' }
+  ];
+
+  /* --------------------------------------------------------------- storage */
+  var votes = readJSON('tinker.votes', {});
+  var localThreads = readJSON('tinker.threads', []);
+  var localReplies = readJSON('tinker.replies', {});
+  var helpfulState = readJSON('tinker.helpful', {});
+
+  function allThreads() {
+    return localThreads.concat(BASE).map(function (t) {
+      var t2 = {};
+      for (var k in t) { if (Object.prototype.hasOwnProperty.call(t, k)) t2[k] = t[k]; }
+      if (t.mine) t2.replies = (localReplies[t.id] || []).length + (t.replies || 0);
+      return t2;
+    });
+  }
+  function findThread(id) {
+    var list = allThreads(), i;
+    for (i = 0; i < list.length; i++) { if (String(list[i].id) === String(id)) return list[i]; }
+    return null;
+  }
+  function repliesFor(t) {
+    var extra = localReplies[String(t.id)] || [];
+    if (t.mine) return extra;
+    var base = REPLIES[t.id];
+    if (base) {
+      return base.map(function (r) { return { author: r.author, age: r.age, body: r.body, helpful: r.helpful, base: true }; }).concat(extra);
+    }
+    var idNum = Number(t.id) || 1;
+    var out = [];
+    var count = Math.min(3, Math.max(0, t.replies || 0));
+    for (var i = 0; i < count; i++) {
+      var p = POOL[(idNum + i * 3) % POOL.length];
+      out.push({ author: p.author, age: Math.max(4, (t.age || 60) - 20 - i * 7), body: p.body, helpful: 2 + ((idNum + i) % 7), base: true });
+    }
+    return out.concat(extra);
+  }
+  function score(t) { return (t.votes || 0) + (votes[String(t.id)] || 0); }
+
+  /* ---------------------------------------------------------------- router */
+  var state = { tab: 'latest', sort: 'newest', q: '', page: 1, cat: null };
+  var view = document.getElementById('view');
+  var titleDefault = document.title;
+
+  function parseHash() {
+    var raw = (location.hash || '#/').replace(/^#\/?/, '');
+    var parts = raw.split('/').filter(Boolean);
+    if (parts.length === 0) return { name: 'threads' };
+    if (parts[0] === 't' && parts[1]) return { name: 'thread', id: parts[1] };
+    if (parts[0] === 'c' && parts[1]) return { name: 'category', cat: decodeURIComponent(parts[1]) };
+    if (parts[0] === 'members' || parts[0] === 'rules' || parts[0] === 'categories') return { name: parts[0] };
+    return { name: 'threads' };
+  }
+
+  function render() {
+    var route = parseHash();
+    markNav(route.name);
+    closeMenu();
+    closeMobile();
+    if (route.name === 'thread') { renderThread(route.id); }
+    else if (route.name === 'members') { renderMembers(); }
+    else if (route.name === 'rules') { renderRules(); }
+    else if (route.name === 'categories') { renderCategories(); }
+    else if (route.name === 'category') { state.cat = route.cat; state.page = 1; renderList(); }
+    else { state.cat = null; renderList(); }
+    window.scrollTo(0, 0);
+  }
+
+  function markNav(name) {
+    var map = { threads: 'threads', thread: 'threads', category: 'threads', categories: 'categories', members: 'members', rules: 'rules' };
+    var want = map[name];
+    var links = document.querySelectorAll('[data-nav]');
+    for (var i = 0; i < links.length; i++) {
+      if (links[i].getAttribute('data-nav') === want) links[i].setAttribute('aria-current', 'page');
+      else links[i].removeAttribute('aria-current');
+    }
+  }
+
+  /* ------------------------------------------------------------------ list */
+  function filtered() {
+    var q = state.q.trim().toLowerCase();
+    var list = allThreads().filter(function (t) {
+      if (state.cat && t.cat !== state.cat) return false;
+      if (state.tab === 'solved' && !t.solved) return false;
+      if (state.tab === 'unanswered' && (t.replies || 0) > 0) return false;
+      if (q) {
+        var hay = (t.title + ' ' + t.excerpt + ' ' + (t.tags || []).join(' ') + ' ' + t.author + ' ' + t.cat).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+    list.sort(function (a, b) {
+      if (state.sort === 'votes') return score(b) - score(a);
+      if (state.sort === 'replies') return (b.replies || 0) - (a.replies || 0);
+      if (state.tab === 'hot') return hot(b) - hot(a);
+      return (a.age || 0) - (b.age || 0);
+    });
+    return list;
+  }
+  function hot(t) {
+    var s = score(t) * 2 + (t.replies || 0) * 3 - (t.age || 0) / 30;
+    return s;
+  }
+
+  function threadRow(t) {
+    var v = votes[String(t.id)] || 0;
+    var tagHtml = (t.tags || []).map(function (tag) { return '<a class="tag" href="#/c/' + encodeURIComponent(t.cat) + '">#' + esc(tag) + '</a>'; }).join('');
+    var solved = t.solved ? '<span class="badge badge--solved">' + I.check + ' Solved</span>' : '';
+    var mine = t.mine ? '<span class="badge badge--new">Your thread</span>' : '';
+    return '' +
+      '<article class="thread" data-thread="' + esc(t.id) + '">' +
+        '<div class="vote" data-id="' + esc(t.id) + '">' +
+          '<button class="vote__btn" type="button" data-vote="1" aria-label="Upvote" aria-pressed="' + (v === 1) + '">' + I.up + '</button>' +
+          '<span class="vote__n">' + score(t) + '</span>' +
+          '<button class="vote__btn vote__btn--down" type="button" data-vote="-1" aria-label="Downvote" aria-pressed="' + (v === -1) + '">' + I.down + '</button>' +
+        '</div>' +
+        '<div class="thread__main">' +
+          '<div class="thread__top">' +
+            '<span class="cat" style="color:' + (CAT[t.cat] || '#6d5efc') + '"><i></i>' + esc(t.cat) + '</span>' +
+            solved + mine +
+          '</div>' +
+          '<a class="thread__title" href="#/t/' + esc(t.id) + '">' + esc(t.title) + '</a>' +
+          '<p class="thread__excerpt">' + esc(t.excerpt) + '</p>' +
+          '<div class="thread__tags">' + tagHtml + '</div>' +
+        '</div>' +
+        '<div class="thread__meta">' +
+          '<span class="who">' + avatar(t.author) + esc(t.author) + '</span>' +
+          '<span class="meta-row">' + I.chat + (t.replies || 0) + ' replies</span>' +
+          '<span class="meta-row">' + ago(t.age) + '</span>' +
+        '</div>' +
+      '</article>';
+  }
+
+  function renderList() {
+    var list = filtered();
+    var perPage = 8;
+    var pages = Math.max(1, Math.ceil(list.length / perPage));
+    if (state.page > pages) state.page = pages;
+    var from = (state.page - 1) * perPage;
+    var slice = list.slice(from, from + perPage);
+    var total = allThreads().length;
+
+    var note = state.cat
+      ? '<div class="filter-note is-on"><span>Category: <strong>' + esc(state.cat) + '</strong></span><button type="button" data-action="clear-cat">Show all threads</button></div>'
+      : '';
+
+    var tabs = [
+      ['latest', 'Latest'], ['hot', 'Hot'], ['unanswered', 'Unanswered'], ['solved', 'Solved']
+    ].map(function (pair) {
+      return '<button type="button" role="tab" data-tab="' + pair[0] + '" aria-selected="' + (state.tab === pair[0]) + '">' + pair[1] + '</button>';
+    }).join('');
+
+    var empty = '<div class="empty"><strong>Nothing here yet</strong>' +
+      (state.q ? 'No threads match “' + esc(state.q) + '”. Try fewer words.' : 'No threads in this view. Be the first to post.') +
+      '</div>';
+
+    view.innerHTML = '' +
+      '<div class="layout">' +
+        '<section>' +
+          '<div class="view-head">' +
+            '<div><h1>Threads</h1><p class="sub">' + list.length + ' of ' + total + ' threads · ' + (state.q ? 'filtered by search' : 'sorted by ' + tabsLabel()) + '</p></div>' +
+            '<div class="tools">' +
+              '<div class="tabs" role="tablist" aria-label="Thread filters">' + tabs + '</div>' +
+              '<select class="select" id="sort" aria-label="Sort threads">' +
+                '<option value="newest"' + (state.sort === 'newest' ? ' selected' : '') + '>Newest</option>' +
+                '<option value="votes"' + (state.sort === 'votes' ? ' selected' : '') + '>Most votes</option>' +
+                '<option value="replies"' + (state.sort === 'replies' ? ' selected' : '') + '>Most replies</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+          note +
+          (slice.length ? '<div class="threads">' + slice.map(threadRow).join('') + '</div>' : empty) +
+          pagerHtml(pages) +
+        '</section>' +
+        renderSidebar() +
+      '</div>';
+    document.title = state.cat ? state.cat + ' — Tinker' : 'Threads — Tinker';
+  }
+
+  function tabsLabel() {
+    return state.tab === 'latest' ? 'date' : state.tab === 'hot' ? 'activity' : state.tab;
+  }
+
+  function pagerHtml(pages) {
+    if (pages <= 1) return '';
+    var html = '<div class="pager">';
+    html += '<button type="button" data-page="' + (state.page - 1) + '"' + (state.page === 1 ? ' disabled' : '') + ' aria-label="Previous page">←</button>';
+    for (var p = 1; p <= Math.min(pages, 9); p++) {
+      html += '<button type="button" data-page="' + p + '"' + (p === state.page ? ' aria-current="page"' : '') + '>' + p + '</button>';
+    }
+    html += '<button type="button" data-page="' + (state.page + 1) + '"' + (state.page === pages ? ' disabled' : '') + ' aria-label="Next page">→</button>';
+    html += '<span class="pager__info">Page ' + state.page + ' of ' + pages + '</span></div>';
+    return html;
+  }
+
+  function renderSidebar() {
+    var tags = {};
+    allThreads().forEach(function (t) { (t.tags || []).forEach(function (g) { tags[g] = (tags[g] || 0) + 1; }); });
+    var top = Object.keys(tags).sort(function (a, b) { return tags[b] - tags[a]; }).slice(0, 9);
+    return '<aside class="side">' +
+      '<div class="card">' +
+        '<h2>About Tinker</h2>' +
+        '<p>A forum for repair, machining and small electronics. No ads, no ranking, no algorithm — just threads in order.</p>' +
+        '<div class="stat-grid">' +
+          '<div><span>2,148</span><small>members</small></div>' +
+          '<div><span>9,412</span><small>threads</small></div>' +
+          '<div><span>61k</span><small>posts</small></div>' +
+          '<div><span>18</span><small>online now</small></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>Top members</h2>' +
+        '<ul class="people">' + MEMBERS.slice(0, 5).map(function (m) {
+          return '<li>' + avatar(m.name) + '<a href="#/members">' + esc(m.name) + '</a><span class="rep">' + m.rep.toLocaleString('en-GB') + '</span></li>';
+        }).join('') + '</ul>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>Popular tags</h2>' +
+        '<div class="tagcloud">' + top.map(function (g) { return '<a class="tag" href="#/">#' + esc(g) + '</a>'; }).join('') + '</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>House rules</h2>' +
+        '<ul class="rule-teaser">' +
+          '<li><b>1</b><span>No ads, no affiliate links.</span></li>' +
+          '<li><b>2</b><span>Show what you tried before asking.</span></li>' +
+          '<li><b>3</b><span>Mains and battery safety is not negotiable.</span></li>' +
+        '</ul>' +
+        '<p style="margin:11px 0 0"><a href="#/rules" style="color:var(--accent-ink);font-size:13px;text-decoration:none">Read all five rules →</a></p>' +
+      '</div>' +
+      '<div class="card cta">' +
+        '<h2>First thread?</h2>' +
+        '<p>Photos, part numbers and measurements get answers twice as fast.</p>' +
+        '<button class="btn btn--primary btn--block" type="button" data-action="new-thread">Start a thread</button>' +
+      '</div>' +
+    '</aside>';
+  }
+
+  /* ----------------------------------------------------------- thread view */
+  function renderThread(id) {
+    var t = findThread(id);
+    if (!t) {
+      view.innerHTML = '<div class="empty" style="margin-top:20px"><strong>Thread not found</strong>It may have been deleted or moved. <a href="#/" style="color:var(--accent-ink)">Back to threads</a></div>';
+      return;
+    }
+    var v = votes[String(t.id)] || 0;
+    var paras = String(t.body || t.excerpt).split('\n\n').map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+    var replyList = repliesFor(t);
+    var tagHtml = (t.tags || []).map(function (g) { return '<a class="tag" href="#/">#' + esc(g) + '</a>'; }).join('');
+    var related = allThreads().filter(function (o) {
+      return o.id !== t.id && (o.cat === t.cat || (o.tags || []).some(function (g) { return (t.tags || []).indexOf(g) !== -1; }));
+    }).slice(0, 3);
+
+    var repliesHtml = replyList.length
+      ? replyList.map(function (r, idx) {
+          var key = String(t.id) + ':' + idx;
+          var baseN = r.helpful || 0;
+          var pressed = !!helpfulState[key];
+          return '<article class="reply' + (idx === 1 && replyList.length > 2 ? ' reply--nested' : '') + '">' +
+            avatar(r.author) +
+            '<div>' +
+              '<div class="reply__head"><strong>' + esc(r.author) + '</strong>' +
+                (r.author === ME_KEY ? '<span class="badge badge--solved">You</span>' : '') +
+                '<span>· rep ' + (r.author === ME_KEY ? ME.rep : (240 + idx * 137)) + '</span>' +
+                '<span style="margin-left:auto">' + ago(r.age) + '</span>' +
+              '</div>' +
+              '<p class="reply__body">' + esc(r.body) + '</p>' +
+              '<div class="reply__foot">' +
+                '<button class="helpful" type="button" data-helpful="' + esc(key) + '" data-base="' + baseN + '" aria-pressed="' + pressed + '">' +
+                  I.check + ' Helpful <span>' + (baseN + (pressed ? 1 : 0)) + '</span>' +
+                '</button>' +
+                '<button class="helpful" type="button" data-quote="' + esc(r.author) + '">' + I.reply + ' Reply</button>' +
+              '</div>' +
+            '</div>' +
+          '</article>';
+        }).join('')
+      : '<div class="empty"><strong>No replies yet</strong>Be the first to answer — a measurement or a photo usually helps most.</div>';
+
+    view.innerHTML = '' +
+      '<a class="back" href="#/">' + I.arrow + ' All threads</a>' +
+      '<div class="layout">' +
+        '<section>' +
+          '<div class="post-title">' +
+            '<h1>' + esc(t.title) + '</h1>' +
+            (t.solved ? '<span class="badge badge--solved" style="margin-top:6px">' + I.check + ' Solved</span>' : '') +
+          '</div>' +
+          '<article class="post">' +
+            '<div class="post__head">' + avatar(t.author, 'avatar') +
+              '<div class="post__who"><strong>' + esc(t.author) + '</strong><span>rep ' + (420 + Number(t.id) * 31) + ' · posted ' + ago(t.age) + '</span></div>' +
+              '<span class="cat" style="margin-left:auto;color:' + (CAT[t.cat] || '#6d5efc') + '"><i></i>' + esc(t.cat) + '</span>' +
+            '</div>' +
+            '<div class="post__body">' + paras + '</div>' +
+            '<div class="post__foot">' +
+              '<div class="vote" data-id="' + esc(t.id) + '">' +
+                '<button class="vote__btn" type="button" data-vote="1" aria-label="Upvote" aria-pressed="' + (v === 1) + '">' + I.up + '</button>' +
+                '<span class="vote__n">' + score(t) + '</span>' +
+                '<button class="vote__btn vote__btn--down" type="button" data-vote="-1" aria-label="Downvote" aria-pressed="' + (v === -1) + '">' + I.down + '</button>' +
+              '</div>' +
+              '<button class="helpful" type="button" data-copy="' + esc(t.id) + '">' + I.link + ' Copy link</button>' +
+              '<div class="spacer"></div>' +
+              '<button class="helpful" type="button" data-toast="Reported to moderators — thank you">' + I.flag + ' Report</button>' +
+            '</div>' +
+          '</article>' +
+          '<div class="replies-head"><h2>Replies</h2><span>' + replyList.length + '</span></div>' +
+          '<div class="replies">' + repliesHtml + '</div>' +
+          '<div class="editor">' +
+            '<div class="editor__bar">' +
+              '<button type="button" data-md="**" aria-label="Bold">B</button>' +
+              '<button type="button" data-md="*" aria-label="Italic"><i>I</i></button>' +
+              '<button type="button" data-md="`" aria-label="Code">&lt;/&gt;</button>' +
+              '<span class="hint">Markdown is fine · ⌘/Ctrl + Enter to post</span>' +
+            '</div>' +
+            '<textarea id="reply-text" placeholder="Answer ' + esc(t.author) + ' — what did you measure?" aria-label="Your reply"></textarea>' +
+            '<div class="editor__foot">' +
+              '<span class="editor__count" id="reply-count">0 / 4000</span>' +
+              '<span class="err" id="reply-err" hidden>Write at least a few words.</span>' +
+              '<button class="btn btn--primary" type="button" id="reply-post">Post reply</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="replies-head"><h2>Related threads</h2></div>' +
+          '<div class="threads">' + related.map(threadRow).join('') + '</div>' +
+        '</section>' +
+        renderSidebar() +
+      '</div>';
+    document.title = t.title + ' — Tinker';
+  }
+
+  /* -------------------------------------------------------------- members */
+  function renderMembers() {
+    view.innerHTML = '' +
+      '<div class="view-head"><div><h1>Members</h1><p class="sub">2,148 people · 18 online · sorted by reputation</p></div></div>' +
+      '<div class="people-grid">' +
+      MEMBERS.map(function (m) {
+        return '<div class="member">' + avatar(m.name, 'avatar--lg') +
+          '<strong>' + esc(m.name) + '</strong>' +
+          '<span>' + esc(m.note) + '</span>' +
+          '<div class="member-stats"><div><b>' + m.rep.toLocaleString('en-GB') + '</b>rep</div><div><b>' + m.posts + '</b>posts</div></div>' +
+          '<div class="badges">' + m.badges.map(function (b) { return '<span class="tag">' + esc(b) + '</span>'; }).join('') + '</div>' +
+          '<span style="margin-top:8px">joined ' + esc(m.joined) + '</span>' +
+        '</div>';
+      }).join('') +
+      '</div>';
+    document.title = 'Members — Tinker';
+  }
+
+  function renderRules() {
+    view.innerHTML = '' +
+      '<div class="view-head"><div><h1>Rules</h1><p class="sub">Five things that keep this place worth reading</p></div></div>' +
+      '<div class="prose">' +
+        '<h2>1. No selling, no affiliate links</h2>' +
+        '<p>Tinker is not a shop window. Mentioning a tool you use is fine; a link with a tracking tag is not. Threads that exist to move product get removed without discussion.</p>' +
+        '<h2>2. Show what you tried</h2>' +
+        '<p>“It does not work” is not a question. Measurements, part numbers, a photo of the board, the exact model — anything that lets someone else reproduce your situation.</p>' +
+        '<h2>3. Mains and battery safety is not negotiable</h2>' +
+        '<p>Advice that makes a beginner open a live power supply, bypass a fuse or solder directly to a lithium cell will be deleted. There is no version of this rule that is flexible.</p>' +
+        '<h2>4. Answer in public</h2>' +
+        '<p>If you solve a thread in a DM, post the fix. Future readers only have the thread.</p>' +
+        '<h2>5. Be boring about disagreements</h2>' +
+        '<p>Analog versus digital, PLA versus PETG, leaded versus lead-free — argue the measurements, not the person. Threads that turn personal get locked, not deleted, so the technical content survives.</p>' +
+        '<p class="muted" style="margin-top:20px">Moderation is by three volunteers. Appeals go to the moderation log, which is public. Last updated 12 Nov 2025.</p>' +
+      '</div>';
+    document.title = 'Rules — Tinker';
+  }
+
+  function renderCategories() {
+    var counts = {};
+    allThreads().forEach(function (t) { counts[t.cat] = (counts[t.cat] || 0) + 1; });
+    var cats = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+    view.innerHTML = '' +
+      '<div class="view-head"><div><h1>Categories</h1><p class="sub">' + cats.length + ' areas · threads are tagged, not filed away</p></div></div>' +
+      '<div class="cat-grid">' +
+      cats.map(function (c) {
+        return '<a class="cat-card" href="#/c/' + encodeURIComponent(c) + '">' +
+          '<span class="cat" style="color:' + (CAT[c] || '#6d5efc') + '"><i></i>' + esc(c) + '</span>' +
+          '<strong>' + esc(c) + '</strong>' +
+          '<span>' + counts[c] + ' thread' + (counts[c] === 1 ? '' : 's') + '</span>' +
+        '</a>';
+      }).join('') +
+      '</div>';
+    document.title = 'Categories — Tinker';
+  }
+
+  /* ------------------------------------------------------------- overlays */
+  var modal = document.getElementById('modal');
+  var toasts = document.getElementById('toasts');
+  var meBtn = document.getElementById('me-btn');
+  var meMenu = document.getElementById('me-menu');
+  var burger = document.getElementById('burger');
+  var mobileNav = document.getElementById('mobile-nav');
+
+  function toast(message) {
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = I.check + '<span>' + esc(message) + '</span>';
+    toasts.appendChild(el);
+    setTimeout(function () { el.remove(); }, 2800);
+  }
+
+  function openModal() {
+    modal.hidden = false;
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    var first = modal.querySelector('#nt-title');
+    if (first) first.focus();
+  }
+  function closeModal() {
+    modal.classList.remove('is-open');
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+  function closeMenu() {
+    meMenu.hidden = true;
+    meBtn.setAttribute('aria-expanded', 'false');
+  }
+  function closeMobile() {
+    mobileNav.hidden = true;
+    burger.setAttribute('aria-expanded', 'false');
+  }
+  function toggleMenu() {
+    var open = meMenu.hidden;
+    meMenu.hidden = !open;
+    meBtn.setAttribute('aria-expanded', String(open));
+  }
+
+  /* --------------------------------------------------------------- actions */
+  function applyVote(id, dir) {
+    var key = String(id);
+    var current = votes[key] || 0;
+    votes[key] = current === dir ? 0 : dir;
+    writeJSON('tinker.votes', votes);
+    var holders = document.querySelectorAll('.vote[data-id="' + key + '"]');
+    for (var i = 0; i < holders.length; i++) {
+      var holder = holders[i];
+      var up = holder.querySelector('[data-vote="1"]');
+      var down = holder.querySelector('[data-vote="-1"]');
+      var num = holder.querySelector('.vote__n');
+      if (up) up.setAttribute('aria-pressed', String(votes[key] === 1));
+      if (down) down.setAttribute('aria-pressed', String(votes[key] === -1));
+      if (num) num.textContent = String(score({ id: id, votes: threadBase(id) }));
+    }
+  }
+  function threadBase(id) {
+    var t = findThread(id);
+    return t ? t.votes : 0;
+  }
+
+  function postReply() {
+    var textarea = document.getElementById('reply-text');
+    var err = document.getElementById('reply-err');
+    if (!textarea) return;
+    var text = textarea.value.trim();
+    if (text.length < 6) {
+      err.hidden = false;
+      textarea.focus();
+      return;
+    }
+    err.hidden = true;
+    var route = parseHash();
+    var id = String(route.id);
+    localReplies[id] = localReplies[id] || [];
+    localReplies[id].push({ author: ME_KEY, age: 0, body: text, helpful: 0 });
+    writeJSON('tinker.replies', localReplies);
+    toast('Reply posted');
+    renderThread(id);
+  }
+
+  function createThread(form) {
+    var title = form.querySelector('#nt-title');
+    var tagsEl = form.querySelector('#nt-tags');
+    var bodyEl = form.querySelector('#nt-body');
+    var catEl = form.querySelector('#nt-cat');
+    var bad = false;
+    function mark(input, bad2) {
+      var field = input.closest('.field');
+      if (field) field.classList.toggle('is-bad', bad2);
+      if (bad2) bad = true;
+    }
+    mark(title, title.value.trim().length < 8);
+    mark(bodyEl, bodyEl.value.trim().length < 40);
+    if (bad) return;
+    var tags = tagsEl.value.split(',').map(function (s) { return s.trim().toLowerCase().replace(/^#/, ''); })
+      .filter(Boolean).slice(0, 4);
+    var thread = {
+      id: 'l' + Date.now(),
+      title: title.value.trim(),
+      excerpt: bodyEl.value.trim().slice(0, 150),
+      body: bodyEl.value.trim(),
+      tags: tags.length ? tags : ['general'],
+      author: ME_KEY,
+      replies: 0,
+      votes: 0,
+      cat: catEl.value,
+      solved: false,
+      age: 0,
+      mine: true
+    };
+    localThreads.unshift(thread);
+    writeJSON('tinker.threads', localThreads);
+    form.reset();
+    closeModal();
+    toast('Thread posted');
+    location.hash = '#/t/' + thread.id;
+  }
+
+  /* ----------------------------------------------------------------- wiring */
+  document.addEventListener('click', function (ev) {
+    var target = ev.target;
+
+    var voteBtn = target.closest ? target.closest('[data-vote]') : null;
+    if (voteBtn) {
+      ev.preventDefault();
+      var holder = voteBtn.closest('.vote');
+      applyVote(holder.getAttribute('data-id'), Number(voteBtn.getAttribute('data-vote')));
+      return;
+    }
+
+    var helpfulBtn = target.closest ? target.closest('[data-helpful]') : null;
+    if (helpfulBtn) {
+      var key = helpfulBtn.getAttribute('data-helpful');
+      var base = Number(helpfulBtn.getAttribute('data-base')) || 0;
+      helpfulState[key] = !helpfulState[key];
+      writeJSON('tinker.helpful', helpfulState);
+      helpfulBtn.setAttribute('aria-pressed', String(helpfulState[key]));
+      helpfulBtn.querySelector('span').textContent = String(base + (helpfulState[key] ? 1 : 0));
+      return;
+    }
+
+    var copyBtn = target.closest ? target.closest('[data-copy]') : null;    if (copyBtn) {
+      var link = location.origin + location.pathname + '#/t/' + copyBtn.getAttribute('data-copy');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function () { toast('Link copied'); }, function () { toast('Press ⌘/Ctrl + C to copy'); });
+      } else {
+        toast('Press ⌘/Ctrl + C to copy');
+      }
+      return;
+    }
+
+    var quoteBtn = target.closest ? target.closest('[data-quote]') : null;
+    if (quoteBtn) {
+      var ta = document.getElementById('reply-text');
+      if (ta) {
+        var mention = '@' + quoteBtn.getAttribute('data-quote') + ' ';
+        ta.value = ta.value ? ta.value + '\n' + mention : mention;
+        ta.focus();
+        ta.selectionStart = ta.selectionEnd = ta.value.length;
+        var counter = document.getElementById('reply-count');
+        if (counter) counter.textContent = ta.value.length + ' / 4000';
+        ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    var toastBtn = target.closest ? target.closest('[data-toast]') : null;
+    if (toastBtn) {
+      ev.preventDefault();
+      toast(toastBtn.getAttribute('data-toast'));
+      if (toastBtn.tagName === 'A' && toastBtn.getAttribute('href') === '#') ev.preventDefault();
+      return;
+    }
+
+    var actionBtn = target.closest ? target.closest('[data-action]') : null;
+    if (actionBtn) {
+      var action = actionBtn.getAttribute('data-action');
+      if (action === 'new-thread') { openModal(); return; }
+      if (action === 'clear-cat') { location.hash = '#/'; return; }
+    }
+
+    var tabBtn = target.closest ? target.closest('[data-tab]') : null;
+    if (tabBtn) {
+      state.tab = tabBtn.getAttribute('data-tab');
+      state.page = 1;
+      renderList();
+      return;
+    }
+
+    var pageBtn = target.closest ? target.closest('[data-page]') : null;
+    if (pageBtn) {
+      var p = Number(pageBtn.getAttribute('data-page'));
+      if (p >= 1) { state.page = p; renderList(); window.scrollTo(0, 0); }
+      return;
+    }
+
+    var mdBtn = target.closest ? target.closest('[data-md]') : null;
+    if (mdBtn) {
+      var ta = document.getElementById('reply-text');
+      if (!ta) return;
+      var wrap = mdBtn.getAttribute('data-md');
+      var start = ta.selectionStart, end = ta.selectionEnd;
+      var sel = ta.value.slice(start, end) || 'text';
+      ta.value = ta.value.slice(0, start) + wrap + sel + wrap + ta.value.slice(end);
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = start + wrap.length + sel.length + wrap.length;
+      document.getElementById('reply-count').textContent = ta.value.length + ' / 4000';
+      return;
+    }
+
+    var threadRowEl = target.closest ? target.closest('[data-thread]') : null;
+    if (threadRowEl && !target.closest('a,button,input,textarea,select')) {
+      location.hash = '#/t/' + threadRowEl.getAttribute('data-thread');
+      return;
+    }
+
+    if (target === modal) { closeModal(); return; }
+    if (!target.closest || (!target.closest('#me-menu') && !target.closest('#me-btn'))) closeMenu();
+    if (!target.closest || (!target.closest('#mobile-nav') && !target.closest('#burger'))) closeMobile();
+  });
+
+  document.addEventListener('change', function (ev) {
+    if (ev.target && ev.target.id === 'sort') {
+      state.sort = ev.target.value;
+      state.page = 1;
+      renderList();
+    }
+  });
+
+  document.addEventListener('input', function (ev) {
+    var t = ev.target;
+    if (!t) return;
+    if (t.id === 'reply-text') {
+      var counter = document.getElementById('reply-count');
+      if (counter) counter.textContent = t.value.length + ' / 4000';
+      var err = document.getElementById('reply-err');
+      if (err && t.value.trim().length >= 6) err.hidden = true;
+      return;
+    }
+    if (t.id === 'q' || t.id === 'q-m') {
+      state.q = t.value;
+      state.page = 1;
+      if (parseHash().name !== 'threads') { location.hash = '#/'; }
+      else renderList();
+      var other = document.getElementById(t.id === 'q' ? 'q-m' : 'q');
+      if (other) other.value = t.value;
+    }
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
+      ev.preventDefault();
+      var input = document.getElementById('q');
+      if (input) input.focus();
+    }
+    if (ev.key === 'Escape') {
+      if (!modal.hidden) { closeModal(); return; }
+      closeMenu();
+      closeMobile();
+    }
+    if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {
+      var ta = document.getElementById('reply-text');
+      if (ta && document.activeElement === ta) { ev.preventDefault(); postReply(); }
+    }
+  });
+
+  document.getElementById('new-thread').addEventListener('click', openModal);
+  meBtn.addEventListener('click', function (ev) { ev.stopPropagation(); toggleMenu(); });
+  burger.addEventListener('click', function (ev) {
+    ev.stopPropagation();
+    var open = mobileNav.hidden;
+    mobileNav.hidden = !open;
+    burger.setAttribute('aria-expanded', String(open));
+  });
+  modal.addEventListener('click', function (ev) { if (ev.target === modal) closeModal(); });
+  document.addEventListener('submit', function (ev) {
+    if (ev.target && ev.target.id === 'new-thread-form') {
+      ev.preventDefault();
+      createThread(ev.target);
+    }
+  });
+  view.addEventListener('click', function (ev) {
+    var btn = ev.target.closest ? ev.target.closest('#reply-post') : null;
+    if (btn) { postReply(); }
+  });
+  view.addEventListener('input', function (ev) {
+    if (ev.target && ev.target.id === 'reply-text') {
+      var counter = document.getElementById('reply-count');
+      if (counter) counter.textContent = ev.target.value.length + ' / 4000';
+    }
+  });
+
+  window.addEventListener('hashchange', render);
+  document.title = titleDefault;
+  render();
+})();
+</script>
 </body>
 </html>

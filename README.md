@@ -29,7 +29,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer
 | Selfsteal (да/нет) | `да` | сайт-заглушка для Reality/TLS |
 | Домен | — | A-запись должна указывать на сервер (нужна для Let's Encrypt) |
 | Внутренний порт Caddy | `9443` | Reality target: `127.0.0.1:9443` |
-| Сайт-заглушка | `landing` | 50 пресетов, см. ниже |
+| Сайт-заглушка | `shop` | 10 готовых сайтов, см. ниже |
 | Схема сети: 1 или 2 IP | `1` | `2` — вход на IP1, выход через IP2 |
 | IP входа | автоопределённый | можно указать докупленный адрес (`--ip1`) |
 | IP выхода | — | адрес, с которого нода ходит в интернет (`--ip2`) |
@@ -56,7 +56,7 @@ bash install.sh --yes \
   --node-port 2222 --panel-ip 203.0.113.10 --panel-port 3000 \
   --secret-key 'КЛЮЧ_ИЗ_ПАНЕЛИ' \
   --connect-port 443 --hysteria yes \
-  --domain vpn.example.com --template landing \
+  --domain vpn.example.com --template shop \
   --two-ip --ip2 198.51.100.7 \
   --dns yes --autoupdate yes
 ```
@@ -185,32 +185,42 @@ bash install.sh --yes \
 **с доверенным сертификатом** (без `-k`). Если не поднялось — печатает частые причины
 и последние строки лога Caddy.
 
-## Сайты-заглушки (50 пресетов)
+## Сайты-заглушки (10 сайтов)
 
 Список и описания берутся из [`templates/manifest.tsv`](templates/manifest.tsv) —
 чтобы добавить сайт, достаточно создать папку и строку в манифесте, код не правится.
 
-- **Базовые:** `landing` (визитка), `startup` (SaaS-лендинг), `agency` (кейсы),
-  `portfolio` (портфолио разработчика)
-- **Документация и сервисы:** `docs` (API), `wiki` (статья), `paste` (pastebin),
-  `git` (репозитории), `status` (статус-страница)
-- **Интерфейсы:** `dashboard`, `analytics`, `mail`, `chat`, `calendar`, `notes`,
-  `tasks`, `crm`, `hr`, `edu`, `quiz`
-- **Медиа:** `podcast`, `radio`, `music`, `video`, `cinema`, `photos`, `gallery`, `cloud`
-- **Сообщество:** `news`, `forum`, `blog`, `torrent`, `503`
-- **Коммерция:** `shop`, `restaurant`, `fitness`, `health`, `law`, `insurance`,
-  `realestate`, `auto`, `logistics`, `travel`, `hotel`
-- **Тех/бизнес:** `crypto`, `finance`, `hosting`, `cdn`, `speedtest`, `auth`
+| Ключ | Что это | Что работает |
+|---|---|---|
+| `shop` | магазин керамики Kiln & Co | фильтры, поиск, сортировка, быстрый просмотр, корзина в localStorage, двухшаговое оформление заказа |
+| `studio` | дизайн-студия «Цех» (по-русски) | кейсы в модалках, таймлайн подхода, форма заявки с валидацией |
+| `saas` | лендинг Lattice (поддержка клиентов) | переключатель биллинга, слайдер мест с живым пересчётом, табы фич, FAQ, заявка на демо |
+| `docs` | документация Quarry API | поиск по разделам, табы cURL/Node/Python/Go, копирование, scroll-spy, светлая и тёмная тема |
+| `blog` | журнал Field Notes | статьи на хеш-роутинге, теги, архив, прогресс чтения, подписка |
+| `dashboard` | Meridian — продуктовая аналитика | вход с демо-доступом, KPI, графики с подсказками, сортируемая таблица, экспорт CSV, ⌘K |
+| `restaurant` | Osteria Nove (Флоренция) | меню по табам, EN/IT, бронь со слотами, `.ics` в календарь |
+| `travel` | гид Northbound | фильтры региона и сезона, избранное в localStorage, маршруты по дням, калькулятор бюджета |
+| `forum` | форум Tinker | треды, голосование, пагинация, ответы, создание темы, поиск |
+| `hosting` | Basalt Cloud — VPS | конфигуратор с живой ценой, регионы с задержками, карта, деплой с прогрессом |
 
-Каждый — одиночный `index.html` без внешних CDN, шрифтов и трекеров, с тёмной темой
-(`prefers-color-scheme`). Скачивается скриптом при установке (из клона — берётся локально).
+Каждый — один самодостаточный `index.html`: CSS и JS внутри, ноль внешних запросов
+(шрифты системные, вся графика — inline SVG и CSS), работает и по HTTPS, и открытый
+локально. Навигация внутри сайта — на хешах, поэтому Caddy отдаёт один документ
+на любой путь (`try_files {path} /index.html`) и клики не ломаются.
 
 Сменить сайт без переустановки:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer/main/templates/blog/index.html \
+nodego preset docs      # или интерактивно: nodego → 12
+```
+
+Вручную (если `nodego` не установлен):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer/main/templates/docs/index.html \
   -o /opt/selfsteal/html/index.html && docker restart selfsteal
 ```
+
 
 ## Авто-подбор swap
 
@@ -475,7 +485,8 @@ IP, а порт 80 — быть доступен снаружи. До выпус
 |---|---|
 | `bash -n install.sh` | синтаксис |
 | **ShellCheck** (`-S style`, все уровни) для `install.sh` и `nodego.sh` | ошибки и плохие практики |
-| шаблоны | 50 штук: манифест без дублей, у каждого ключа есть папка и наоборот, `index.html` непустой |
+| шаблоны | 10 сайтов: манифест без дублей, у каждого ключа есть папка и наоборот, `index.html` непустой и самодостаточный (нет внешних URL, кроме `xmlns`) |
+| JS шаблонов | весь инлайн-JS каждого сайта проверяется `node --check` |
 | встроенные скрипты | `rw-secondary-ip.sh`, `rw-node-update.sh`, `rw-healthcheck.sh`, `rw-backup.sh`, `rw-cert-sync.sh`, `rw-configs.sh` парсятся bash |
 | генератор конфигов | `rw-configs.sh` реально генерирует 3–4 JSON; проверяются теги, порт, `privateKey` (43 символа), 6 `shortIds` по 16 hex, target `127.0.0.1:9443`/`www.apple.com:443`, `serverNames` и поля Hysteria2 |
 | сгенерированные конфиги | оба `docker-compose.yml` валидны как YAML, Caddyfile структурно цел |
@@ -485,6 +496,30 @@ IP, а порт 80 — быть доступен снаружи. До выпус
 ```bash
 shellcheck -S style install.sh nodego.sh
 bash -n install.sh
+bash -n nodego.sh
+
+# внешних ссылок быть не должно — в выводе остаётся только www.w3.org (xmlns SVG)
+grep -rhoE 'https?://[a-z0-9.-]+' templates --include=index.html | sort -u
+
+# синтаксис инлайн-JS каждого шаблона (нужен node)
+python3 - <<'EOF'
+import os, re, subprocess, tempfile
+for key in sorted(os.listdir("templates")):
+    p = os.path.join("templates", key, "index.html")
+    if not os.path.isfile(p):
+        continue
+    html = open(p, encoding="utf-8").read()
+    for i, m in enumerate(re.finditer(r"<script\b([^>]*)>(.*?)</script>", html, re.S)):
+        attrs, body = m.group(1), m.group(2)
+        if "src=" in attrs or "json" in attrs or not body.strip():
+            continue
+        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
+            f.write(body)
+            tmp = f.name
+        r = subprocess.run(["node", "--check", tmp], capture_output=True, text=True)
+        print(f"{p} #{i}: {'ok' if r.returncode == 0 else r.stderr.strip()[:200]}")
+        os.unlink(tmp)
+EOF
 ```
 
 Переводы строк в репозитории — только **LF** (`.gitattributes`: `* text=auto eol=lf`).
