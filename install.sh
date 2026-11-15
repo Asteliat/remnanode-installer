@@ -2213,10 +2213,18 @@ cat > /usr/local/sbin/rw-configs.sh <<'CONFIGS_EOF'
 # ============================================================================
 #  rw-configs — готовые конфиги для Config Profile панели Remnawave
 # ============================================================================
-#  xHTTP, gRPC, TCP (VLESS + Reality) и Hysteria2 (TLS по UDP):
+#  xHTTP, gRPC, TCP (VLESS + Reality) и Hysteria2 (TLS по UDP).
+#
+#  hysteria2.json содержит ДВА инбаунда: hysteria (UDP) и xHTTP + Reality (TCP,
+#  target 127.0.0.1:<порт Caddy>). Второй нужен для Caddy selfsteal: без него на
+#  публичном TCP/443 никто не слушает, и сайт-заглушка не открывается — у
+#  hysteria-инбаунда в Xray нет fallback. Для клиентов xHTTP включать не
+#  обязательно (Squads → Inbounds решает, раздавать ли его в подписках).
+#
+#  Секреты и имена — случайные при каждой генерации:
 #    * privateKey — настоящая X25519-пара (xray x25519 внутри ноды),
 #      в конфиг попадает приватный ключ, publicKey выводит команда keys
-#    * shortIds   — случайные 8-байтные hex (16 символов)
+#    * shortIds   — случайные 8-байтные hex (16 символов), по 6 на инбаунд
 #    * tag        — 8 символов: NodeGo22 / Node6521 / GoNode29 / 21Node54
 #    * target     — 127.0.0.1:<порт Caddy>, если стоит selfsteal,
 #                   иначе www.apple.com:443
@@ -2248,7 +2256,7 @@ warn() { echo "  [!!] $*"; }
 say()  { echo "$*"; }
 
 usage() {
-    sed -n '4,20p' "$0" | sed 's/^# \{0,1\}//' | sed '/^$/d' || true
+    sed -n '4,/^set -uo pipefail$/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//' | sed '/^$/d' || true
 }
 
 load_conf() {
@@ -2544,13 +2552,42 @@ write_tcp() { # write_tcp TAG PRIVKEY
 EOF
 }
 
-write_hysteria() { # write_hysteria TAG
-    cat > "$CONF_DIR/hysteria2.json" <<EOF
+json_head() {
+    cat <<'EOF'
 {
   "log": {
     "loglevel": "warning"
   },
   "inbounds": [
+EOF
+}
+
+json_tail() {
+    cat <<'EOF'
+  ],
+  "outbounds": [
+    { "tag": "DIRECT", "protocol": "freedom" },
+    { "tag": "BLOCK", "protocol": "blackhole" }
+  ],
+  "routing": {
+    "rules": [
+      { "ip": ["geoip:private"], "outboundTag": "BLOCK" },
+      { "domain": ["geosite:private"], "outboundTag": "BLOCK" },
+      { "protocol": ["bittorrent"], "outboundTag": "BLOCK" }
+    ]
+  }
+}
+EOF
+}
+
+# hysteria2.json = hysteria (UDP) и, если задан второй тег, ещё xHTTP + Reality
+# (TCP) в том же файле. xHTTP нужен для Caddy selfsteal: у hysteria-инбаунда нет
+# fallback, поэтому без TCP-инбаунда сайт-заглушка снаружи не открывается.
+# Раздавать ли xHTTP клиентам — решает Squads → Inbounds, это не обязательно.
+write_hysteria() { # write_hysteria HY_TAG [XH_TAG XH_PRIV]
+    {
+        json_head
+        cat <<EOF
     {
       "tag": "$1",
       "port": $CONNECT_PORT,
@@ -2579,20 +2616,44 @@ write_hysteria() { # write_hysteria TAG
         }
       }
     }
-  ],
-  "outbounds": [
-    { "tag": "DIRECT", "protocol": "freedom" },
-    { "tag": "BLOCK", "protocol": "blackhole" }
-  ],
-  "routing": {
-    "rules": [
-      { "ip": ["geoip:private"], "outboundTag": "BLOCK" },
-      { "domain": ["geosite:private"], "outboundTag": "BLOCK" },
-      { "protocol": ["bittorrent"], "outboundTag": "BLOCK" }
-    ]
-  }
-}
 EOF
+        if [ -n "${2:-}" ]; then
+            cat <<EOF
+    ,
+    {
+      "tag": "$2",
+      "port": $CONNECT_PORT,
+      "listen": "0.0.0.0",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "reality",
+        "xhttpSettings": {
+          "mode": "auto",
+          "path": "/"
+        },
+        "realitySettings": {
+          "show": false,
+          "xver": 0,
+          "target": "$REALITY_TARGET",
+          "shortIds": [$SHORT_IDS_JSON],
+          "privateKey": "$3",
+          "serverNames": [$SERVER_NAMES]
+        }
+      }
+    }
+EOF
+        fi
+        json_tail
+    } > "$CONF_DIR/hysteria2.json"
 }
 
 # Обновляет «переменные» параметры (порт, target, serverNames) в готовом
@@ -2607,14 +2668,16 @@ sync_existing() { # sync_existing FILE
           --arg target "$REALITY_TARGET" \
           --arg sni "$SNI" \
           --argjson names "[$SERVER_NAMES]" '
-        .inbounds[0].port = $port
-        | if .inbounds[0].streamSettings.realitySettings then
-            .inbounds[0].streamSettings.realitySettings.target = $target
-            | .inbounds[0].streamSettings.realitySettings.serverNames = $names
-          else . end
-        | if .inbounds[0].streamSettings.tlsSettings then
-            .inbounds[0].streamSettings.tlsSettings.serverName = $sni
-          else . end
+        .inbounds |= map(
+            .port = $port
+            | if .streamSettings.realitySettings then
+                .streamSettings.realitySettings.target = $target
+                | .streamSettings.realitySettings.serverNames = $names
+              else . end
+            | if .streamSettings.tlsSettings then
+                .streamSettings.tlsSettings.serverName = $sni
+              else . end
+        )
       ' "$f" > "$tmp" 2>/dev/null; then
         mv "$tmp" "$f"
     else
@@ -2625,7 +2688,7 @@ sync_existing() { # sync_existing FILE
 
 # ------------------------------------------------------------------- команды
 generate() {
-    local force="${1:-}" type="" f="" tag="" pair="" priv="" pub="" svc=""
+    local force="${1:-}" type="" f="" tag="" pair="" priv="" pub="" svc="" xh_tag=""
     [ -f "$ANSWERS" ] || die "нет $ANSWERS — сначала запустите установщик"
     mkdir -p "$CONF_DIR"
     chmod 700 "$STATE_DIR" "$CONF_DIR" 2>/dev/null || true
@@ -2671,11 +2734,31 @@ generate() {
         if [ -f "$f" ]; then
             sync_existing "$f"
         else
+            priv=""
+            pair="$(gen_pair)" || true
+            priv="${pair%% *}"
+            pub="${pair#* }"
+            if [ -z "$priv" ] || [ "$priv" = "$pair" ]; then
+                priv=""; pub=""
+                warn "не удалось сгенерировать X25519 — hysteria2 без xHTTP"
+            fi
             tag="$(new_tag)"
-            write_hysteria "$tag"
+            if [ -n "$priv" ]; then
+                xh_tag="$(new_tag)"
+                gen_short_id_set
+                write_hysteria "$tag" "$xh_tag" "$priv"
+                meta_add hysteria2 TAG "$tag"
+                meta_add hysteria2 XHTTP_TAG "$xh_tag"
+                meta_add hysteria2 XHTTP_PUB "$pub"
+                meta_add hysteria2 XHTTP_SIDS "$SHORT_IDS_LIST"
+                say "  готов: hysteria2 (tag $tag, $CONNECT_PORT/udp)"
+                say "         + xHTTP/Reality (tag $xh_tag, $CONNECT_PORT/tcp) — нужен для selfsteal"
+            else
+                write_hysteria "$tag"
+                meta_add hysteria2 TAG "$tag"
+                say "  готов: hysteria2 (tag $tag, $CONNECT_PORT/udp), без xHTTP"
+            fi
             chmod 600 "$f"
-            meta_add hysteria2 TAG "$tag"
-            say "  готов: hysteria2 (tag $tag, порт $CONNECT_PORT/udp)"
         fi
     else
         if [ -f "$CONF_DIR/hysteria2.json" ]; then
@@ -2688,7 +2771,7 @@ generate() {
 }
 
 brief() {
-    local type="" f="" tag="" port="" n=0
+    local type="" f="" tag="" port="" n=0 xh_tag=""
     say "Готовые конфиги: $CONF_DIR"
     for type in xhttp grpc tcp hysteria2; do
         f="$CONF_DIR/$type.json"
@@ -2697,6 +2780,11 @@ brief() {
         port="$(sed -n 's/^[[:space:]]*"port"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p' "$f" | head -n1)"
         if [ "$type" = "hysteria2" ]; then
             say "  $(printf '%-9s' "$type") tag $(printf '%-8s' "$tag") UDP/$port  TLS: $SNI"
+            xh_tag="$(meta_val HYSTERIA2_XHTTP_TAG)"
+            if [ -n "$xh_tag" ]; then
+                say "  $(printf '%-9s' 'xHTTP') tag $(printf '%-8s' "$xh_tag") TCP/$port  target $REALITY_TARGET  SNI $SNI"
+                say "            в том же hysteria2.json; нужен для selfsteal, клиентам не обязателен"
+            fi
         else
             say "  $(printf '%-9s' "$type") tag $(printf '%-8s' "$tag") TCP/$port  target $REALITY_TARGET  SNI $SNI"
         fi
@@ -2714,7 +2802,7 @@ meta_val() { # meta_val КЛЮЧ -> значение из meta.env (без sourc
 }
 
 keys() {
-    local type="" f="" var="" tag="" pub="" sids=""
+    local type="" f="" var="" tag="" pub="" sids="" xh=""
     [ -s "$CONF_DIR/meta.env" ] || { warn "нет $CONF_DIR/meta.env — перегенерируйте конфиги"; return 1; }
     for type in xhttp grpc tcp hysteria2; do
         f="$CONF_DIR/$type.json"
@@ -2725,6 +2813,13 @@ keys() {
         sids="$(meta_val "${var}_SIDS")"
         if [ "$type" = "hysteria2" ]; then
             say "  $type: tag $tag, TLS serverName $SNI"
+            xh="$(meta_val HYSTERIA2_XHTTP_TAG)"
+            if [ -n "$xh" ]; then
+                say "    xHTTP (второй инбаунд в том же файле, нужен для selfsteal):"
+                say "      tag:       $xh"
+                say "      publicKey: $(meta_val HYSTERIA2_XHTTP_PUB)"
+                say "      shortIds:  $(meta_val HYSTERIA2_XHTTP_SIDS)"
+            fi
             continue
         fi
         say "  $type: tag $tag"
@@ -2948,6 +3043,10 @@ else
     say "     xHTTP, gRPC, TCP — порт $CONNECT_PORT,"
 fi
 say "     privateKey/shortIds/tag уже сгенерированы, при selfsteal target = 127.0.0.1:$SELFSTEAL_PORT."
+if [ "$HYSTERIA" = "yes" ]; then
+    say "     В hysteria2.json два инбаунда — hysteria (UDP) и xHTTP+Reality (TCP);"
+    say "     xHTTP нужен для Caddy selfsteal, раздавать его клиентам не обязательно."
+fi
 say "     Скопируйте нужный JSON в Config Profile (или перенесите inbound'ы в один профиль),"
 say "     затем Squads → Inbounds, Hosts → привязка к инбаунду."
 say ""
@@ -2962,7 +3061,12 @@ if [ "$HYSTERIA" = "yes" ]; then
     say "  ${C_BLD}Hysteria2:${C_OFF}"
     say "     UDP/$CONNECT_PORT уже открыт в ufw; сертификат лежит в $NODE_DIR/cert,"
     say "     таймер rw-cert-sync.timer обновляет его после продления Caddy."
-    say "     Инбаунд — в $STATE_DIR/configs/hysteria2.json (protocol: hysteria, version 2)."
+    say "     Инбаунд — в $STATE_DIR/configs/hysteria2.json:"
+    say "       • hysteria (protocol: hysteria, version 2) — UDP/$CONNECT_PORT;"
+    say "       • xHTTP + Reality — TCP/$CONNECT_PORT, target 127.0.0.1:${SELFSTEAL_PORT}."
+    say "     xHTTP здесь нужен для Caddy selfsteal: у hysteria-инбаунда нет fallback,"
+    say "     и без TCP-инбаунда сайт-заглушка снаружи не открывается. Клиентам"
+    say "     включать его не обязательно — решает Squads → Inbounds."
     say "     Управление: nodego → Hysteria2 (включить/выключить, сертификат, ядро)."
     say ""
 fi

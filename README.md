@@ -136,6 +136,8 @@ bash install.sh --yes \
     (+ `Hysteria2`): настоящие `privateKey` из `xray x25519`, случайные
     `shortId`, теги на 8 символов, `target: 127.0.0.1:9443` при selfsteal и
     `serverNames` с доменом (или `apple.com`, если selfsteal нет).
+    `hysteria2.json` содержит два инбаунда — hysteria (UDP) и xHTTP+Reality
+    (TCP) для Caddy selfsteal; раздавать xHTTP клиентам не обязательно.
     Файлы: `/etc/remnawave-setup/configs/*.json`, показ и обновление — `nodego`.
 14. **Проверка**: контейнеры, порты (TCP и UDP), версия ядра Xray, локальный
     запрос к Caddy, статус юнитов и таймеров, исходящий IP, DNS.
@@ -306,8 +308,13 @@ bash install.sh --yes --two-ip --ip1 203.0.113.55 --ip2 198.51.100.7 ...
    - `xhttp.json`, `grpc.json`, `tcp.json` — VLESS+Reality; `target` уже
      `127.0.0.1:9443`, `serverNames` — ваш домен, `privateKey` и `shortIds`
      сгенерированы;
-   - `hysteria2.json` — если Hysteria2 включена: `protocol: hysteria`,
-     сертификат из `/etc/remnanode/cert`.
+   - `hysteria2.json` — если Hysteria2 включена: **два инбаунда** в одном
+     файле — `hysteria` (UDP/443, сертификат из `/etc/remnanode/cert`) и
+     `vless` + `xhttp` + `reality` (TCP/443, `target 127.0.0.1:9443`).
+     xHTTP там нужен для **Caddy selfsteal**: у hysteria-инбаунда в Xray нет
+     fallback, поэтому без TCP-инбаунда сайт-заглушка снаружи не открывается
+     (на 443 некому слушать). Раздавать xHTTP клиентам не обязательно —
+     это решает **Squads → Inbounds**.
    Скопируйте нужный JSON в Config Profile (или перенесите inbound'ы в один
    профиль), затем **Squads → Inbounds** и **Hosts**.
 4. Hysteria2 отдельно «ставить» не надо: UDP-порт уже открыт, сертификат

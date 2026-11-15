@@ -747,6 +747,7 @@ menu_configs() {
         hdr "Готовые конфиги (порт ${CONNECT_PORT:-?})"
         if [ "$HYSTERIA" = "yes" ]; then
             say "  набор: xHTTP, gRPC, TCP, Hysteria2   •   каталог: $CONFIGS_DIR"
+            say "  hysteria2.json = hysteria (UDP) + xHTTP/Reality (TCP) для selfsteal"
         else
             say "  набор: xHTTP, gRPC, TCP   •   каталог: $CONFIGS_DIR"
         fi
