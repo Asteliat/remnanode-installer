@@ -22,7 +22,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer
 |---|---|---|
 | Порт ноды | `2222` | внутренний API «панель → нода» |
 | IP панели Remnawave | — | порт ноды откроется **только** для этого IP |
-| Порт панели | `3000` | порт веб-панели — по нему проверяется, что нода видит панель (Enter — проверять не надо) |
 | `SECRET_KEY` | — | копируется из панели при создании ноды |
 | Порт подключения | `443` | **один** порт на xHTTP, gRPC и TCP; открывается всем |
 | Hysteria2 (да/нет) | `да` | UDP на том же порту + сертификат selfsteal |
@@ -53,7 +52,7 @@ IP панели.
 
 ```bash
 bash install.sh --yes \
-  --node-port 2222 --panel-ip 203.0.113.10 --panel-port 3000 \
+  --node-port 2222 --panel-ip 203.0.113.10 \
   --secret-key 'КЛЮЧ_ИЗ_ПАНЕЛИ' \
   --connect-port 443 --hysteria yes \
   --domain vpn.example.com --template studio \
@@ -61,7 +60,7 @@ bash install.sh --yes \
   --dns yes --autoupdate yes
 ```
 
-Флаги: `--node-port`, `--panel-ip`, `--panel-port`, `--secret-key`,
+Флаги: `--node-port`, `--panel-ip`, `--secret-key`,
 `--connect-port` (один порт для xHTTP/gRPC/TCP), `--hysteria yes|no` /
 `--no-hysteria`, `--selfsteal yes|no`, `--no-selfsteal`, `--domain`,
 `--selfsteal-port`, `--template`, `--one-ip` / `--two-ip` / `--dual-ip`,
@@ -155,7 +154,7 @@ bash install.sh --yes \
 | ACME: ZeroSSL | резервный путь, если LE недоступен |
 | GitHub raw | не скачаются шаблоны и `nodego` |
 | Docker Hub (`registry-1.docker.io`) | не скачаются образы ноды и Caddy |
-| панель `IP:PORT` | доступность панели по выбранному порту (`--panel-port`, по умолчанию 3000; информационно) |
+| панель `IP:PORT` | доступность веб-порта панели — только по явному `--panel-port`; для работы ноды не нужно (соединение всегда панель → нода) |
 
 Пример вывода на проблемном сервере:
 

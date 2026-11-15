@@ -39,7 +39,8 @@
 #
 #  Дополнительно скрипт спрашивает:
 #    * порт ноды и IP панели — порт ноды откроется только этому адресу
-#    * порт панели — по нему проверяется, что нода видит панель
+#      (порт веб-панели не спрашивается: нода пассивна, соединение всегда
+#       панель → нода; необязательная проверка — ключом --panel-port)
 #    * один порт подключения (xHTTP/gRPC/TCP) и Hysteria2 (UDP на нём же)
 #    * DNS-фильтрацию AdGuard (блокировка рекламы/трекеров, DoT)
 #    * автообновление ноды (systemd-таймер + откат при неудаче)
@@ -71,8 +72,7 @@ SWAP_SIZE="${SWAP_SIZE:-auto}"      # auto | off | 512M | 2G
 
 # ------------------------------------------------------------------ defaults
 PANEL_IP="${PANEL_IP:-}"
-PANEL_PORT="${PANEL_PORT:-3000}"
-PANEL_PORT_FLAG=""                # --panel-port задан явно: повторно не спрашиваем    # порт веб-панели (нужен для проверки «нода видит панель»)
+PANEL_PORT="${PANEL_PORT:-}"     # необязателен: только для проверки --panel-port (нода к панели не стучится)
 NODE_PORT="${NODE_PORT:-2222}"
 SECRET_KEY="${SECRET_KEY:-}"
 CONNECT_PORT="${CONNECT_PORT:-}"    # один порт для xHTTP/gRPC/TCP (и UDP для Hysteria2)
@@ -124,8 +124,8 @@ Remnawave Node + Caddy selfsteal — установщик
 Основные флаги:
   --node-port PORT       порт ноды (внутренний API, по умолчанию 2222)
   --panel-ip IP          IP панели Remnawave (порт ноды откроется только ему)
-  --panel-port PORT      порт панели для проверки доступности (по умолчанию 3000;
-                         пустая строка — не проверять)
+  --panel-port PORT      необязательно: проверить доступность веб-порта панели
+                         (нода к панели не подключается — только панель к ноде)
   --secret-key KEY       SECRET_KEY из панели
   --connect-port PORT    ОДИН порт для подключения клиентов (по умолчанию 443):
                          на нём работают xHTTP, gRPC и TCP
@@ -174,7 +174,7 @@ while [[ $# -gt 0 ]]; do
         --skip-firewall)   SKIP_FIREWALL=true ;;
         --skip-netcheck)   SKIP_NETCHECK=true ;;
         --panel-ip)        PANEL_IP="${2:?}"; shift ;;
-        --panel-port)      PANEL_PORT="${2-}"; PANEL_PORT_FLAG=yes; shift || true ;;
+        --panel-port)      PANEL_PORT="${2-}"; shift || true ;;
         --node-port)       NODE_PORT="${2:?}"; shift ;;
         --secret-key)      SECRET_KEY="${2:?}"; shift ;;
         --connect-port)    CONNECT_PORT="${2:?}"; shift ;;
@@ -436,13 +436,14 @@ net_check() {
             ;;
     esac
 
-    if [ -z "${PANEL_PORT:-}" ]; then
-        note "проверка доступности панели отключена (--panel-port '')"
-    elif timeout 4 bash -c "echo > /dev/tcp/${PANEL_IP}/${PANEL_PORT}" 2>/dev/null; then
-        ok "панель ${PANEL_IP}:${PANEL_PORT} отвечает"
-    else
-        note "панель ${PANEL_IP}:${PANEL_PORT} не отвечает (другой порт или файрвол панели) — не критично"
-        note "порт панели задаётся ключом --panel-port"
+    # Порт панели не нужен для работы ноды: соединение всегда панель → нода
+    # (NODE_PORT). Проверка только по явному --panel-port, иначе молчим.
+    if [ -n "${PANEL_PORT:-}" ]; then
+        if timeout 4 bash -c "echo > /dev/tcp/${PANEL_IP}/${PANEL_PORT}" 2>/dev/null; then
+            ok "панель ${PANEL_IP}:${PANEL_PORT} отвечает (информационно, для ноды не нужно)"
+        else
+            note "панель ${PANEL_IP}:${PANEL_PORT} не отвечает — не критично, нода подключается не сама"
+        fi
     fi
 
     if [ "$warned" -gt 0 ]; then
@@ -515,29 +516,12 @@ if [ -z "$PANEL_IP" ] || ! is_ipv4 "$PANEL_IP"; then
 fi
 ok "Панель: $PANEL_IP (порт $NODE_PORT будет открыт только ей)"
 
-# --- Порт панели -----------------------------------------------------------
-# Нужен только для проверки «нода видит панель»: панель может слушать не 3000
-# (свой reverse-proxy, порт из docker-compose). Спрашиваем до ключа, чтобы
-# проверка шла по тому порту, который реально открыт.
-if [ "$ASSUME_YES" != true ] && [ "$PANEL_PORT_FLAG" != yes ]; then
-    say ""
-    note "Порт панели — на нём слушает сама панель Remnawave (обычно 3000)."
-    note "Нода стучится туда, чтобы проверить «нода видит панель»; это не порт"
-    note "ноды ($NODE_PORT) и не порт подключения клиентов."
-fi
-if [ -z "$PANEL_PORT" ]; then
-    note "Порт панели: проверка доступности отключена"
-else
-    while ! is_port "$PANEL_PORT"; do
-        if [ "$ASSUME_YES" = true ]; then
-            die "Некорректный --panel-port: '$PANEL_PORT' (ожидается 1-65535 или пусто)"
-        fi
-        ask PANEL_PORT "Порт панели Remnawave (обычно 3000)" "3000"
-    done
-    if [ "$ASSUME_YES" != true ] && [ "$PANEL_PORT_FLAG" != yes ]; then
-        ask PANEL_PORT "Порт панели Remnawave (обычно 3000, Enter — оставить)" "$PANEL_PORT"
-    fi
-    ok "Порт панели: $PANEL_PORT"
+# --- Порт панели (необязательно) --------------------------------------------
+# Нода — пассивная сторона: панель сама стучится к ней на NODE_PORT, обратного
+# соединения нет. Поэтому порт панели не спрашиваем: он нужен только для
+# необязательной проверки веб-порта панели (--panel-port PORT).
+if [ -n "${PANEL_PORT:-}" ] && ! is_port "$PANEL_PORT"; then
+    die "Некорректный --panel-port: '$PANEL_PORT' (ожидается 1-65535 или пусто)"
 fi
 
 # --- Секретный ключ --------------------------------------------------------
@@ -823,7 +807,7 @@ fi
 # --- Сводка и подтверждение ------------------------------------------------
 say ""
 say "  ${C_BLD}Итого:${C_OFF}"
-say "    панель ............ ${PANEL_IP}${PANEL_PORT:+:$PANEL_PORT}"
+say "    панель ............ ${PANEL_IP}"
 say "    порт ноды ......... $NODE_PORT (только с $PANEL_IP)"
 say "    порт подключения .. $CONNECT_PORT/tcp — xHTTP, gRPC, TCP"
 if [ "$HYSTERIA" = "yes" ]; then
