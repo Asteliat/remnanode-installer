@@ -17,7 +17,7 @@
 #
 #  Неинтерактивный режим:
 #    ... install.sh --yes --node-port 2222 --panel-ip 1.2.3.4 --secret-key KEY \
-#                   --connect-port 443 --domain vpn.example.com --template shop
+#                   --connect-port 443 --domain vpn.example.com --template studio
 #
 #  Порты: спрашивается ОДИН порт подключения — на нём работают xHTTP, gRPC и TCP.
 #  Какой именно inbound какого типа — установщику не важно: важны firewall и
@@ -79,7 +79,7 @@ HYSTERIA="${HYSTERIA:-}"            # yes = Hysteria2 (UDP на CONNECT_PORT)
 USE_SELFSTEAL="${USE_SELFSTEAL:-yes}"
 DOMAIN="${DOMAIN:-}"
 SELFSTEAL_PORT="${SELFSTEAL_PORT:-9443}"
-TEMPLATE="${TEMPLATE:-shop}"
+TEMPLATE="${TEMPLATE:-studio}"
 
 # --- сеть -------------------------------------------------------------------
 DUAL_IP="${DUAL_IP:-no}"        # yes = вход на IP1, выход через IP2
@@ -134,7 +134,7 @@ Remnawave Node + Caddy selfsteal — установщик
   --selfsteal yes|no     разворачивать сайт-заглушку
   --domain DOMAIN        домен для selfsteal
   --selfsteal-port PORT  внутренний порт Caddy (9443)
-  --template NAME        сайт-заглушка: shop (по умолчанию), studio, saas, docs,
+  --template NAME        сайт-заглушка: studio (по умолчанию), saas, docs,
                          blog, dashboard, restaurant, travel, forum, hosting
   --one-ip | --two-ip    схема сети (2 IP: клиенты входят на --ip1, нода выходит с --ip2)
   --ip1 IP               IP для входа (по умолчанию — автоопределённый IP сервера;
@@ -160,7 +160,7 @@ Remnawave Node + Caddy selfsteal — установщик
   bash install.sh
   bash install.sh --yes --node-port 2222 --panel-ip 1.2.3.4 --secret-key KEY \
       --connect-port 443 --hysteria yes \
-      --domain vpn.example.com --template shop --two-ip --ip2 5.6.7.8
+      --domain vpn.example.com --template studio --two-ip --ip2 5.6.7.8
 USAGE
 }
 
@@ -583,8 +583,8 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
     if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/templates/manifest.tsv" ]; then
         cp "$SCRIPT_DIR/templates/manifest.tsv" "$_mf"
     elif ! fetch "$TEMPLATES_BASE/manifest.tsv" "$_mf" 2>/dev/null; then
-        warn "не удалось получить список шаблонов — доступен только shop"
-        printf 'shop|магазин керамики — каталог, фильтры, корзина\n' > "$_mf"
+        warn "не удалось получить список шаблонов — доступен только studio"
+        printf 'studio|дизайн-студия — кейсы, услуги, форма заявки\n' > "$_mf"
     fi
     while IFS='|' read -r _tk _td; do
         _tk="${_tk%$'\r'}"
@@ -596,8 +596,8 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
     rm -f "$_mf"
     unset _tk _td _mf 2>/dev/null || true
     if [ "${#TEMPLATE_KEYS[@]}" -eq 0 ]; then
-        TEMPLATE_KEYS=(shop)
-        TEMPLATE_DESCS=("магазин керамики — каталог, фильтры, корзина")
+        TEMPLATE_KEYS=(studio)
+        TEMPLATE_DESCS=("дизайн-студия — кейсы, услуги, форма заявки")
     fi
 
     # Совместимость со старым answers.env: там мог остаться ключ из прежнего
@@ -615,7 +615,7 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
             tasks|crm|hr|edu|quiz|crypto|finance)     TEMPLATE=dashboard ;;
             news|torrent|music|video|cinema)          TEMPLATE=blog ;;
             podcast|radio|hotel|photos|gallery)       TEMPLATE=travel ;;
-            fitness|health|law|insurance|realestate)  TEMPLATE=shop ;;
+            fitness|health|law|insurance|realestate)  TEMPLATE=studio ;;
             auto|logistics|speedtest)                 TEMPLATE=hosting ;;
             status|503|cdn|cloud)                     TEMPLATE=hosting ;;
             *)                                       TEMPLATE="${TEMPLATE_KEYS[0]}" ;;
