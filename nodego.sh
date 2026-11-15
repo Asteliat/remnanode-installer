@@ -8,6 +8,7 @@
 #  Без меню:          nodego status | logs | restart | update | net | preset <имя>
 #                     nodego configs [xhttp|grpc|tcp|hysteria2] | keys
 #                     nodego ports | nodego hysteria [status|on|off|cert|core|test]
+#                     nodego check [ip|region|bench-ru|bench|yabs|dpi|cpu|quick]
 # ============================================================================
 
 set -uo pipefail
@@ -588,6 +589,234 @@ doctor() {
     pause
 }
 
+# ============================================================================
+#  Проверка сервера: сторонние скрипты (IP, чёрные списки, бенчмарки, DPI)
+# ============================================================================
+#  Скрипты чужие: запускаются от root, ходят в интернет и доставляют себе
+#  пакеты — всё, что они поставят, остаётся в системе. Бенчмарки занимают
+#  канал и CPU, поэтому на боевой ноде их лучше запускать в окно низкой
+#  нагрузки. URL всегда печатается перед запуском: не доверяете — не жмите.
+
+CHECKS_TMP="/tmp/nodego-checks"
+
+ensure_pkgs() { # ensure_pkgs <пакет>... — доставить через apt, если чего-то нет
+    local -a miss=()
+    local p
+    for p in "$@"; do
+        have "$p" || miss+=("$p")
+    done
+    if [ "${#miss[@]}" -eq 0 ]; then
+        return 0
+    fi
+    if ! have apt-get; then
+        warn "нет apt-get — поставьте вручную: ${miss[*]}"
+        return 1
+    fi
+    say "  ${C_DIM}доставляю: ${miss[*]}${C_OFF}"
+    DEBIAN_FRONTEND=noninteractive apt-get update -qq >/dev/null 2>&1 || true
+    if ! DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${miss[@]}" >/dev/null 2>&1; then
+        err "не удалось поставить: ${miss[*]}"
+        return 1
+    fi
+    for p in "${miss[@]}"; do
+        if ! have "$p"; then
+            err "после установки не найден: $p"
+            return 1
+        fi
+    done
+    ok "зависимости на месте"
+}
+
+check_dl() { # check_dl <url> <файл> — скачать и проверить, что это скрипт, а не HTML
+    if have wget; then
+        wget -q --timeout=40 --tries=2 -O "$2" "$1" 2>/dev/null || return 1
+    else
+        # часть сайтов (например bench.gig.ovh) отдаёт скрипт только на UA wget
+        curl -fsSL --max-time 40 -A 'Wget/1.21.4' -o "$2" "$1" 2>/dev/null || return 1
+    fi
+    if [ ! -s "$2" ]; then
+        return 1
+    fi
+    if ! head -c 512 "$2" | grep -qiE '(^#!)|bash'; then
+        err "по ссылке пришёл не скрипт — не запускаю"
+        return 1
+    fi
+    return 0
+}
+
+check_run() { # check_run <url> [аргументы для bash] — скачать и запустить
+    local url="$1"
+    local f=""
+    local rc=0
+    shift
+    if ! ensure_pkgs curl wget; then
+        return 1
+    fi
+    mkdir -p "$CHECKS_TMP" || return 1
+    chmod 700 "$CHECKS_TMP" 2>/dev/null || true
+    f="$CHECKS_TMP/$(basename "${url%%\?*}")"
+    dim "источник: $url"
+    if ! check_dl "$url" "$f"; then
+        rm -f "$f"
+        err "не скачалось: $url"
+        return 1
+    fi
+    dim "скачано $(du -h "$f" 2>/dev/null | cut -f1), запускаю…"
+    say ""
+    ( cd "$CHECKS_TMP" && bash "$f" "$@" ) || rc=$?
+    say ""
+    if [ "$rc" -eq 0 ]; then
+        ok "проверка завершена (результаты и логи — в $CHECKS_TMP)"
+    else
+        warn "скрипт вышел с кодом $rc — часть тестов не прошла, это нормально"
+    fi
+    return 0
+}
+
+check_head() { # check_head <заголовок> <что смотрим> <время>
+    hdr "$1"
+    say "  ${C_DIM}что смотрим:${C_OFF} $2"
+    say "  ${C_DIM}время:${C_OFF}       $3"
+    say ""
+}
+
+check_ip() {
+    check_head "IP: блокировки и чёрные списки" \
+        "доступность зарубежных сервисов с этого IP, чёрные списки, тип адреса (resi/hosting)" "1–3 мин"
+    check_run "https://IP.Check.Place" -l en
+    pause
+}
+
+check_region() {
+    check_head "Регион IP" \
+        "какая страна и провайдер числятся за IP в базах регистрации" "10–20 c"
+    check_run "https://ipregion.xyz"
+    pause
+}
+
+check_bench_ru() {
+    check_head "Бенчмарк: RU-точки" \
+        "скорость до российских городов, диск, CPU (резервный источник — bench.tlab.pw)" "1–2 мин"
+    check_run "https://bench.gig.ovh" || check_run "https://bench.tlab.pw"
+    pause
+}
+
+check_bench_world() {
+    check_head "Бенчмарк: зарубежные точки" \
+        "скорость до европейских и азиатских точек, диск, CPU (резерв — speed.tlab.pw)" "1–2 мин"
+    check_run "https://bench.sh" || check_run "https://speed.tlab.pw"
+    pause
+}
+
+check_yabs() {
+    check_head "YABS: диск, iperf3, GeekBench" \
+        "скорость диска, реальный канал (iperf3), CPU-скор GeekBench — по нему видно steal" "10–20 мин"
+    warn "iperf3 расходует трафик, GeekBench грузит CPU: на боевой ноде лучше в окно низкой нагрузки"
+    say ""
+    if [ "$NODEGO_CLI" = true ] || confirm "запустить YABS?" "n"; then
+        check_run "https://yabs.sh" -4
+    fi
+    pause
+}
+
+check_instagram() {
+    check_head "Instagram: блокировка аудио" \
+        "отдаёт ли Instagram музыку и аудио с этого IP" "~1 мин"
+    check_run "https://bench.openode.xyz/checker_inst.sh"
+    pause
+}
+
+check_dpi() {
+    check_head "CensorCheck: DPI-фильтрация" \
+        "режет ли провайдер трафик к заблокированным в РФ ресурсам" "~2 мин"
+    warn "смысл есть только для ноды или канала в РФ: с зарубежного сервера тест покажет «всё доступно»"
+    say ""
+    check_run "https://raw.githubusercontent.com/vernette/censorcheck/master/censorcheck.sh" --mode dpi
+    pause
+}
+
+sysbench_cpu() {
+    if ! ensure_pkgs sysbench; then
+        return 1
+    fi
+    mkdir -p "$CHECKS_TMP" 2>/dev/null || true
+    ( cd "$CHECKS_TMP" && sysbench cpu run --threads=1 2>&1 | sed 's/^/  /' ) || true
+    say ""
+    dim "сравнивайте с другой нодой того же класса: заметно ниже — проверяйте steal (top, mpstat)"
+}
+
+check_cpu() {
+    check_head "CPU: sysbench, один поток" \
+        "события в секунду в один поток; низкое или скачущее значение — признак steal" "~15 c"
+    sysbench_cpu
+    pause
+}
+
+check_quick() {
+    check_head "Быстрый набор" \
+        "исходящий IP, регион по IP и CPU в один поток — без тяжёлых бенчмарков" "~40 c"
+    outbound_check
+    say ""
+    check_run "https://ipregion.xyz"
+    say ""
+    sysbench_cpu
+    pause
+}
+
+menu_checks() {
+    local c=""
+    while true; do
+        hdr "Проверка сервера"
+        dim "скрипты сторонние: запуск от root, доставка пакетов, выход в интернет"
+        say ""
+        say "  ${C_BLD}1)${C_OFF} IP: блокировки и чёрные списки       ${C_DIM}~1–3 мин${C_OFF}"
+        say "  ${C_BLD}2)${C_OFF} Регион IP                            ${C_DIM}~15 c${C_OFF}"
+        say "  ${C_BLD}3)${C_OFF} Бенчмарк: RU-точки                   ${C_DIM}~1–2 мин${C_OFF}"
+        say "  ${C_BLD}4)${C_OFF} Бенчмарк: зарубежные точки           ${C_DIM}~1–2 мин${C_OFF}"
+        say "  ${C_BLD}5)${C_OFF} YABS: диск, iperf3, GeekBench        ${C_DIM}~10–20 мин${C_OFF}"
+        say "  ${C_BLD}6)${C_OFF} Instagram: блокировка аудио          ${C_DIM}~1 мин${C_OFF}"
+        say "  ${C_BLD}7)${C_OFF} CensorCheck: DPI (нужна нода в РФ)   ${C_DIM}~2 мин${C_OFF}"
+        say "  ${C_BLD}8)${C_OFF} CPU: sysbench, один поток            ${C_DIM}~15 c${C_OFF}"
+        say "  ${C_BLD}9)${C_OFF} Быстрый набор: IP + регион + CPU     ${C_DIM}~40 c${C_OFF}"
+        say "  ${C_BLD}0)${C_OFF} Назад"
+        say ""
+        read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" c || true
+        case "${c:-}" in
+            1) check_ip ;;
+            2) check_region ;;
+            3) check_bench_ru ;;
+            4) check_bench_world ;;
+            5) check_yabs ;;
+            6) check_instagram ;;
+            7) check_dpi ;;
+            8) check_cpu ;;
+            9) check_quick ;;
+            0|q|Q|"") return ;;
+            *) warn "нет такого пункта" ;;
+        esac
+    done
+}
+
+cli_check() { # nodego check <имя> — то же без меню
+    case "${1:-menu}" in
+        ip|ipcheck)   check_ip ;;
+        region|geoip) check_region ;;
+        bench-ru|ru)  check_bench_ru ;;
+        bench|world)  check_bench_world ;;
+        yabs)         check_yabs ;;
+        instagram|ig) check_instagram ;;
+        dpi|censor)   check_dpi ;;
+        cpu|sysbench) check_cpu ;;
+        quick)        check_quick ;;
+        menu|"")      menu_checks ;;
+        *)
+            err "неизвестная проверка: $1"
+            say "  ip | region | bench-ru | bench | yabs | instagram | dpi | cpu | quick"
+            exit 1
+            ;;
+    esac
+}
+
 backup_now() {
     hdr "Бэкап конфигов"
     if [ ! -x /usr/local/sbin/rw-backup.sh ]; then
@@ -1118,6 +1347,10 @@ cli() {
                 exit 1
             fi
             ;;
+        check|checks)
+            shift || true
+            cli_check "${1:-menu}"
+            ;;
         -h|--help|help)
             say "nodego — меню управления Remnawave Node"
             say ""
@@ -1136,6 +1369,8 @@ cli() {
             say "  nodego backup          бэкап конфигов"
             say "  nodego restore <файл>  восстановление из бэкапа"
             say "  nodego alerts          статус алертов"
+            say "  nodego check [что]     проверка сервера: ip | region | bench-ru | bench |"
+            say "                         yabs | instagram | dpi | cpu | quick"
             ;;
         *) err "неизвестная команда: $1 (см. nodego --help)"; exit 1 ;;
     esac
@@ -1181,6 +1416,7 @@ while true; do
     say "  ${C_BLD}19)${C_OFF} Бэкап конфигов сейчас"
     say "  ${C_BLD}20)${C_OFF} Восстановить из бэкапа"
     say "  ${C_BLD}21)${C_OFF} Алерты Telegram: включить/выключить"
+    say "  ${C_BLD}22)${C_OFF} Проверка сервера: IP, бенчмарки, DPI"
     say "  ${C_BLD}0)${C_OFF} Выход"
     say ""
     read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" choice || true
@@ -1206,6 +1442,7 @@ while true; do
         19) backup_now ;;
         20) restore_menu ;;
         21) toggle_alerts ;;
+        22) menu_checks ;;
         0|q|Q|"") say ""; dim "выход"; exit 0 ;;
         *) warn "нет такого пункта" ;;
     esac
