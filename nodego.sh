@@ -6,6 +6,8 @@
 #
 #  Запуск:            nodego
 #  Без меню:          nodego status | logs | restart | update | net | preset <имя>
+#                     nodego configs [xhttp|grpc|tcp|hysteria2] | keys
+#                     nodego ports | nodego hysteria [status|on|off|cert|core|test]
 # ============================================================================
 
 set -uo pipefail
@@ -20,13 +22,18 @@ STATE_DIR="/etc/remnawave-setup"
 ANSWERS="$STATE_DIR/answers.env"
 NET_ENV="$STATE_DIR/net.env"
 ALERTS_ENV="$STATE_DIR/alerts.env"
+CONFIGS_DIR="$STATE_DIR/configs"
 NODE_DIR="/opt/remnanode"
 SELFSTEAL_DIR="/opt/selfsteal"
 CADDYFILE="$SELFSTEAL_DIR/Caddyfile"
 UPDATE_LOG="/var/log/remnawave-update.log"
+CONFIGS_BIN="/usr/local/sbin/rw-configs.sh"
+CERT_SYNC="/usr/local/sbin/rw-cert-sync.sh"
+HY_CERT="$NODE_DIR/cert"
 
 TEMPLATE_KEYS=()
 TEMPLATE_DESCS=()
+NODEGO_CLI=false
 
 load_templates() { # список сайтов из templates/manifest.tsv
     TEMPLATE_KEYS=()
@@ -62,9 +69,13 @@ ok()   { say "  ${C_GRN}[ok]${C_OFF} $*"; }
 warn() { say "  ${C_YEL}[!!]${C_OFF} $*"; }
 err()  { say "  ${C_RED}[xx]${C_OFF} $*"; }
 dim()  { say "  ${C_DIM}$*${C_OFF}"; }
+note() { dim "$*"; }
 hdr()  { echo; say "${C_BLU}▌ $*${C_OFF}"; }
 
-pause() { read -r -p "$(echo -e "${C_DIM}Enter — продолжить…${C_OFF}")" _ || true; }
+pause() {
+    [ "$NODEGO_CLI" = true ] && return 0
+    read -r -p "$(echo -e "${C_DIM}Enter — продолжить…${C_OFF}")" _ || true
+}
 
 ask() { # ask VAR "текст" "дефолт"
     local __var="$1" __prompt="$2" __def="${3:-}" __val=""
@@ -96,6 +107,35 @@ is_ipv4() {
     return 0
 }
 
+is_port() {
+    [[ "${1:-}" =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
+node_xray_version() {
+    local v=""
+    v="$(docker exec remnanode sh -c 'xray version 2>/dev/null || /usr/local/bin/xray version 2>/dev/null' 2>/dev/null | head -n1)"
+    [ -n "$v" ] || v="нода не запущена"
+    printf '%s\n' "$v"
+}
+
+have_configs() { [ -x "$CONFIGS_BIN" ]; }
+
+configs_count() {
+    local n=0 f=""
+    for f in "$CONFIGS_DIR"/*.json; do
+        [ -f "$f" ] && n=$((n + 1))
+    done
+    printf '%s\n' "$n"
+}
+
+cfg_run() { # cfg_run <параметры rw-configs.sh>
+    if ! have_configs; then
+        err "генератор конфигов не найден ($CONFIGS_BIN) — запустите установщик ещё раз"
+        return 1
+    fi
+    "$CONFIGS_BIN" "$@"
+}
+
 have() { command -v "$1" >/dev/null 2>&1; }
 need_root() {
     if [ "$(id -u)" -ne 0 ]; then
@@ -109,6 +149,7 @@ load_conf() {
     MODE="single"; IP1=""; IP2=""; IFACE=""; GW=""; BIND_IP="0.0.0.0"
     PANEL_IP=""; NODE_PORT=""; USE_SELFSTEAL=""; DOMAIN=""; SELFSTEAL_PORT="9443"
     TEMPLATE=""; USE_DNS=""; AUTO_UPDATE=""
+    CONNECT_PORT=""; HYSTERIA="no"
     XHTTP_PORT=""; GRPC_PORT=""; TCP_PORT=""
     ALERTS="no"; TG_TOKEN=""; TG_CHAT=""
     # shellcheck disable=SC1090
@@ -117,6 +158,15 @@ load_conf() {
     [ -f "$NET_ENV" ] && . "$NET_ENV"
     # shellcheck disable=SC1090
     [ -f "$ALERTS_ENV" ] && . "$ALERTS_ENV"
+    if [ -z "${CONNECT_PORT:-}" ]; then
+        for _p in "${XHTTP_PORT:-}" "${GRPC_PORT:-}" "${TCP_PORT:-}"; do
+            if [ -n "$_p" ]; then CONNECT_PORT="$_p"; break; fi
+        done
+        unset _p 2>/dev/null || true
+    fi
+    CONNECT_PORT="${CONNECT_PORT:-443}"
+    HYSTERIA="${HYSTERIA:-no}"
+    SELFSTEAL_PORT="${SELFSTEAL_PORT:-9443}"
     [ -n "${IP1:-}" ] || IP1="$(primary_ip)"
 }
 
@@ -239,15 +289,26 @@ show_status() {
 
     say ""
     say "  ${C_BLD}Порты:${C_OFF}"
-    say "    панель: ${PANEL_IP:-—}   порт ноды: ${NODE_PORT:-—}"
+    say "    панель: ${PANEL_IP:-—}   порт ноды: ${NODE_PORT:-—} (только с IP панели)"
     if [ "$USE_SELFSTEAL" = "yes" ]; then
         say "    selfsteal: ${DOMAIN:-—} (80/443 → 127.0.0.1:${SELFSTEAL_PORT:-9443}), шаблон: ${TEMPLATE:-landing}"
     else
         say "    selfsteal: выключен"
     fi
-    say "    xHTTP: ${XHTTP_PORT:-—}   gRPC: ${GRPC_PORT:-—}   TCP: ${TCP_PORT:-—}"
+    say "    подключение: порт ${CONNECT_PORT:-—}/tcp — xHTTP, gRPC, TCP"
+    if [ "$HYSTERIA" = "yes" ]; then
+        if ss -ulnH "sport = :${CONNECT_PORT:-443}" 2>/dev/null | grep -q .; then
+            say "    Hysteria2: UDP/${CONNECT_PORT} — слушается"
+        else
+            say "    Hysteria2: UDP/${CONNECT_PORT} открыт в ufw, но инбаунда в профиле панели нет"
+        fi
+    else
+        say "    Hysteria2: выключена (nodego → 3)"
+    fi
+    say "    готовые конфиги: $(configs_count) шт. в $CONFIGS_DIR"
+    say "    ядро ноды: $(node_xray_version)"
     say "    DNS-фильтр: ${USE_DNS:-no}   автообновление: ${AUTO_UPDATE:-no}"
-    ss -tlnH 2>/dev/null | awk '{print $4}' | grep -E ':(80|443|'"${NODE_PORT:-2222}"')$' \
+    ss -tlnH 2>/dev/null | awk '{print $4}' | grep -E ':(80|'"${NODE_PORT:-2222}"'|'"${CONNECT_PORT:-443}"')$' \
         | sort -u | sed 's/^/    слушается /' || true
 }
 
@@ -657,6 +718,350 @@ show_config() {    hdr "Конфигурация"
     pause
 }
 
+# ------------------------------------------------------------ готовые конфиги
+configs_refresh() {
+    hdr "Обновить параметры конфигов"
+    dim "  порт, Reality target и serverNames подтянутся из текущих настроек;"
+    dim "  privateKey, shortIds и теги останутся прежними"
+    if cfg_run generate; then
+        cfg_run brief
+    fi
+    pause
+}
+
+configs_regen() {
+    hdr "Перегенерировать конфиги"
+    warn "privateKey, shortIds и теги станут новыми — профиль в панели надо обновить"
+    if confirm "продолжить?" "n"; then
+        if cfg_run generate --force; then
+            cfg_run brief
+        fi
+    fi
+    pause
+}
+
+menu_configs() {
+    while true; do
+        hdr "Готовые конфиги (порт ${CONNECT_PORT:-?})"
+        if [ "$HYSTERIA" = "yes" ]; then
+            say "  набор: xHTTP, gRPC, TCP, Hysteria2   •   каталог: $CONFIGS_DIR"
+        else
+            say "  набор: xHTTP, gRPC, TCP   •   каталог: $CONFIGS_DIR"
+        fi
+        say ""
+        say "  ${C_BLD}1)${C_OFF} показать все конфиги"
+        say "  ${C_BLD}2)${C_OFF} xHTTP"
+        say "  ${C_BLD}3)${C_OFF} gRPC"
+        say "  ${C_BLD}4)${C_OFF} TCP"
+        if [ "$HYSTERIA" = "yes" ]; then
+            say "  ${C_BLD}5)${C_OFF} Hysteria2"
+        else
+            say "  ${C_BLD}5)${C_OFF} Hysteria2 — выключена"
+        fi
+        say "  ${C_BLD}6)${C_OFF} publicKey и shortIds (для ручных клиентов)"
+        say "  ${C_BLD}7)${C_OFF} обновить параметры (порт/домен, ключи сохраняются)"
+        say "  ${C_BLD}8)${C_OFF} перегенерировать (новые ключи, теги и shortIds)"
+        say "  ${C_BLD}9)${C_OFF} проверить через xray -test"
+        say "  ${C_BLD}0)${C_OFF} назад"
+        say ""
+        local c=""
+        read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" c || true
+        case "${c:-}" in
+            1) hdr "Все конфиги"; cfg_run show all; pause ;;
+            2) hdr "xHTTP"; cfg_run show xhttp; pause ;;
+            3) hdr "gRPC"; cfg_run show grpc; pause ;;
+            4) hdr "TCP"; cfg_run show tcp; pause ;;
+            5)
+                if [ "$HYSTERIA" = "yes" ]; then
+                    hdr "Hysteria2"; cfg_run show hysteria2
+                else
+                    warn "Hysteria2 выключена — включите её: главное меню → 3 → 2"
+                fi
+                pause
+                ;;
+            6) hdr "publicKey и shortIds"; cfg_run keys; pause ;;
+            7) configs_refresh ;;
+            8) configs_regen ;;
+            9) hdr "Проверка конфигов (xray -test)"; cfg_run test; pause ;;
+            0|"") return ;;
+            *) warn "нет такого пункта" ;;
+        esac
+    done
+}
+
+# --------------------------------------------------------------------- порты
+ports_list() {
+    hdr "Открытые порты (ufw)"
+    if have ufw; then
+        ufw status verbose 2>/dev/null | sed 's/^/  /' || true
+    else
+        warn "ufw не установлен"
+    fi
+    pause
+}
+
+ports_add() {
+    local p="" proto="" from="" label=""
+    hdr "Открыть порт"
+    read -r -p "$(echo -e "${C_BLD}Порт${C_OFF}: ")" p || true
+    p="${p//[[:space:]]/}"
+    if ! is_port "$p"; then err "некорректный порт: '$p'"; pause; return; fi
+    read -r -p "$(echo -e "${C_BLD}Протокол${C_OFF} [tcp/udp/both, tcp]: ")" proto || true
+    proto="${proto:-tcp}"
+    proto="${proto,,}"
+    case "$proto" in
+        tcp|udp|both) : ;;
+        *) err "протокол: tcp, udp или both"; pause; return ;;
+    esac
+    read -r -p "$(echo -e "${C_BLD}Только для IP${C_OFF} [пусто — для всех]: ")" from || true
+    from="${from//[[:space:]]/}"
+    if [ -n "$from" ] && ! is_ipv4 "$from"; then
+        err "некорректный IPv4: '$from'"
+        pause
+        return
+    fi
+    read -r -p "$(echo -e "${C_BLD}Подпись правила${C_OFF} [port $p]: ")" label || true
+    label="${label:-port $p}"
+    if ! have ufw; then err "ufw не установлен"; pause; return; fi
+    if [ -n "$from" ]; then
+        if ufw allow from "$from" to any port "$p" proto "$proto" comment "$label" >/dev/null 2>&1; then
+            ok "открыт $p/$proto для $from — «$label»"
+        else
+            warn "ufw не принял правило"
+        fi
+    elif [ "$proto" = "both" ]; then
+        ufw allow "$p/tcp" comment "$label" >/dev/null 2>&1
+        ufw allow "$p/udp" comment "$label" >/dev/null 2>&1
+        ok "открыт $p/tcp и $p/udp — «$label»"
+    else
+        if ufw allow "$p/$proto" comment "$label" >/dev/null 2>&1; then
+            ok "открыт $p/$proto — «$label»"
+        else
+            warn "ufw не принял правило"
+        fi
+    fi
+    say ""
+    ufw status 2>/dev/null | grep -E "^${p}(/| )" | sed 's/^/  /' || true
+    pause
+}
+
+ports_del() {
+    local num=""
+    hdr "Закрыть порт"
+    if ! have ufw; then err "ufw не установлен"; pause; return; fi
+    ufw status numbered 2>/dev/null | sed 's/^/  /' || true
+    say ""
+    read -r -p "$(echo -e "${C_BLD}Номер правила (Enter — отмена)${C_OFF}: ")" num || true
+    [ -z "$num" ] && return
+    if ! [[ "$num" =~ ^[0-9]+$ ]]; then err "нужен номер из списка"; pause; return; fi
+    if confirm "удалить правило №$num?" "n"; then
+        if ufw --force delete "$num" >/dev/null 2>&1; then
+            ok "правило №$num удалено"
+        else
+            warn "ufw не смог удалить правило №$num"
+        fi
+        say ""
+        ufw status 2>/dev/null | sed 's/^/  /' || true
+    fi
+    pause
+}
+
+menu_ports() {
+    while true; do
+        hdr "Порты в firewall"
+        say "  ${C_BLD}1)${C_OFF} список открытых портов"
+        say "  ${C_BLD}2)${C_OFF} открыть новый порт с подписью"
+        say "  ${C_BLD}3)${C_OFF} закрыть порт"
+        say "  ${C_BLD}0)${C_OFF} назад"
+        say ""
+        local c=""
+        read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" c || true
+        case "${c:-}" in
+            1) ports_list ;;
+            2) ports_add ;;
+            3) ports_del ;;
+            0|"") return ;;
+            *) warn "нет такого пункта" ;;
+        esac
+    done
+}
+
+# ----------------------------------------------------------------- Hysteria2
+ufw_drop_port() { # ufw_drop_port ПОРТ ПРОТОКОЛ (убирает все правила v4/v6)
+    local p="$1" proto="$2" num="" tries=0
+    while [ "$tries" -lt 5 ]; do
+        num="$(ufw status numbered 2>/dev/null \
+            | grep -E "\\] ${p}/${proto}([[:space:]]|$)" \
+            | head -n1 | sed -n 's/^\[[[:space:]]*\([0-9]*\)\].*/\1/p')"
+        [ -n "$num" ] || break
+        ufw --force delete "$num" >/dev/null 2>&1 || break
+        tries=$((tries + 1))
+    done
+    [ "$tries" -gt 0 ]
+}
+
+hy_short_status() {
+    local udp="нет" cert="нет" state="выключена"
+    if ufw status 2>/dev/null | grep -qE "^${CONNECT_PORT}/udp"; then udp="открыт"; fi
+    if [ -s "$HY_CERT/fullchain.crt" ] && [ -s "$HY_CERT/private.key" ]; then cert="есть"; fi
+    if [ "$HYSTERIA" = "yes" ]; then state="включена"; fi
+    say "  состояние: ${C_BLD}${state}${C_OFF}   UDP/${CONNECT_PORT}: $udp   сертификат: $cert"
+    say "  ядро ноды: $(node_xray_version)"
+}
+
+hy_status() {
+    hdr "Hysteria2: статус"
+    hy_short_status
+    say ""
+    say "  домен:          ${DOMAIN:-—}"
+    say "  Reality target: 127.0.0.1:${SELFSTEAL_PORT:-9443}"
+    if [ -f "$CONFIGS_DIR/hysteria2.json" ]; then
+        say "  конфиг:         $CONFIGS_DIR/hysteria2.json (есть)"
+    else
+        say "  конфиг:         нет — включите Hysteria2 (пункт 2)"
+    fi
+    say "  таймер сертификата: $(systemctl is-active rw-cert-sync.timer 2>/dev/null || echo -)"
+    dim "  UDP в ядре Xray поднимается только когда hysteria-инбаунд есть в профиле панели"
+    pause
+}
+
+hy_enable() {
+    hdr "Hysteria2: включить"
+    if [ "$USE_SELFSTEAL" != "yes" ] || [ -z "${DOMAIN:-}" ]; then
+        err "нужен selfsteal с доменом (сейчас: ${USE_SELFSTEAL:-нет}, домен '${DOMAIN:-—}')"
+        pause
+        return 1
+    fi
+    if [ ! -x "$CERT_SYNC" ]; then
+        err "нет $CERT_SYNC — запустите установщик ещё раз"
+        pause
+        return 1
+    fi
+    say "  синхронизирую сертификат…"
+    "$CERT_SYNC" | sed 's/^/  /'
+    if [ ! -s "$HY_CERT/fullchain.crt" ]; then
+        err "сертификат не найден — selfsteal ещё не выпустил (проверьте: docker logs selfsteal)"
+        pause
+        return 1
+    fi
+    if have ufw; then
+        ufw allow "$CONNECT_PORT/udp" comment "hysteria2 QUIC $CONNECT_PORT" >/dev/null 2>&1 || true
+        ok "UDP/$CONNECT_PORT открыт в ufw"
+    fi
+    set_answer HYSTERIA yes
+    HYSTERIA="yes"
+    if cfg_run generate; then
+        cfg_run brief
+    fi
+    ok "Hysteria2 включена: конфиг $CONFIGS_DIR/hysteria2.json"
+    note "дальше: вставьте его в Config Profile, включите в Squads и Hosts, перезапустите ноду"
+    pause
+}
+
+hy_disable() {
+    hdr "Hysteria2: выключить"
+    if [ "$NODEGO_CLI" = false ]; then
+        confirm "закрыть UDP/$CONNECT_PORT и удалить конфиг?" "n" || return 0
+    fi
+    if have ufw; then
+        if ufw_drop_port "$CONNECT_PORT" udp; then
+            ok "UDP/$CONNECT_PORT закрыт в ufw"
+        fi
+    fi
+    set_answer HYSTERIA no
+    HYSTERIA="no"
+    cfg_run generate >/dev/null 2>&1 || true
+    ok "Hysteria2 выключена, конфиг hysteria2.json удалён"
+    note "не забудьте убрать hysteria-инбаунд из профиля панели"
+    pause
+}
+
+hy_cert() {
+    hdr "Hysteria2: сертификат"
+    if [ ! -x "$CERT_SYNC" ]; then
+        err "нет $CERT_SYNC — запустите установщик ещё раз"
+        pause
+        return 1
+    fi
+    "$CERT_SYNC" | sed 's/^/  /'
+    if [ -s "$HY_CERT/fullchain.crt" ]; then
+        ok "сертификат на месте: $HY_CERT/{fullchain.crt,private.key}"
+    else
+        warn "сертификата нет — Caddy ещё не выпустил или домен не тот"
+    fi
+    pause
+}
+
+hy_core() {
+    hdr "Hysteria2: обновление ядра (Xray в ноде)"
+    say "  сейчас: $(node_xray_version)"
+    if [ "$NODEGO_CLI" = false ]; then
+        confirm "обновить Docker-образ ноды до latest (с откатом при сбое)?" "y" || return 0
+    fi
+    if [ -x /usr/local/sbin/rw-node-update.sh ]; then
+        /usr/local/sbin/rw-node-update.sh | sed 's/^/  /'
+    else
+        ( cd "$NODE_DIR" && docker compose pull -q && docker compose up -d ) 2>&1 | sed 's/^/  /'
+    fi
+    say "  после обновления: $(node_xray_version)"
+    note "свежий Xray умеет hysteria-инбаунд — ядро обновлено"
+    pause
+}
+
+hy_test() {
+    hdr "Hysteria2: проверка конфига (xray -test)"
+    if cfg_run test hysteria2; then
+        ok "конфиг hysteria2.json принимается ядром"
+    else
+        warn "ядро не приняло конфиг — чаще всего нет сертификата ($HY_CERT) или Xray старый"
+        note "обновить сертификат: пункт 4, ядро: пункт 5"
+    fi
+    pause
+}
+
+menu_hysteria() {
+    while true; do
+        hdr "Hysteria2"
+        hy_short_status
+        say ""
+        say "  ${C_BLD}1)${C_OFF} статус подробно"
+        say "  ${C_BLD}2)${C_OFF} включить (сертификат + UDP/$CONNECT_PORT + конфиг)"
+        say "  ${C_BLD}3)${C_OFF} выключить"
+        say "  ${C_BLD}4)${C_OFF} обновить сертификат сейчас"
+        say "  ${C_BLD}5)${C_OFF} обновить ядро ноды (Xray) до последней версии"
+        say "  ${C_BLD}6)${C_OFF} проверить конфиг через xray -test"
+        say "  ${C_BLD}0)${C_OFF} назад"
+        say ""
+        local c=""
+        read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" c || true
+        case "${c:-}" in
+            1) hy_status ;;
+            2) hy_enable ;;
+            3) hy_disable ;;
+            4) hy_cert ;;
+            5) hy_core ;;
+            6) hy_test ;;
+            0|"") return ;;
+            *) warn "нет такого пункта" ;;
+        esac
+    done
+}
+
+cli_hysteria() {
+    case "${1:-status}" in
+        status) hdr "Hysteria2: статус"; hy_short_status ;;
+        on)     hy_enable ;;
+        off)    hy_disable ;;
+        cert)   "$CERT_SYNC" ;;
+        core)   hy_core ;;
+        test)   hdr "Hysteria2: проверка конфига (xray -test)"; cfg_run test hysteria2 ;;
+        *)
+            err "hysteria: status | on | off | cert | core | test"
+            exit 1
+            ;;
+    esac
+}
+
 # ---------------------------------------------------------------- CLI-режим
 cli() {
     case "${1:-}" in
@@ -676,6 +1081,19 @@ cli() {
             say "алерты: ${ALERTS}${TG_CHAT:+ (chat_id: $TG_CHAT)}"
             ;;
         net)     load_conf; shift; net_show ;;
+        configs|config)
+            load_conf
+            shift || true
+            cfg_run show "${1:-all}"
+            ;;
+        keys)    load_conf; cfg_run keys ;;
+        ports)   load_conf; shift || true; ports_list ;;
+        hysteria)
+            load_conf
+            shift || true
+            cli_hysteria "${1:-status}"
+            ;;
+        certsync) load_conf; "$CERT_SYNC" ;;
         preset)
             load_conf
             load_templates
@@ -706,6 +1124,10 @@ cli() {
             say "  nodego restart         перезапустить ноду"
             say "  nodego update          обновить ноду (с откатом)"
             say "  nodego net             показать схему сети"
+            say "  nodego configs [тип]   готовые конфиги: xhttp|grpc|tcp|hysteria2|all"
+            say "  nodego keys            publicKey и shortIds для ручных клиентов"
+            say "  nodego ports           открытые порты в ufw"
+            say "  nodego hysteria ...    status | on | off | cert | core | test"
             say "  nodego preset <имя>    сменить сайт-заглушку"
             say "  nodego doctor          диагностика (7 проверок)"
             say "  nodego backup          бэкап конфигов"
@@ -721,6 +1143,7 @@ need_root
 load_conf
 
 if [ $# -gt 0 ]; then
+    NODEGO_CLI=true
     cli "$@"
     exit 0
 fi
@@ -731,48 +1154,55 @@ while true; do
     say "${C_BLU}║${C_OFF}  ${C_BLD}nodego${C_OFF} — управление Remnawave Node                  ${C_BLU}║${C_OFF}"
     say "${C_BLU}╚══════════════════════════════════════════════════════════╝${C_OFF}"
     net_state="$([ "$MODE" = dual ] && echo "2 IP: $IP1 → $IP2" || echo "1 IP: ${IP1:-?}")"
-    say "  нода: $(node_running && echo "${C_GRN}работает${C_OFF}" || echo "${C_RED}остановлена${C_OFF}")   |   сеть: $net_state"
+    hy_state="$([ "$HYSTERIA" = "yes" ] && echo "Hy2 UDP/$CONNECT_PORT" || echo "Hy2 off")"
+    say "  нода: $(node_running && echo "${C_GRN}работает${C_OFF}" || echo "${C_RED}остановлена${C_OFF}")   |   сеть: $net_state   |   порт ${CONNECT_PORT:-?}   |   $hy_state"
     say ""
-    say "  ${C_BLD}1)${C_OFF} Статус: контейнеры, службы, сеть, порты"
-    say "  ${C_BLD}2)${C_OFF} Логи ноды (live)"
-    say "  ${C_BLD}3)${C_OFF} Логи selfsteal (live)"
-    say "  ${C_BLD}4)${C_OFF} Лог автообновления"
-    say "  ${C_BLD}5)${C_OFF} Перезапустить ноду"
-    say "  ${C_BLD}6)${C_OFF} Перезапустить selfsteal"
-    say "  ${C_BLD}7)${C_OFF} Перезапустить всё"
-    say "  ${C_BLD}8)${C_OFF} Сеть: 1 IP / 2 IP, вход и выход"
-    say "  ${C_BLD}9)${C_OFF} Сменить сайт-заглушку"
-    say "  ${C_BLD}10)${C_OFF} Обновить ноду сейчас (с откатом)"
-    say "  ${C_BLD}11)${C_OFF} Проверить исходящий IP"
-    say "  ${C_BLD}12)${C_OFF} Показать конфигурацию"
-    say "  ${C_BLD}13)${C_OFF} Автообновление: включить/выключить"
-    say "  ${C_BLD}14)${C_OFF} DNS-фильтр AdGuard: включить/выключить"
-    say "  ${C_BLD}15)${C_OFF} Диагностика (doctor)"
-    say "  ${C_BLD}16)${C_OFF} Бэкап конфигов сейчас"
-    say "  ${C_BLD}17)${C_OFF} Восстановить из бэкапа"
-    say "  ${C_BLD}18)${C_OFF} Алерты Telegram: включить/выключить"
+    say "  ${C_BLD}1)${C_OFF} Готовые конфиги: xHTTP, gRPC, TCP$([ "$HYSTERIA" = "yes" ] && echo ", Hysteria2")"
+    say "  ${C_BLD}2)${C_OFF} Порты: список / открыть новый с подписью / закрыть"
+    say "  ${C_BLD}3)${C_OFF} Hysteria2: статус, включить/выключить, сертификат, ядро"
+    say "  ${C_BLD}4)${C_OFF} Статус: контейнеры, службы, сеть, порты"
+    say "  ${C_BLD}5)${C_OFF} Логи ноды (live)"
+    say "  ${C_BLD}6)${C_OFF} Логи selfsteal (live)"
+    say "  ${C_BLD}7)${C_OFF} Лог автообновления"
+    say "  ${C_BLD}8)${C_OFF} Перезапустить ноду"
+    say "  ${C_BLD}9)${C_OFF} Перезапустить selfsteal"
+    say "  ${C_BLD}10)${C_OFF} Перезапустить всё"
+    say "  ${C_BLD}11)${C_OFF} Сеть: 1 IP / 2 IP, вход и выход"
+    say "  ${C_BLD}12)${C_OFF} Сменить сайт-заглушку"
+    say "  ${C_BLD}13)${C_OFF} Обновить ноду сейчас (с откатом)"
+    say "  ${C_BLD}14)${C_OFF} Проверить исходящий IP"
+    say "  ${C_BLD}15)${C_OFF} Показать конфигурацию"
+    say "  ${C_BLD}16)${C_OFF} Автообновление: включить/выключить"
+    say "  ${C_BLD}17)${C_OFF} DNS-фильтр AdGuard: включить/выключить"
+    say "  ${C_BLD}18)${C_OFF} Диагностика (doctor)"
+    say "  ${C_BLD}19)${C_OFF} Бэкап конфигов сейчас"
+    say "  ${C_BLD}20)${C_OFF} Восстановить из бэкапа"
+    say "  ${C_BLD}21)${C_OFF} Алерты Telegram: включить/выключить"
     say "  ${C_BLD}0)${C_OFF} Выход"
     say ""
     read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" choice || true
     case "${choice:-}" in
-        1)  show_status; pause ;;
-        2)  logs_node ;;
-        3)  logs_caddy ;;
-        4)  logs_update ;;
-        5)  restart_node ;;
-        6)  restart_caddy ;;
-        7)  restart_all ;;
-        8)  menu_net ;;
-        9)  change_preset ;;
-        10) update_now ;;
-        11) hdr "Исходящий IP"; outbound_check; pause ;;
-        12) show_config ;;
-        13) toggle_autoupdate ;;
-        14) toggle_dns ;;
-        15) doctor ;;
-        16) backup_now ;;
-        17) restore_menu ;;
-        18) toggle_alerts ;;
+        1)  menu_configs ;;
+        2)  menu_ports ;;
+        3)  menu_hysteria ;;
+        4)  show_status; pause ;;
+        5)  logs_node ;;
+        6)  logs_caddy ;;
+        7)  logs_update ;;
+        8)  restart_node ;;
+        9)  restart_caddy ;;
+        10) restart_all ;;
+        11) menu_net ;;
+        12) change_preset ;;
+        13) update_now ;;
+        14) hdr "Исходящий IP"; outbound_check; pause ;;
+        15) show_config ;;
+        16) toggle_autoupdate ;;
+        17) toggle_dns ;;
+        18) doctor ;;
+        19) backup_now ;;
+        20) restore_menu ;;
+        21) toggle_alerts ;;
         0|q|Q|"") say ""; dim "выход"; exit 0 ;;
         *) warn "нет такого пункта" ;;
     esac

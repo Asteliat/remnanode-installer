@@ -91,13 +91,124 @@ jobs:
           awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-node-update.sh/{f=1;next} f&&/^EOS$/{exit} f' install.sh > /tmp/update.sh
           awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-healthcheck.sh/{f=1;next} f&&/^HEALTH_EOF$/{exit} f' install.sh > /tmp/health.sh
           awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-backup.sh/{f=1;next} f&&/^BACKUP_EOF$/{exit} f' install.sh > /tmp/backup.sh
-          for pair in "/tmp/secondary.sh:secondary-ip" "/tmp/update.sh:update" "/tmp/health.sh:healthcheck" "/tmp/backup.sh:backup"; do
+          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-cert-sync.sh/{f=1;next} f&&/^CERT_SYNC_EOF$/{exit} f' install.sh > /tmp/certsync.sh
+          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-configs.sh/{f=1;next} f&&/^CONFIGS_EOF$/{exit} f' install.sh > /tmp/rw-configs.sh
+          for pair in "/tmp/secondary.sh:secondary-ip" "/tmp/update.sh:update" "/tmp/health.sh:healthcheck" \
+                      "/tmp/backup.sh:backup" "/tmp/certsync.sh:cert-sync" "/tmp/rw-configs.sh:configs"; do
             file="${pair%%:*}"
             name="${pair##*:}"
             test -s "$file" || { echo "::error::$name script not extracted"; exit 1; }
             bash -n "$file" || { echo "::error::$name script has syntax errors"; exit 1; }
             echo "$name: $(wc -l < "$file") lines, syntax ok"
           done
+
+  generator:
+    name: config generator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract rw-configs.sh
+        run: |
+          set -euo pipefail
+          awk '/^[[:space:]]*cat > \/usr\/local\/sbin\/rw-configs.sh/{f=1;next} f&&/^CONFIGS_EOF$/{exit} f' install.sh > /tmp/rw-configs.sh
+          test -s /tmp/rw-configs.sh
+          bash -n /tmp/rw-configs.sh
+
+      - name: Generate with selfsteal + Hysteria2
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/state1
+          cat > /tmp/state1/answers.env <<'EOF'
+          PANEL_IP='203.0.113.10'
+          NODE_PORT='2222'
+          CONNECT_PORT='443'
+          HYSTERIA='yes'
+          USE_SELFSTEAL='yes'
+          DOMAIN='node.example.com'
+          SELFSTEAL_PORT='9443'
+          EOF
+          RW_STATE_DIR=/tmp/state1 bash /tmp/rw-configs.sh generate
+          # повторный запуск — обновляет параметры, не меняя ключи и shortIds
+          RW_STATE_DIR=/tmp/state1 bash /tmp/rw-configs.sh generate
+          RW_STATE_DIR=/tmp/state1 bash /tmp/rw-configs.sh brief
+          RW_STATE_DIR=/tmp/state1 bash /tmp/rw-configs.sh keys
+          RW_STATE_DIR=/tmp/state1 bash /tmp/rw-configs.sh path tcp
+
+      - name: Validate generated JSON
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib, re, sys
+          d = pathlib.Path('/tmp/state1/configs')
+          files = {p.stem: p for p in d.glob('*.json')}
+          if set(files) != {'xhttp', 'grpc', 'tcp', 'hysteria2'}:
+              sys.exit(f'unexpected configs: {sorted(files)}')
+          tags = set()
+          for name, path in files.items():
+              cfg = json.loads(path.read_text(encoding='utf-8'))
+              ib = cfg['inbounds'][0]
+              tag = ib['tag']
+              if not re.fullmatch(r'(NodeGo\d\d|GoNode\d\d|Node\d{4}|\d\dNode\d\d)', tag):
+                  sys.exit(f'bad tag: {tag}')
+              tags.add(tag)
+              assert ib['port'] == 443, ib['port']
+              assert ib['listen'] == '0.0.0.0'
+              assert cfg['outbounds'][0]['tag'] == 'DIRECT'
+              if name == 'hysteria2':
+                  st = ib['streamSettings']
+                  assert ib['protocol'] == 'hysteria'
+                  assert st['network'] == 'hysteria' and st['security'] == 'tls'
+                  assert st['tlsSettings']['serverName'] == 'node.example.com'
+                  assert st['tlsSettings']['certificates'][0]['certificateFile'] == \
+                      '/etc/remnanode/cert/fullchain.crt'
+                  assert st['hysteriaSettings'] == {'version': 2, 'udpIdleTimeout': 60}
+                  assert ib['settings']['version'] == 2
+              else:
+                  assert ib['protocol'] == 'vless'
+                  st = ib['streamSettings']
+                  assert st['security'] == 'reality'
+                  rs = st['realitySettings']
+                  assert rs['target'] == '127.0.0.1:9443', rs['target']
+                  assert rs['serverNames'] == ['node.example.com'], rs['serverNames']
+                  assert re.fullmatch(r'[A-Za-z0-9_-]{43}', rs['privateKey']), rs['privateKey']
+                  assert len(rs['shortIds']) == 6, rs['shortIds']
+                  assert all(re.fullmatch(r'[0-9a-f]{16}', s) for s in rs['shortIds']), rs['shortIds']
+                  assert st['network'] == name, (name, st['network'])
+                  if name == 'grpc':
+                      assert st['grpcSettings']['serviceName']
+          if len(tags) != 4:
+              sys.exit(f'tags are not unique: {tags}')
+          print('configs ok:', sorted(tags))
+          PY
+
+      - name: Generate without selfsteal (apple.com fallback)
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/state2
+          cat > /tmp/state2/answers.env <<'EOF'
+          NODE_PORT='2222'
+          CONNECT_PORT='8443'
+          HYSTERIA='no'
+          USE_SELFSTEAL='no'
+          EOF
+          RW_STATE_DIR=/tmp/state2 bash /tmp/rw-configs.sh generate
+          python3 - <<'PY'
+          import json, pathlib, sys
+          d = pathlib.Path('/tmp/state2/configs')
+          files = {p.stem: p for p in d.glob('*.json')}
+          if set(files) != {'xhttp', 'grpc', 'tcp'}:
+              sys.exit(f'unexpected configs without selfsteal: {sorted(files)}')
+          for name, path in files.items():
+              cfg = json.loads(path.read_text(encoding='utf-8'))
+              ib = cfg['inbounds'][0]
+              assert ib['port'] == 8443
+              rs = ib['streamSettings']['realitySettings']
+              assert rs['target'] == 'www.apple.com:443', rs['target']
+              assert rs['serverNames'] == ['www.apple.com', 'apple.com'], rs['serverNames']
+          print('fallback ok')
+          PY
 
   config:
     name: generated configs

@@ -5,7 +5,8 @@
 Установщик **Remnawave Node + Caddy Selfsteal** «под ключ» для чистого Debian/Ubuntu.
 
 Один скрипт: зависимости → Docker → тюнинг системы → сеть (1 или 2 IP) → нода →
-сайт-заглушка → firewall → DNS-фильтр → автообновление → systemd → проверка.
+сайт-заглушка → firewall → DNS-фильтр → автообновление → systemd →
+готовые конфиги для панели → проверка.
 
 ## Быстрый старт
 
@@ -15,20 +16,19 @@ bash <(curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer
 
 `-f` важен: если сеть до GitHub недоступна, вы увидите ошибку, а не тихий пустой запуск.
 
-Скрипт спросит (для портов: **Enter = порт не открывается**):
+Скрипт спросит (сначала порт ноды, затем панель и **один** порт подключения):
 
 | Вопрос | Значение в `--yes` | Зачем |
 |---|---|---|
+| Порт ноды | `2222` | внутренний API «панель → нода» |
 | IP панели Remnawave | — | порт ноды откроется **только** для этого IP |
 | Порт панели | `3000` | порт веб-панели — по нему проверяется, что нода видит панель (Enter — проверять не надо) |
-| Порт ноды | `2222` | внутренний API «панель → нода» |
 | `SECRET_KEY` | — | копируется из панели при создании ноды |
-| Порт xHTTP | `443` | Enter = порт не открывается |
-| Порт gRPC | `2096` | Enter = порт не открывается |
-| Порт TCP/Vision | `4443` | Enter = порт не открывается |
+| Порт подключения | `443` | **один** порт на xHTTP, gRPC и TCP; открывается всем |
+| Hysteria2 (да/нет) | `да` | UDP на том же порту + сертификат selfsteal |
 | Selfsteal (да/нет) | `да` | сайт-заглушка для Reality/TLS |
 | Домен | — | A-запись должна указывать на сервер (нужна для Let's Encrypt) |
-| Внутренний порт Caddy | `9443` | Xray будет проксировать сюда |
+| Внутренний порт Caddy | `9443` | Reality target: `127.0.0.1:9443` |
 | Сайт-заглушка | `landing` | 50 пресетов, см. ниже |
 | Схема сети: 1 или 2 IP | `1` | `2` — вход на IP1, выход через IP2 |
 | IP входа | автоопределённый | можно указать докупленный адрес (`--ip1`) |
@@ -37,30 +37,42 @@ bash <(curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer
 | Автообновление ноды | `да` | ежедневная проверка + откат при сбое |
 | Алерты в Telegram | `нет` | если да — спросит токен бота и chat_id |
 
-**Пропуск порта = порт не открывается.** В неинтерактивном режиме значение по
-умолчанию применяется, только если флаг не передан; чтобы порт не открывался —
-передайте пустую строку: `--grpc-port ''`.
+**Один порт вместо трёх.** Раньше спрашивались порты для xHTTP, gRPC и TCP по
+отдельности — теперь спрашивается один порт подключения (по умолчанию `443`).
+Все inbound'ы работают на нём; установщику не важно, какие именно вы создадите
+в панели. Порт ноды по-прежнему спрашивается отдельно и открывается только
+IP панели.
+
+**Hysteria2 — это hysteria-инбаунд внутри Xray ноды**, отдельный бинарь не
+ставится: ядро `remnawave/node` умеет этот протокол. Установщик копирует
+сертификат selfsteal в `/opt/remnanode/cert` (в контейнере — `/etc/remnanode/cert`),
+открывает UDP на порту подключения и обновляет сертификат по таймеру после
+продления Caddy. Включить/выключить позже: `nodego` → 3.
 
 ## Неинтерактивный режим
 
 ```bash
 bash install.sh --yes \
-  --panel-ip 203.0.113.10 --panel-port 3000 \
-  --node-port 2222 \
+  --node-port 2222 --panel-ip 203.0.113.10 --panel-port 3000 \
   --secret-key 'КЛЮЧ_ИЗ_ПАНЕЛИ' \
-  --xhttp-port 443 --grpc-port '' --tcp-port '' \
+  --connect-port 443 --hysteria yes \
   --domain vpn.example.com --template landing \
   --two-ip --ip2 198.51.100.7 \
   --dns yes --autoupdate yes
 ```
 
-Флаги: `--panel-ip`, `--panel-port`, `--node-port`, `--secret-key`, `--xhttp-port`, `--grpc-port`,
-`--tcp-port`, `--selfsteal yes|no`, `--no-selfsteal`, `--domain`,
+Флаги: `--node-port`, `--panel-ip`, `--panel-port`, `--secret-key`,
+`--connect-port` (один порт для xHTTP/gRPC/TCP), `--hysteria yes|no` /
+`--no-hysteria`, `--selfsteal yes|no`, `--no-selfsteal`, `--domain`,
 `--selfsteal-port`, `--template`, `--one-ip` / `--two-ip` / `--dual-ip`,
 `--ip1`, `--ip2`, `--dns yes|no` / `--no-dns`, `--autoupdate yes|no` /
 `--no-autoupdate`, `--alerts yes|no` / `--no-alerts`, `--tg-token`, `--tg-chat`,
 `--swap-size auto|off|1024M`, `--yes`, `--reconfigure`, `--skip-tuning`,
 `--skip-firewall`, `--skip-netcheck`, `--help`.
+
+Старые флаги `--xhttp-port` / `--grpc-port` / `--tcp-port` принимаются и задают
+общий `--connect-port` (первый непустой) — существующие команды установки
+продолжают работать.
 
 Повторный запуск с `--yes` без флагов читает сохранённые ответы из
 `/etc/remnawave-setup/answers.env`. Переопределить: `--reconfigure`.
@@ -90,16 +102,18 @@ bash install.sh --yes \
 7. **Firewall (UFW)**:
    - SSH-порт (определяется автоматически);
    - `80/tcp` — если selfsteal (ACME HTTP-01 + редирект);
-   - порты транспортов — всем;
+   - порт подключения `443/tcp` — всем (xHTTP, gRPC, TCP);
+   - `443/udp` — если включена Hysteria2;
    - порт ноды — только с IP панели.
 8. **Нода** `/opt/remnanode`:
    - `.env` (`NODE_PORT`, `SECRET_KEY`), compose (`remnawave/node:latest`,
      host network, `restart: always`, `cap_add: NET_ADMIN`, ulimits, лог-ротация,
-     монтирование `/var/log/remnanode`);
+     монтирование `/var/log/remnanode` и `./cert` → `/etc/remnanode/cert`);
    - `remnanode.service` — автозапуск через `docker compose`.
 9. **Selfsteal** `/opt/selfsteal`: Caddy на `127.0.0.1:9443`, ACME через 80,
    редирект, security-заголовки, выбранный сайт-заглушка,
-   публичный `:80` привязан к основному IP.
+   публичный `:80` привязан к основному IP; сертификат копируется в
+   `/opt/remnanode/cert` для Hysteria2 (`rw-cert-sync.timer`).
 10. **DNS-фильтр AdGuard DoT** (опционально, по вопросу):
     - `DNS=`/`FallbackDNS=` в `/etc/systemd/resolved.conf` **закомментированы**,
       чтобы старые глобальные DNS не перебивали AdGuard;
@@ -119,9 +133,14 @@ bash install.sh --yes \
       (хранится 14 копий), восстановление: `nodego restore`;
     - `logrotate` для логов ноды + cron (docker-логи, неиспользуемые образы);
     - journald ограничен 500 МБ через `journald.conf.d` (без cron-обрезки).
-13. **Проверка**: контейнеры, порты, локальный запрос к Caddy, статус юнитов
-    и таймеров, исходящий IP, DNS.
-14. **Итог**: что нажать в панели.
+13. **Готовые конфиги** для Config Profile панели — `xHTTP`, `gRPC`, `TCP`
+    (+ `Hysteria2`): настоящие `privateKey` из `xray x25519`, случайные
+    `shortId`, теги на 8 символов, `target: 127.0.0.1:9443` при selfsteal и
+    `serverNames` с доменом (или `apple.com`, если selfsteal нет).
+    Файлы: `/etc/remnawave-setup/configs/*.json`, показ и обновление — `nodego`.
+14. **Проверка**: контейнеры, порты (TCP и UDP), версия ядра Xray, локальный
+    запрос к Caddy, статус юнитов и таймеров, исходящий IP, DNS.
+15. **Итог**: что нажать в панели.
 
 ## Проверка сети перед установкой
 
@@ -275,9 +294,17 @@ bash install.sh --yes --two-ip --ip1 203.0.113.55 --ip2 198.51.100.7 ...
    - Port: тот, что вы указали как «порт ноды»
    - `SECRET_KEY`: тот, что вставили при установке
 2. **Next** → выберите Config Profile → **Create**.
-3. Для selfsteal в inbound'ах xHTTP/gRPC включите **Self-steal**:
-   - `dest: 127.0.0.1:9443`
-   - domain: ваш домен
+3. **Готовые конфиги** — `nodego` → `1` (или `nodego configs`):
+   - `xhttp.json`, `grpc.json`, `tcp.json` — VLESS+Reality; `target` уже
+     `127.0.0.1:9443`, `serverNames` — ваш домен, `privateKey` и `shortIds`
+     сгенерированы;
+   - `hysteria2.json` — если Hysteria2 включена: `protocol: hysteria`,
+     сертификат из `/etc/remnanode/cert`.
+   Скопируйте нужный JSON в Config Profile (или перенесите inbound'ы в один
+   профиль), затем **Squads → Inbounds** и **Hosts**.
+4. Hysteria2 отдельно «ставить» не надо: UDP-порт уже открыт, сертификат
+   синхронизирован, а ядро обновляется вместе с нодой
+   (`nodego` → `3` → `5`).
 
 Проверить, что заглушка жива: откройте `https://ваш-домен` в браузере.
 
@@ -286,45 +313,57 @@ bash install.sh --yes --two-ip --ip1 203.0.113.55 --ip2 198.51.100.7 ...
 После установки на сервере появляется команда **`nodego`** — интерактивное меню:
 
 ```
-1) Статус: контейнеры, службы, сеть, порты
-2) Логи ноды (live)
-3) Логи selfsteal (live)
-4) Лог автообновления
-5) Перезапустить ноду
-6) Перезапустить selfsteal
-7) Перезапустить всё
-8) Сеть: 1 IP / 2 IP, вход и выход
-9) Сменить сайт-заглушку
-10) Обновить ноду сейчас (с откатом)
-11) Проверить исходящий IP
-12) Показать конфигурацию
-13) Автообновление: включить/выключить
-14) DNS-фильтр AdGuard: включить/выключить
-15) Диагностика (doctor)
-16) Бэкап конфигов сейчас
-17) Восстановить из бэкапа
-18) Алерты Telegram: включить/выключить
+1) Готовые конфиги: xHTTP, gRPC, TCP (+ Hysteria2)
+2) Порты: список / открыть новый с подписью / закрыть
+3) Hysteria2: статус, включить/выключить, сертификат, ядро
+4) Статус: контейнеры, службы, сеть, порты
+5) Логи ноды (live)
+6) Логи selfsteal (live)
+7) Лог автообновления
+8) Перезапустить ноду
+9) Перезапустить selfsteal
+10) Перезапустить всё
+11) Сеть: 1 IP / 2 IP, вход и выход
+12) Сменить сайт-заглушку
+13) Обновить ноду сейчас (с откатом)
+14) Проверить исходящий IP
+15) Показать конфигурацию
+16) Автообновление: включить/выключить
+17) DNS-фильтр AdGuard: включить/выключить
+18) Диагностика (doctor)
+19) Бэкап конфигов сейчас
+20) Восстановить из бэкапа
+21) Алерты Telegram: включить/выключить
 ```
 
 Без меню:
 
 ```bash
-nodego status          # состояние
-nodego logs            # логи ноды
-nodego restart         # перезапуск ноды
-nodego update          # обновление с откатом
-nodego net             # схема сети
-nodego preset blog     # сменить заглушку
-nodego doctor          # диагностика (7 проверок + события docker)
-nodego backup          # бэкап конфигов
-nodego restore <файл>  # восстановление
-nodego alerts          # статус алертов
+nodego status                # состояние
+nodego logs                  # логи ноды
+nodego restart               # перезапуск ноды
+nodego update                # обновление с откатом
+nodego net                   # схема сети
+nodego configs               # все готовые конфиги
+nodego configs hysteria2     # один конфиг
+nodego keys                  # publicKey + shortIds (для ручных клиентов)
+nodego ports                 # открытые порты
+nodego hysteria status       # Hysteria2: статус
+nodego hysteria on|off       # включить/выключить
+nodego hysteria cert         # обновить сертификат из selfsteal
+nodego hysteria core         # обновить ядро ноды (Xray) до latest
+nodego hysteria test         # проверить конфиг через xray -test
+nodego preset blog           # сменить заглушку
+nodego doctor                # диагностика (7 проверок + события docker)
+nodego backup                # бэкап конфигов
+nodego restore <файл>        # восстановление
+nodego alerts                # статус алертов
 ```
 
 ### Смена схемы IP без переустановки
 
 Схема хранится в `/etc/remnawave-setup/net.env`, применение — универсальный
-`/usr/local/sbin/rw-secondary-ip.sh`. Поэтому в меню `nodego → 8` можно:
+`/usr/local/sbin/rw-secondary-ip.sh`. Поэтому в меню `nodego → 11` можно:
 
 - перейти с 1 IP на 2 IP (ввести выходной адрес);
 - перейти с 2 IP на 1 IP (правила снимаются автоматически);
@@ -363,13 +402,16 @@ curl -4 --interface <IP2> https://ifconfig.io
 
 | Путь | Что |
 |---|---|
-| `/opt/remnanode/` | `docker-compose.yml`, `.env` |
-| `/opt/selfsteal/` | `docker-compose.yml`, `Caddyfile`, `html/`, `logs/` |
+| `/opt/remnanode/` | `docker-compose.yml`, `.env`, `cert/` (сертификат для Hysteria2) |
+| `/opt/selfsteal/` | `docker-compose.yml`, `Caddyfile`, `html/`, `logs/`, `ssl/` |
 | `/etc/systemd/system/remnanode.service` | автозапуск ноды |
 | `/etc/systemd/system/selfsteal.service` | автозапуск Caddy |
 | `/etc/systemd/system/rw-secondary-ip.service` | второй IP + SNAT |
 | `/etc/systemd/system/rw-node-update.{service,timer}` | автообновление |
+| `/etc/systemd/system/rw-cert-sync.{service,timer}` | сертификат для Hysteria2 |
 | `/usr/local/bin/nodego` | интерактивное меню управления |
+| `/usr/local/sbin/rw-configs.sh` | генератор готовых конфигов (xHTTP/gRPC/TCP/Hysteria2) |
+| `/usr/local/sbin/rw-cert-sync.sh` | копирование сертификата selfsteal в ноду |
 | `/usr/local/sbin/rw-secondary-ip.sh` | применение схемы сети из `net.env` |
 | `/usr/local/sbin/rw-node-update.sh` | обновление с откатом |
 | `/usr/local/sbin/rw-healthcheck.sh` | проверки + алерты (и `--report` для doctor) |
@@ -377,6 +419,7 @@ curl -4 --interface <IP2> https://ifconfig.io
 | `/etc/remnawave-setup/answers.env` | сохранённые ответы (chmod 600) |
 | `/etc/remnawave-setup/net.env` | текущая схема IP (chmod 600) |
 | `/etc/remnawave-setup/alerts.env` | токен/chat_id для алертов (chmod 600) |
+| `/etc/remnawave-setup/configs/` | готовые JSON-конфиги + `meta.env` (chmod 600) |
 | `/var/backups/remnanode/` | бэкапы конфигов (14 копий) |
 | `/var/log/remnanode/` | логи Xray (logrotate) |
 | `/var/log/remnawave-setup.log` | лог установки |
@@ -403,6 +446,17 @@ IP, а порт 80 — быть доступен снаружи. До выпус
 **Порт занят.** Скрипт предупредит до запуска контейнеров:
 `ss -tlnp | grep :443`.
 
+**Hysteria2 не подключается.** Проверьте по порядку: `nodego hysteria status`
+(UDP открыт? сертификат на месте?), затем `nodego hysteria test` — ядро должно
+принять `hysteria2.json`. Если UDP-порт закрыт в **облачном** firewall
+(security group у хостера), ufw этого не видит — откройте порт там.
+Клиентская ссылка должна указывать на порт подключения (например `:443`),
+а `hysteria-инбаунд` — быть включён в Squads и Hosts панели.
+
+**Конфиги не подходят к панели / поменял домен.** `nodego` → `1` → `7`
+обновляет порт, target и serverNames, не меняя ключи; `8` перегенерирует
+конфиги полностью (новые ключи — профиль в панели придётся обновить).
+
 **Нужен перезапуск?** Да, для полного применения `nofile`:
 `reboot`.
 
@@ -422,7 +476,8 @@ IP, а порт 80 — быть доступен снаружи. До выпус
 | `bash -n install.sh` | синтаксис |
 | **ShellCheck** (`-S style`, все уровни) для `install.sh` и `nodego.sh` | ошибки и плохие практики |
 | шаблоны | 50 штук: манифест без дублей, у каждого ключа есть папка и наоборот, `index.html` непустой |
-| встроенные скрипты | `rw-secondary-ip.sh`, `rw-node-update.sh`, `rw-healthcheck.sh`, `rw-backup.sh` парсятся bash |
+| встроенные скрипты | `rw-secondary-ip.sh`, `rw-node-update.sh`, `rw-healthcheck.sh`, `rw-backup.sh`, `rw-cert-sync.sh`, `rw-configs.sh` парсятся bash |
+| генератор конфигов | `rw-configs.sh` реально генерирует 3–4 JSON; проверяются теги, порт, `privateKey` (43 символа), 6 `shortIds` по 16 hex, target `127.0.0.1:9443`/`www.apple.com:443`, `serverNames` и поля Hysteria2 |
 | сгенерированные конфиги | оба `docker-compose.yml` валидны как YAML, Caddyfile структурно цел |
 
 Проверить локально:

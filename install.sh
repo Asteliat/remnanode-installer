@@ -7,20 +7,26 @@
 #    2. тюнит систему под VPN-нагрузку (swap, nofile, sysctl, BBR+FQ, NTP, DNS)
 #    3. разворачивает Remnawave Node (/opt/remnanode) с вашими NODE_PORT и ключом
 #    4. разворачивает Caddy Selfsteal (/opt/selfsteal) с выбранным сайтом-заглушкой
-#    5. настраивает firewall: порты транспортов — всем, порт ноды — только панели
+#    5. настраивает firewall: ОДИН порт подключения — всем, порт ноды — только панели
 #    6. создаёт systemd-юниты автозапуска (docker compose)
-#    7. проверяет результат и печатает, что осталось сделать в панели
+#    7. готовит готовые конфиги для панели: xHTTP, gRPC, TCP (+ Hysteria2)
+#    8. проверяет результат и печатает, что осталось сделать в панели
 #
 #  Быстрый старт:
 #    bash <(curl -fsSL https://raw.githubusercontent.com/Asteliat/remnanode-installer/main/install.sh)
 #
 #  Неинтерактивный режим:
-#    ... install.sh --yes --panel-ip 1.2.3.4 --secret-key KEY \
-#                   --xhttp-port 443 --tcp-port 4443 --grpc-port 2096 \
-#                   --domain vpn.example.com --template landing
+#    ... install.sh --yes --node-port 2222 --panel-ip 1.2.3.4 --secret-key KEY \
+#                   --connect-port 443 --domain vpn.example.com --template landing
 #
-#  Пропуск порта = порт не открывается. Самый простой способ "выключить":
-#  нажать Enter на вопросе о порте либо передать --xhttp-port "" .
+#  Порты: спрашивается ОДИН порт подключения — на нём работают xHTTP, gRPC и TCP.
+#  Какой именно inbound какого типа — установщику не важно: важны firewall и
+#  готовые конфиги. Отдельно спрашивается порт ноды (внутренний API), и только
+#  после него — IP панели, которой этот порт открывается.
+#
+#  Hysteria2 (UDP на том же порту) — по желанию: ставится вместе с нодой и
+#  selfsteal, сертификат для TLS забирается у Caddy. Позже включить/выключить,
+#  обновить сертификат или ядро можно в меню `nodego`.
 #
 #  Схемы с IP:
 #    1 IP  — вход и выход через один адрес (обычная схема)
@@ -32,7 +38,9 @@
 #            интерфейс; автоопределённый IP сервера показывается как подсказка.
 #
 #  Дополнительно скрипт спрашивает:
+#    * порт ноды и IP панели — порт ноды откроется только этому адресу
 #    * порт панели — по нему проверяется, что нода видит панель
+#    * один порт подключения (xHTTP/gRPC/TCP) и Hysteria2 (UDP на нём же)
 #    * DNS-фильтрацию AdGuard (блокировка рекламы/трекеров, DoT)
 #    * автообновление ноды (systemd-таймер + откат при неудаче)
 #    * алерты в Telegram (healthcheck)
@@ -44,7 +52,7 @@
 
 set -euo pipefail
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 
 REPO_OWNER="Asteliat"
 REPO_NAME="remnanode-installer"
@@ -66,9 +74,8 @@ PANEL_IP="${PANEL_IP:-}"
 PANEL_PORT="${PANEL_PORT:-3000}"    # порт веб-панели (нужен для проверки «нода видит панель»)
 NODE_PORT="${NODE_PORT:-2222}"
 SECRET_KEY="${SECRET_KEY:-}"
-XHTTP_PORT="${XHTTP_PORT:-443}"
-GRPC_PORT="${GRPC_PORT:-2096}"
-TCP_PORT="${TCP_PORT:-4443}"
+CONNECT_PORT="${CONNECT_PORT:-}"    # один порт для xHTTP/gRPC/TCP (и UDP для Hysteria2)
+HYSTERIA="${HYSTERIA:-}"            # yes = Hysteria2 (UDP на CONNECT_PORT)
 USE_SELFSTEAL="${USE_SELFSTEAL:-yes}"
 DOMAIN="${DOMAIN:-}"
 SELFSTEAL_PORT="${SELFSTEAL_PORT:-9443}"
@@ -114,14 +121,16 @@ Remnawave Node + Caddy selfsteal — установщик
   bash install.sh --yes ...       неинтерактивно (флаги ниже)
 
 Основные флаги:
+  --node-port PORT       порт ноды (внутренний API, по умолчанию 2222)
   --panel-ip IP          IP панели Remnawave (порт ноды откроется только ему)
   --panel-port PORT      порт панели для проверки доступности (по умолчанию 3000;
                          пустая строка — не проверять)
-  --node-port PORT       порт ноды (по умолчанию 2222)
   --secret-key KEY       SECRET_KEY из панели
-  --xhttp-port PORT      порт xHTTP        (пусто = не открывать)
-  --grpc-port PORT       порт gRPC         (пусто = не открывать)
-  --tcp-port PORT        порт TCP/Vision   (пусто = не открывать)
+  --connect-port PORT    ОДИН порт для подключения клиентов (по умолчанию 443):
+                         на нём работают xHTTP, gRPC и TCP
+  --hysteria yes|no      Hysteria2 (UDP на порту подключения, по умолчанию yes
+                         при включённом selfsteal)
+  --no-hysteria          не включать Hysteria2
   --selfsteal yes|no     разворачивать сайт-заглушку
   --domain DOMAIN        домен для selfsteal
   --selfsteal-port PORT  внутренний порт Caddy (9443)
@@ -142,10 +151,14 @@ Remnawave Node + Caddy selfsteal — установщик
   -h, --help             эта справка
   -v, --version          версия
 
+  Устаревшие флаги --xhttp-port / --grpc-port / --tcp-port (раньше было три
+  отдельных порта) принимаются и задают общий --connect-port.
+  Сами inbound'ы настраиваются в панели — установщику важен только firewall.
+
 Примеры:
   bash install.sh
-  bash install.sh --yes --panel-ip 1.2.3.4 --secret-key KEY \
-      --xhttp-port 443 --grpc-port '' --tcp-port '' \
+  bash install.sh --yes --node-port 2222 --panel-ip 1.2.3.4 --secret-key KEY \
+      --connect-port 443 --hysteria yes \
       --domain vpn.example.com --template landing --two-ip --ip2 5.6.7.8
 USAGE
 }
@@ -162,9 +175,13 @@ while [[ $# -gt 0 ]]; do
         --panel-port)      PANEL_PORT="${2-}"; shift || true ;;
         --node-port)       NODE_PORT="${2:?}"; shift ;;
         --secret-key)      SECRET_KEY="${2:?}"; shift ;;
-        --xhttp-port)      XHTTP_PORT="${2-}"; shift || true ;;
-        --grpc-port)       GRPC_PORT="${2-}"; shift || true ;;
-        --tcp-port)        TCP_PORT="${2-}"; shift || true ;;
+        --connect-port)    CONNECT_PORT="${2:?}"; shift ;;
+        --hysteria)        HYSTERIA="${2:?}"; shift ;;
+        --no-hysteria)     HYSTERIA="no" ;;
+        # старые флаги: три порта → один общий (первый непустой)
+        --xhttp-port|--grpc-port|--tcp-port)
+            if [ -n "${2:-}" ] && [ -z "$CONNECT_PORT" ]; then CONNECT_PORT="$2"; fi
+            shift || true ;;
         --selfsteal)       USE_SELFSTEAL="${2:?}"; shift ;;
         --no-selfsteal)    USE_SELFSTEAL="no" ;;
         --domain)          DOMAIN="${2:?}"; shift ;;
@@ -198,6 +215,16 @@ DUAL_IP="$(norm_yn "$DUAL_IP")"
 USE_DNS="$(norm_yn "$USE_DNS")"
 AUTO_UPDATE="$(norm_yn "$AUTO_UPDATE")"
 ALERTS="$(norm_yn "$ALERTS")"
+
+# ---- один порт вместо трёх: читаем и старые answers.env, и старые флаги -----
+if [ -z "${CONNECT_PORT:-}" ]; then
+    for _legacy_port in "${XHTTP_PORT:-}" "${GRPC_PORT:-}" "${TCP_PORT:-}"; do
+        if [ -n "$_legacy_port" ]; then CONNECT_PORT="$_legacy_port"; break; fi
+    done
+    unset _legacy_port 2>/dev/null || true
+fi
+CONNECT_PORT="${CONNECT_PORT:-443}"
+HYSTERIA="$(norm_yn "${HYSTERIA:-yes}")"
 
 # ------------------------------------------------------------------ helpers
 if [ -t 1 ]; then
@@ -297,24 +324,6 @@ ask_yesno() { # ask_yesno VAR "текст" default(y/n)
             n|no|н|нет) printf -v "$__var" '%s' "no"; return 0 ;;
             *) warn "Ответьте «д» (да) или «н» (нет)" ;;
         esac
-    done
-}
-
-ask_port() { # ask_port VAR "текст" "подсказка-дефолт"
-    # В интерактивном режиме пустой ввод = порт НЕ открывается (так просил заказчик).
-    # Значение по умолчанию применяется только в неинтерактивном режиме (--yes).
-    local __var="$1" __prompt="$2" __hint="${3:-}" __val=""
-    if [ "$ASSUME_YES" = true ]; then return 0; fi
-    while true; do
-        if [ -n "$__hint" ]; then
-            read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} [${__hint} — Enter, чтобы не открывать]: ")" __val || true
-        else
-            read -r -p "$(echo -e "${C_BLD}${__prompt}${C_OFF} (Enter — не открывать): ")" __val || true
-        fi
-        __val="${__val//[[:space:]]/}"
-        if [ -z "$__val" ]; then printf -v "$__var" '%s' ""; return 0; fi
-        if is_port "$__val"; then printf -v "$__var" '%s' "$__val"; return 0; fi
-        warn "'$__val' — не порт (1-65535)."
     done
 }
 
@@ -469,21 +478,31 @@ touch "$LOG_FILE" 2>/dev/null || true
 # ============================================================================
 hdr "1. Параметры установки"
 
+# --- Порт ноды -------------------------------------------------------------
+# Спрашиваем первым: именно этот порт открывается в firewall — и только панели.
+while ! is_port "$NODE_PORT"; do
+    if [ "$ASSUME_YES" = true ]; then
+        die "Некорректный --node-port: '$NODE_PORT' (ожидается 1-65535)"
+    fi
+    ask NODE_PORT "Порт ноды (внутренний API, панель → нода)" "2222"
+done
+ok "Порт ноды: $NODE_PORT"
+
 # --- IP панели -------------------------------------------------------------
 if [ -z "$PANEL_IP" ] || ! is_ipv4 "$PANEL_IP"; then
     while true; do
-        ask PANEL_IP "IP панели Remnawave (к ней будет открыт порт ноды)" "${PANEL_IP:-}"
+        ask PANEL_IP "IP панели Remnawave (этому адресу откроем порт $NODE_PORT)" "${PANEL_IP:-}"
         is_ipv4 "$PANEL_IP" && break
         warn "Некорректный IPv4: '$PANEL_IP'"
         [ "$ASSUME_YES" = true ] && die "Укажите корректный --panel-ip"
     done
 fi
-ok "Панель: $PANEL_IP"
+ok "Панель: $PANEL_IP (порт $NODE_PORT будет открыт только ей)"
 
 # --- Порт панели -----------------------------------------------------------
 # Нужен только для проверки «нода видит панель»: панель может слушать не 3000
-# (свой reverse-proxy, порт из docker-compose). Спрашиваем до порта ноды и
-# ключа, чтобы проверка шла по тому порту, который реально открыт.
+# (свой reverse-proxy, порт из docker-compose). Спрашиваем до ключа, чтобы
+# проверка шла по тому порту, который реально открыт.
 if [ -z "$PANEL_PORT" ]; then
     note "Порт панели: проверка доступности отключена"
 else
@@ -495,15 +514,6 @@ else
     done
     ok "Порт панели: $PANEL_PORT"
 fi
-
-# --- Порт ноды -------------------------------------------------------------
-while ! is_port "$NODE_PORT"; do
-    if [ "$ASSUME_YES" = true ]; then
-        die "Некорректный --node-port: '$NODE_PORT' (ожидается 1-65535)"
-    fi
-    ask NODE_PORT "Порт ноды (внутренний API, панель → нода)" "2222"
-done
-ok "Порт ноды: $NODE_PORT"
 
 # --- Секретный ключ --------------------------------------------------------
 if [ -z "$SECRET_KEY" ]; then
@@ -522,40 +532,22 @@ fi
 [ "${#SECRET_KEY}" -ge 16 ] || warn "SECRET_KEY короче 16 символов — проверьте, что скопировали целиком."
 ok "SECRET_KEY: ${SECRET_KEY:0:6}…${SECRET_KEY: -4} (${#SECRET_KEY} символов)"
 
-# --- Порты транспортов -----------------------------------------------------
+# --- Порт подключения ------------------------------------------------------
+# Один порт на все транспорты: и xHTTP, и gRPC, и TCP слушают его в панели.
+# Сколько inbound'ов на нём — установщику не важно, важны firewall и конфиги.
 say ""
-note "Укажите порты, которые будут открыты в firewall. Enter — порт не открывать."
-note "Сами inbound'ы настраиваются в панели; здесь важен только firewall."
-say ""
-
-ask_port XHTTP_PORT "Порт для xHTTP" "обычно 443"
-if [ -n "$XHTTP_PORT" ]; then ok "xHTTP: $XHTTP_PORT"; else note "xHTTP: не открывается"; fi
-ask_port GRPC_PORT  "Порт для gRPC" "обычно 2096"
-if [ -n "$GRPC_PORT" ]; then ok "gRPC:  $GRPC_PORT"; else note "gRPC: не открывается"; fi
-ask_port TCP_PORT   "Порт для TCP/Vision" "обычно 4443"
-if [ -n "$TCP_PORT" ]; then ok "TCP:   $TCP_PORT"; else note "TCP: не открывается"; fi
-
-# Валидация портов, переданных флагами (в --yes промптов не было)
-for _pv in XHTTP_PORT GRPC_PORT TCP_PORT; do
-    _v="${!_pv:-}"
-    [ -z "$_v" ] && continue
-    is_port "$_v" || die "Некорректный порт в --${_pv,,}: '$_v' (ожидается 1-65535)"
+note "Один порт для подключения клиентов: xHTTP, gRPC и TCP работают на нём."
+note "Firewall откроет его всем; сами inbound'ы настраиваются в панели."
+while ! is_port "$CONNECT_PORT"; do
+    if [ "$ASSUME_YES" = true ]; then
+        die "Некорректный --connect-port: '$CONNECT_PORT' (ожидается 1-65535)"
+    fi
+    ask CONNECT_PORT "Порт для подключения (xHTTP/gRPC/TCP)" "443"
 done
-
-# Предупреждения о пересечениях портов
-_used=""
-for _pv in XHTTP_PORT GRPC_PORT TCP_PORT; do
-    _v="${!_pv:-}"
-    [ -z "$_v" ] && continue
-    case " $_used " in
-        *" $_v "*) warn "Порт $_v указан дважды — inbound'ы в панели будут конфликтовать" ;;
-    esac
-    _used="$_used $_v"
-done
-case " $_used " in
-    *" $NODE_PORT "*) warn "Транспортный порт совпадает с портом ноды ($NODE_PORT) — так нельзя" ;;
-esac
-unset _pv _v _used 2>/dev/null || true
+if [ "$CONNECT_PORT" = "$NODE_PORT" ]; then
+    die "Порт подключения совпал с портом ноды ($NODE_PORT) — выберите другой"
+fi
+ok "Порт подключения: $CONNECT_PORT/tcp (xHTTP, gRPC, TCP)"
 
 # --- Selfsteal -------------------------------------------------------------
 say ""
@@ -626,6 +618,27 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
     for k in "${TEMPLATE_KEYS[@]}"; do [ "$k" = "$TEMPLATE" ] && valid=true; done
     [ "$valid" = true ] || die "Неизвестный шаблон '$TEMPLATE'. Допустимо: ${TEMPLATE_KEYS[*]}"
     ok "Сайт-заглушка: $TEMPLATE"
+fi
+
+# --- Hysteria2 -------------------------------------------------------------
+# Hysteria2 — это UDP-транспорт внутри Xray ноды: отдельный бинарь не нужен,
+# ядро ноды (remnawave/node + свежий Xray) умеет hysteria-инбаунд само.
+# Нужны только сертификат домена и открытый UDP на порту подключения.
+say ""
+note "Hysteria2 — тот же порт, но по UDP: работает там, где оператор режет TCP-TLS."
+if [ "$USE_SELFSTEAL" != "yes" ]; then
+    note "Hysteria2 требует домен и сертификат (selfsteal) — пропускаю."
+    HYSTERIA="no"
+else
+    ask_yesno HYSTERIA "Включить Hysteria2 (UDP/$CONNECT_PORT, сертификат от selfsteal)?" "yes"
+    if [ "$HYSTERIA" = "yes" ]; then
+        ok "Hysteria2: UDP/$CONNECT_PORT, сертификат $DOMAIN"
+        if [ "$CONNECT_PORT" = "443" ]; then
+            note "Caddy уже без HTTP/3 (h1/h2), так что UDP/443 остаётся Hysteria2."
+        fi
+    else
+        note "Hysteria2: выключен (включить позже: nodego → Hysteria2)"
+    fi
 fi
 
 # --- Схема с IP ------------------------------------------------------------
@@ -760,14 +773,22 @@ fi
 say ""
 say "  ${C_BLD}Итого:${C_OFF}"
 say "    панель ............ ${PANEL_IP}${PANEL_PORT:+:$PANEL_PORT}"
-say "    порт ноды ......... $NODE_PORT"
-say "    xHTTP ............. ${XHTTP_PORT:-<не открывать>}"
-say "    gRPC .............. ${GRPC_PORT:-<не открывать>}"
-say "    TCP ............... ${TCP_PORT:-<не открывать>}"
+say "    порт ноды ......... $NODE_PORT (только с $PANEL_IP)"
+say "    порт подключения .. $CONNECT_PORT/tcp — xHTTP, gRPC, TCP"
+if [ "$HYSTERIA" = "yes" ]; then
+    say "    Hysteria2 ......... UDP/$CONNECT_PORT (сертификат $DOMAIN)"
+else
+    say "    Hysteria2 ......... выключен"
+fi
 if [ "$USE_SELFSTEAL" = "yes" ]; then
     say "    selfsteal ......... ${DOMAIN}:80/443 → Caddy 127.0.0.1:${SELFSTEAL_PORT} (${TEMPLATE})"
 else
     say "    selfsteal ......... выключен"
+fi
+if [ "$HYSTERIA" = "yes" ]; then
+    say "    готовые конфиги ... xHTTP, gRPC, TCP, Hysteria2"
+else
+    say "    готовые конфиги ... xHTTP, gRPC, TCP"
 fi
 if [ "$DUAL_IP" = "yes" ]; then
     say "    сеть .............. вход $IP1 → выход $IP2"
@@ -796,9 +817,8 @@ PANEL_IP='$PANEL_IP'
 PANEL_PORT='$PANEL_PORT'
 NODE_PORT='$NODE_PORT'
 SECRET_KEY='$SECRET_KEY'
-XHTTP_PORT='$XHTTP_PORT'
-GRPC_PORT='$GRPC_PORT'
-TCP_PORT='$TCP_PORT'
+CONNECT_PORT='$CONNECT_PORT'
+HYSTERIA='$HYSTERIA'
 USE_SELFSTEAL='$USE_SELFSTEAL'
 DOMAIN='$DOMAIN'
 SELFSTEAL_PORT='$SELFSTEAL_PORT'
@@ -1230,11 +1250,13 @@ else
         ufw allow 80/tcp comment 'ACME HTTP-01 + redirect' >/dev/null
     fi
 
-    # Транспортные порты — всем (это публичные inbound'ы)
-    for p in "$XHTTP_PORT" "$GRPC_PORT" "$TCP_PORT"; do
-        [ -n "$p" ] || continue
-        ufw allow "$p/tcp" comment "xray inbound $p" >/dev/null
-    done
+    # Порт подключения — всем: на нём публичные inbound'ы (xHTTP, gRPC, TCP)
+    ufw allow "$CONNECT_PORT/tcp" comment "xray inbound $CONNECT_PORT" >/dev/null
+
+    # Hysteria2 — тот же порт по UDP (QUIC)
+    if [ "$HYSTERIA" = "yes" ]; then
+        ufw allow "$CONNECT_PORT/udp" comment "hysteria2 QUIC $CONNECT_PORT" >/dev/null
+    fi
 
     # Порт ноды — только панели
     ufw allow from "$PANEL_IP" to any port "$NODE_PORT" proto tcp comment "remnanode API $NODE_PORT" >/dev/null
@@ -1253,7 +1275,7 @@ fi
 
 # Проверка занятости портов до запуска контейнеров
 conflict=""
-for p in "$NODE_PORT" "$XHTTP_PORT" "$GRPC_PORT" "$TCP_PORT"; do
+for p in "$NODE_PORT" "$CONNECT_PORT"; do
     [ -n "$p" ] || continue
     if ss -tlnH "sport = :$p" 2>/dev/null | grep -q .; then
         conflict="$conflict $p"
@@ -1265,7 +1287,8 @@ done
 # 8. Remnawave Node
 # ============================================================================
 hdr "8. Remnawave Node"
-mkdir -p "$NODE_DIR" /var/log/remnanode
+mkdir -p "$NODE_DIR" /var/log/remnanode "$NODE_DIR/cert"
+chmod 700 "$NODE_DIR/cert"
 backup "$NODE_DIR/docker-compose.yml"; backup "$NODE_DIR/.env"
 
 cat > "$NODE_DIR/.env" <<EOF
@@ -1292,6 +1315,9 @@ services:
       - NET_ADMIN
     volumes:
       - /var/log/remnanode:/var/log/remnanode
+      # сертификат selfsteal для Hysteria2 (TLS-инбаунд внутри Xray);
+      # синхронизирует rw-cert-sync.timer, без Hysteria2 просто лежит рядом
+      - ./cert:/etc/remnanode/cert:ro
     ulimits:
       nofile:
         soft: 1048576
@@ -1554,6 +1580,131 @@ EOF
     systemctl daemon-reload
     systemctl enable selfsteal.service >/dev/null 2>&1 || true
     ok "Selfsteal запущен, автозагрузка включена (selfsteal.service)"
+
+    # --- сертификат для Hysteria2 -----------------------------------------
+    # Hysteria2 работает внутри Xray ноды и требует файлы сертификата.
+    # Копируем их из selfsteal (из ./ssl или из тома Caddy) в /opt/remnanode/cert
+    # (он смонтирован в контейнер как /etc/remnanode/cert) и обновляем по таймеру:
+    # Caddy продлевает сертификат сам, нода должна увидеть новый файл.
+    cat > /usr/local/sbin/rw-cert-sync.sh <<'CERT_SYNC_EOF'
+#!/bin/bash
+# Синхронизация сертификата selfsteal → /opt/remnanode/cert (для Hysteria2).
+# Источники: ./ssl (сертификат выпущен вручную/acme.sh) или том Caddy.
+set -uo pipefail
+
+ANSWERS=/etc/remnawave-setup/answers.env
+DEST=/opt/remnanode/cert
+DOMAIN=""; HYSTERIA=""
+NO_RESTART=false
+[ "${1:-}" = "--no-restart" ] && NO_RESTART=true
+# shellcheck disable=SC1090
+[ -f "$ANSWERS" ] && . "$ANSWERS"
+
+if [ -z "${DOMAIN:-}" ]; then
+    echo "домен selfsteal не задан — синхронизация сертификата не нужна"
+    exit 0
+fi
+
+mkdir -p "$DEST" 2>/dev/null || true
+chmod 700 "$DEST" 2>/dev/null || true
+tmpd="$(mktemp -d)"
+trap 'rm -rf "$tmpd"' EXIT
+
+src_crt=""; src_key=""
+if [ -s /opt/selfsteal/ssl/fullchain.crt ] && [ -s /opt/selfsteal/ssl/private.key ]; then
+    src_crt=/opt/selfsteal/ssl/fullchain.crt
+    src_key=/opt/selfsteal/ssl/private.key
+elif docker inspect -f '{{.State.Running}}' selfsteal 2>/dev/null | grep -q true; then
+    # Caddy хранит ACME-сертификаты в своём томе: .../certificates/<issuer>/<домен>/
+    p="$(docker exec selfsteal sh -c "find /data/caddy/certificates -type f -name '*.crt' -path '*/${DOMAIN}/*' 2>/dev/null | head -n 1" 2>/dev/null | tr -d '\r')"
+    if [ -n "${p:-}" ]; then
+        docker exec selfsteal cat "$p" > "$tmpd/fullchain.crt" 2>/dev/null || true
+        docker exec selfsteal cat "${p%.crt}.key" > "$tmpd/private.key" 2>/dev/null || true
+        if [ -s "$tmpd/fullchain.crt" ] && [ -s "$tmpd/private.key" ]; then
+            src_crt="$tmpd/fullchain.crt"
+            src_key="$tmpd/private.key"
+        fi
+    fi
+fi
+
+if [ -z "$src_crt" ]; then
+    echo "сертификат для $DOMAIN не найден (selfsteal ещё не выпустил?) — повторим позже"
+    exit 1
+fi
+
+if ! openssl x509 -noout -in "$src_crt" >/dev/null 2>&1; then
+    echo "файл сертификата повреждён — пропускаю"
+    exit 1
+fi
+
+changed=false
+if ! cmp -s "$src_crt" "$DEST/fullchain.crt" 2>/dev/null \
+   || ! cmp -s "$src_key" "$DEST/private.key" 2>/dev/null; then
+    install -m 600 "$src_crt" "$DEST/fullchain.crt"
+    install -m 600 "$src_key" "$DEST/private.key"
+    changed=true
+fi
+
+if [ "$changed" = true ]; then
+    echo "сертификат $DOMAIN обновлён в $DEST"
+    if [ "$NO_RESTART" = false ] && [ "${HYSTERIA:-no}" = "yes" ] \
+       && [ "$(docker inspect -f '{{.State.Running}}' remnanode 2>/dev/null || true)" = "true" ]; then
+        docker restart remnanode >/dev/null 2>&1 \
+            && echo "нода перезапущена (Hysteria2 перечитает сертификат)"
+    fi
+else
+    echo "сертификат в $DEST уже актуален"
+fi
+CERT_SYNC_EOF
+    chmod 0755 /usr/local/sbin/rw-cert-sync.sh
+
+    cat > /etc/systemd/system/rw-cert-sync.service <<'EOF'
+[Unit]
+Description=Sync selfsteal certificate to Remnawave Node (Hysteria2)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/rw-cert-sync.sh
+EOF
+
+    cat > /etc/systemd/system/rw-cert-sync.timer <<'EOF'
+[Unit]
+Description=Daily certificate sync for Hysteria2
+
+[Timer]
+OnCalendar=*-*-* 05:20:00
+RandomizedDelaySec=20m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable --now rw-cert-sync.timer >/dev/null 2>&1 \
+        || warn "таймер синхронизации сертификата не включился"
+    # Caddy выпускает сертификат уже после старта, поэтому ждём до 60 с:
+    # без файлов в /opt/remnanode/cert Hysteria2 не поднимется.
+    _cert_ok=false
+    _cert_try=0
+    while [ "$_cert_try" -lt 12 ]; do
+        if /usr/local/sbin/rw-cert-sync.sh --no-restart >/dev/null 2>&1; then
+            _cert_ok=true
+            break
+        fi
+        sleep 5
+        _cert_try=$((_cert_try + 1))
+    done
+    unset _cert_try 2>/dev/null || true
+    if [ "$_cert_ok" = true ]; then
+        ok "Сертификат скопирован в $NODE_DIR/cert (для Hysteria2), обновление по таймеру"
+    else
+        warn "Сертификат пока не скопирован — Caddy не успел выпустить; повторит таймер"
+        note "вручную: nodego → Hysteria2 → обновить сертификат"
+    fi
+    unset _cert_ok 2>/dev/null || true
 else
     hdr "9. Caddy selfsteal"
     note "Пропущено по выбору пользователя"
@@ -2014,6 +2165,605 @@ if [ "$NODEGO_OK" = true ]; then
 else
     warn "Не удалось установить nodego (меню управления) — не критично"
 fi
+
+# ============================================================================
+# Генератор готовых конфигов (используется установщиком и меню nodego)
+# ============================================================================
+# xHTTP / gRPC / TCP (VLESS+Reality) и Hysteria2 — с уже сгенерированными
+# privateKey (настоящая X25519-пара из xray внутри ноды), shortIds, тегами
+# на 8 символов, правильным Reality target (127.0.0.1:9443 при selfsteal)
+# и serverNames (домен selfsteal либо apple.com).
+cat > /usr/local/sbin/rw-configs.sh <<'CONFIGS_EOF'
+#!/bin/bash
+# ============================================================================
+#  rw-configs — готовые конфиги для Config Profile панели Remnawave
+# ============================================================================
+#  xHTTP, gRPC, TCP (VLESS + Reality) и Hysteria2 (TLS по UDP):
+#    * privateKey — настоящая X25519-пара (xray x25519 внутри ноды),
+#      в конфиг попадает приватный ключ, publicKey выводит команда keys
+#    * shortIds   — случайные 8-байтные hex (16 символов)
+#    * tag        — 8 символов: NodeGo22 / Node6521 / GoNode29 / 21Node54
+#    * target     — 127.0.0.1:<порт Caddy>, если стоит selfsteal,
+#                   иначе www.apple.com:443
+#    * serverNames — домен selfsteal, иначе apple.com и www.apple.com
+#    * порт       — общий порт подключения из answers.env (CONNECT_PORT)
+#
+#  Запуск (обычно через nodego):
+#    rw-configs.sh generate [--force]   создать/обновить конфиги
+#    rw-configs.sh brief                короткая сводка
+#    rw-configs.sh show [тип|all]       напечатать конфиги
+#    rw-configs.sh path <тип>           путь к файлу
+#    rw-configs.sh keys                 publicKey / shortIds / tag
+#    rw-configs.sh test [тип]           проверка через xray -test в ноде
+# ============================================================================
+set -uo pipefail
+
+STATE_DIR="${RW_STATE_DIR:-/etc/remnawave-setup}"
+ANSWERS="$STATE_DIR/answers.env"
+CONF_DIR="$STATE_DIR/configs"
+NODE_CONTAINER="remnanode"
+APL_TARGET="www.apple.com:443"
+APL_NAMES='"www.apple.com", "apple.com"'
+
+SHORT_IDS_JSON=""
+SHORT_IDS_LIST=""
+
+die()  { echo "ОШИБКА: $*" >&2; exit 1; }
+warn() { echo "  [!!] $*"; }
+say()  { echo "$*"; }
+
+usage() {
+    sed -n '4,20p' "$0" | sed 's/^# \{0,1\}//' | sed '/^$/d' || true
+}
+
+load_conf() {
+    CONNECT_PORT=""
+    HYSTERIA="no"; USE_SELFSTEAL="no"; DOMAIN=""; SELFSTEAL_PORT="9443"
+    XHTTP_PORT=""; GRPC_PORT=""; TCP_PORT=""
+    # shellcheck disable=SC1090
+    if [ -f "$ANSWERS" ]; then . "$ANSWERS"; fi
+    if [ -z "${CONNECT_PORT:-}" ]; then
+        for _p in "${XHTTP_PORT:-}" "${GRPC_PORT:-}" "${TCP_PORT:-}"; do
+            if [ -n "$_p" ]; then CONNECT_PORT="$_p"; break; fi
+        done
+        unset _p 2>/dev/null || true
+    fi
+    CONNECT_PORT="${CONNECT_PORT:-443}"
+    HYSTERIA="${HYSTERIA:-no}"
+    SELFSTEAL_PORT="${SELFSTEAL_PORT:-9443}"
+    if [ "${USE_SELFSTEAL:-no}" = "yes" ] && [ -n "${DOMAIN:-}" ]; then
+        REALITY_TARGET="127.0.0.1:${SELFSTEAL_PORT}"
+        SERVER_NAMES="\"${DOMAIN}\""
+        SNI="$DOMAIN"
+    else
+        REALITY_TARGET="$APL_TARGET"
+        SERVER_NAMES="$APL_NAMES"
+        SNI="www.apple.com"
+    fi
+}
+
+# ------------------------------------------------------------------ утилиты
+has_docker() { command -v docker >/dev/null 2>&1; }
+
+node_running() {
+    has_docker || return 1
+    [ "$(docker inspect -f '{{.State.Running}}' "$NODE_CONTAINER" 2>/dev/null || true)" = "true" ]
+}
+
+xray_exec() { docker exec "$NODE_CONTAINER" sh -c "$1" 2>/dev/null; }
+
+gen_short_id() {
+    local s=""
+    s="$(openssl rand -hex 8 2>/dev/null || true)"
+    if [ -z "$s" ]; then
+        s="$(od -An -tx1 -N8 /dev/urandom 2>/dev/null | tr -d ' \n')"
+    fi
+    printf '%s' "${s:0:16}"
+}
+
+gen_short_id_set() {
+    local i="" sid=""
+    SHORT_IDS_JSON=""
+    SHORT_IDS_LIST=""
+    for i in 1 2 3 4 5 6; do
+        sid="$(gen_short_id)"
+        if [ -z "$SHORT_IDS_JSON" ]; then
+            SHORT_IDS_JSON="\"$sid\""
+            SHORT_IDS_LIST="$sid"
+        else
+            SHORT_IDS_JSON="$SHORT_IDS_JSON, \"$sid\""
+            SHORT_IDS_LIST="$SHORT_IDS_LIST,$sid"
+        fi
+    done
+}
+
+# Настоящая X25519-пара: сначала через xray внутри ноды (как в панели),
+# если ноды/докера нет — через openssl (key = 32 байта base64url).
+gen_pair() {
+    local out="" priv="" pub="" pem=""
+    if node_running; then
+        out="$(xray_exec 'xray x25519 2>/dev/null || /usr/local/bin/xray x25519 2>/dev/null' | tr -d '\r')"
+        priv="$(printf '%s\n' "$out" | grep -iE '^private' | head -n1 | sed 's/^[^:]*:[[:space:]]*//')"
+        pub="$(printf '%s\n' "$out" | grep -iE 'public|password' | head -n1 | sed 's/^[^:]*:[[:space:]]*//')"
+    fi
+    case "$priv" in
+        ""|*[!A-Za-z0-9_-]*) priv="" ;;
+    esac
+    if [ "${#priv}" -ne 43 ] || [ "${#pub}" -ne 43 ]; then
+        pem="$(mktemp)"
+        if openssl genpkey -algorithm X25519 -out "$pem" >/dev/null 2>&1; then
+            priv="$(openssl pkey -in "$pem" -outform DER 2>/dev/null | tail -c 32 \
+                    | openssl base64 -A | tr '+/' '-_' | tr -d '=')"
+            pub="$(openssl pkey -in "$pem" -pubout -outform DER 2>/dev/null | tail -c 32 \
+                    | openssl base64 -A | tr '+/' '-_' | tr -d '=')"
+        fi
+        rm -f "$pem"
+    fi
+    if [ "${#priv}" -ne 43 ] || [ "${#pub}" -ne 43 ]; then
+        return 1
+    fi
+    printf '%s %s\n' "$priv" "$pub"
+}
+
+# Тег на 8 символов в духе NodeGo22 / Node6521 / GoNode29 / 21Node54
+gen_tag() {
+    local a="" b=""
+    a="$(printf '%02d' $((RANDOM % 100)))"
+    b="$(printf '%02d' $((RANDOM % 100)))"
+    case $((RANDOM % 4)) in
+        0) printf 'NodeGo%s' "$a" ;;
+        1) printf 'Node%s%s' "$a" "$b" ;;
+        2) printf 'GoNode%s' "$a" ;;
+        *) printf '%sNode%s' "$a" "$b" ;;
+    esac
+}
+
+tag_of() {
+    sed -n 's/^[[:space:]]*"tag"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$1" 2>/dev/null | head -n1
+}
+
+tag_exists() {
+    local t="$1" f=""
+    for f in "$CONF_DIR"/*.json; do
+        [ -f "$f" ] || continue
+        if [ "$(tag_of "$f")" = "$t" ]; then return 0; fi
+    done
+    return 1
+}
+
+new_tag() {
+    local t="" i=0
+    while [ "$i" -lt 50 ]; do
+        t="$(gen_tag)"
+        if ! tag_exists "$t"; then printf '%s' "$t"; return 0; fi
+        i=$((i + 1))
+    done
+    printf 'NodeGo%s' "$(printf '%02d' $((RANDOM % 100)))"
+}
+
+meta_add() { # meta_add ТИП КЛЮЧ ЗНАЧЕНИЕ
+    local t="$1" k="$2" v="$3"
+    t="$(printf '%s' "$t" | tr '[:lower:]' '[:upper:]')"
+    printf "%s_%s='%s'\n" "$t" "$k" "$v" >> "$CONF_DIR/meta.env"
+}
+
+meta_drop() { # meta_drop ТИП
+    local t="$1"
+    t="$(printf '%s' "$t" | tr '[:lower:]' '[:upper:]')"
+    [ -f "$CONF_DIR/meta.env" ] || return 0
+    sed -i "/^${t}_/d" "$CONF_DIR/meta.env"
+}
+
+# ------------------------------------------------------------- JSON-шаблоны
+write_xhttp() { # write_xhttp TAG PRIVKEY
+    cat > "$CONF_DIR/xhttp.json" <<EOF
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "$1",
+      "port": $CONNECT_PORT,
+      "listen": "0.0.0.0",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "reality",
+        "xhttpSettings": {
+          "mode": "auto",
+          "path": "/"
+        },
+        "realitySettings": {
+          "show": false,
+          "xver": 0,
+          "target": "$REALITY_TARGET",
+          "shortIds": [$SHORT_IDS_JSON],
+          "privateKey": "$2",
+          "serverNames": [$SERVER_NAMES]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    { "tag": "DIRECT", "protocol": "freedom" },
+    { "tag": "BLOCK", "protocol": "blackhole" }
+  ],
+  "routing": {
+    "rules": [
+      { "ip": ["geoip:private"], "outboundTag": "BLOCK" },
+      { "domain": ["geosite:private"], "outboundTag": "BLOCK" },
+      { "protocol": ["bittorrent"], "outboundTag": "BLOCK" }
+    ]
+  }
+}
+EOF
+}
+
+write_grpc() { # write_grpc TAG PRIVKEY SERVICE
+    cat > "$CONF_DIR/grpc.json" <<EOF
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "$1",
+      "port": $CONNECT_PORT,
+      "listen": "0.0.0.0",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
+      },
+      "streamSettings": {
+        "network": "grpc",
+        "security": "reality",
+        "grpcSettings": {
+          "serviceName": "$3"
+        },
+        "realitySettings": {
+          "show": false,
+          "xver": 0,
+          "target": "$REALITY_TARGET",
+          "shortIds": [$SHORT_IDS_JSON],
+          "privateKey": "$2",
+          "serverNames": [$SERVER_NAMES]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    { "tag": "DIRECT", "protocol": "freedom" },
+    { "tag": "BLOCK", "protocol": "blackhole" }
+  ],
+  "routing": {
+    "rules": [
+      { "ip": ["geoip:private"], "outboundTag": "BLOCK" },
+      { "domain": ["geosite:private"], "outboundTag": "BLOCK" },
+      { "protocol": ["bittorrent"], "outboundTag": "BLOCK" }
+    ]
+  }
+}
+EOF
+}
+
+write_tcp() { # write_tcp TAG PRIVKEY
+    cat > "$CONF_DIR/tcp.json" <<EOF
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "$1",
+      "port": $CONNECT_PORT,
+      "listen": "0.0.0.0",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "xver": 0,
+          "target": "$REALITY_TARGET",
+          "shortIds": [$SHORT_IDS_JSON],
+          "privateKey": "$2",
+          "serverNames": [$SERVER_NAMES]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    { "tag": "DIRECT", "protocol": "freedom" },
+    { "tag": "BLOCK", "protocol": "blackhole" }
+  ],
+  "routing": {
+    "rules": [
+      { "ip": ["geoip:private"], "outboundTag": "BLOCK" },
+      { "domain": ["geosite:private"], "outboundTag": "BLOCK" },
+      { "protocol": ["bittorrent"], "outboundTag": "BLOCK" }
+    ]
+  }
+}
+EOF
+}
+
+write_hysteria() { # write_hysteria TAG
+    cat > "$CONF_DIR/hysteria2.json" <<EOF
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "$1",
+      "port": $CONNECT_PORT,
+      "listen": "0.0.0.0",
+      "protocol": "hysteria",
+      "settings": {
+        "clients": [],
+        "version": 2
+      },
+      "streamSettings": {
+        "network": "hysteria",
+        "security": "tls",
+        "tlsSettings": {
+          "alpn": ["h3"],
+          "serverName": "$DOMAIN",
+          "certificates": [
+            {
+              "keyFile": "/etc/remnanode/cert/private.key",
+              "certificateFile": "/etc/remnanode/cert/fullchain.crt"
+            }
+          ]
+        },
+        "hysteriaSettings": {
+          "version": 2,
+          "udpIdleTimeout": 60
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    { "tag": "DIRECT", "protocol": "freedom" },
+    { "tag": "BLOCK", "protocol": "blackhole" }
+  ],
+  "routing": {
+    "rules": [
+      { "ip": ["geoip:private"], "outboundTag": "BLOCK" },
+      { "domain": ["geosite:private"], "outboundTag": "BLOCK" },
+      { "protocol": ["bittorrent"], "outboundTag": "BLOCK" }
+    ]
+  }
+}
+EOF
+}
+
+# Обновляет «переменные» параметры (порт, target, serverNames) в готовом
+# конфиге, не трогая ключи и shortId: сменился домен/порт — профиль в панели
+# можно не перегенерировать.
+sync_existing() { # sync_existing FILE
+    local f="$1" tmp=""
+    command -v jq >/dev/null 2>&1 || { warn "jq не найден — параметры $f не обновлены"; return 0; }
+    tmp="$(mktemp)"
+    # shellcheck disable=SC2016  # $port/$target/$names/$sni — переменные jq
+    if jq --argjson port "$CONNECT_PORT" \
+          --arg target "$REALITY_TARGET" \
+          --arg sni "$SNI" \
+          --argjson names "[$SERVER_NAMES]" '
+        .inbounds[0].port = $port
+        | if .inbounds[0].streamSettings.realitySettings then
+            .inbounds[0].streamSettings.realitySettings.target = $target
+            | .inbounds[0].streamSettings.realitySettings.serverNames = $names
+          else . end
+        | if .inbounds[0].streamSettings.tlsSettings then
+            .inbounds[0].streamSettings.tlsSettings.serverName = $sni
+          else . end
+      ' "$f" > "$tmp" 2>/dev/null; then
+        mv "$tmp" "$f"
+    else
+        rm -f "$tmp"
+        warn "не удалось обновить параметры в $f"
+    fi
+}
+
+# ------------------------------------------------------------------- команды
+generate() {
+    local force="${1:-}" type="" f="" tag="" pair="" priv="" pub="" svc=""
+    [ -f "$ANSWERS" ] || die "нет $ANSWERS — сначала запустите установщик"
+    mkdir -p "$CONF_DIR"
+    chmod 700 "$STATE_DIR" "$CONF_DIR" 2>/dev/null || true
+    if [ "$force" = "--force" ]; then
+        rm -f "$CONF_DIR"/*.json
+        rm -f "$CONF_DIR/meta.env"
+    fi
+    : >> "$CONF_DIR/meta.env"
+    chmod 600 "$CONF_DIR/meta.env"
+
+    for type in xhttp grpc tcp; do
+        f="$CONF_DIR/$type.json"
+        if [ -f "$f" ]; then
+            sync_existing "$f"
+            continue
+        fi
+        pair="$(gen_pair)" || true
+        priv="${pair%% *}"
+        pub="${pair#* }"
+        if [ -z "$priv" ] || [ "$priv" = "$pair" ]; then
+            warn "не удалось сгенерировать ключ X25519 для $type"
+            continue
+        fi
+        tag="$(new_tag)"
+        gen_short_id_set
+        case "$type" in
+            xhttp) write_xhttp "$tag" "$priv" ;;
+            grpc)
+                svc="srv$(openssl rand -hex 4 2>/dev/null || gen_short_id)"
+                write_grpc "$tag" "$priv" "$svc"
+                ;;
+            tcp)   write_tcp "$tag" "$priv" ;;
+        esac
+        chmod 600 "$f"
+        meta_add "$type" TAG "$tag"
+        meta_add "$type" PUB "$pub"
+        meta_add "$type" SIDS "$SHORT_IDS_LIST"
+        say "  готов: $type (tag $tag, порт $CONNECT_PORT)"
+    done
+
+    if [ "${HYSTERIA:-no}" = "yes" ] && [ -n "${DOMAIN:-}" ]; then
+        f="$CONF_DIR/hysteria2.json"
+        if [ -f "$f" ]; then
+            sync_existing "$f"
+        else
+            tag="$(new_tag)"
+            write_hysteria "$tag"
+            chmod 600 "$f"
+            meta_add hysteria2 TAG "$tag"
+            say "  готов: hysteria2 (tag $tag, порт $CONNECT_PORT/udp)"
+        fi
+    else
+        if [ -f "$CONF_DIR/hysteria2.json" ]; then
+            rm -f "$CONF_DIR/hysteria2.json"
+            meta_drop hysteria2
+            say "  Hysteria2 выключена — конфиг hysteria2.json удалён"
+        fi
+    fi
+    return 0
+}
+
+brief() {
+    local type="" f="" tag="" port="" n=0
+    say "Готовые конфиги: $CONF_DIR"
+    for type in xhttp grpc tcp hysteria2; do
+        f="$CONF_DIR/$type.json"
+        [ -f "$f" ] || continue
+        tag="$(tag_of "$f")"
+        port="$(sed -n 's/^[[:space:]]*"port"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p' "$f" | head -n1)"
+        if [ "$type" = "hysteria2" ]; then
+            say "  $(printf '%-9s' "$type") tag $(printf '%-8s' "$tag") UDP/$port  TLS: $SNI"
+        else
+            say "  $(printf '%-9s' "$type") tag $(printf '%-8s' "$tag") TCP/$port  target $REALITY_TARGET  SNI $SNI"
+        fi
+        n=$((n + 1))
+    done
+    if [ "$n" -eq 0 ]; then
+        warn "конфигов пока нет — создайте: rw-configs.sh generate"
+        return 1
+    fi
+    say "  privateKey и shortIds уже внутри; publicKey: rw-configs.sh keys"
+}
+
+meta_val() { # meta_val КЛЮЧ -> значение из meta.env (без source)
+    sed -n "s/^${1}='\(.*\)'\$/\1/p" "$CONF_DIR/meta.env" 2>/dev/null | head -n1
+}
+
+keys() {
+    local type="" f="" var="" tag="" pub="" sids=""
+    [ -s "$CONF_DIR/meta.env" ] || { warn "нет $CONF_DIR/meta.env — перегенерируйте конфиги"; return 1; }
+    for type in xhttp grpc tcp hysteria2; do
+        f="$CONF_DIR/$type.json"
+        [ -f "$f" ] || continue
+        var="$(printf '%s' "$type" | tr '[:lower:]' '[:upper:]')"
+        tag="$(meta_val "${var}_TAG")"
+        pub="$(meta_val "${var}_PUB")"
+        sids="$(meta_val "${var}_SIDS")"
+        if [ "$type" = "hysteria2" ]; then
+            say "  $type: tag $tag, TLS serverName $SNI"
+            continue
+        fi
+        say "  $type: tag $tag"
+        say "    publicKey: $pub"
+        say "    shortIds:  $sids"
+    done
+}
+
+show() {
+    local what="${1:-all}" type="" f=""
+    case "$what" in hy2|hysteria) what="hysteria2" ;; esac
+    for type in xhttp grpc tcp hysteria2; do
+        if [ "$what" != "all" ] && [ "$what" != "$type" ]; then continue; fi
+        f="$CONF_DIR/$type.json"
+        [ -f "$f" ] || continue
+        say "=== $type — $f ==="
+        cat "$f"
+        say ""
+    done
+}
+
+path_cmd() {
+    local type="${1:-xhttp}"
+    case "$type" in hy2|hysteria) type="hysteria2" ;; esac
+    printf '%s\n' "$CONF_DIR/$type.json"
+}
+
+test_configs() {
+    local what="${1:-all}" type="" f="" out="" rc=0
+    case "$what" in hy2|hysteria) what="hysteria2" ;; esac
+    if ! node_running; then
+        warn "нода не запущена — проверка конфигов недоступна"
+        return 1
+    fi
+    for type in xhttp grpc tcp hysteria2; do
+        if [ "$what" != "all" ] && [ "$what" != "$type" ]; then continue; fi
+        f="$CONF_DIR/$type.json"
+        [ -f "$f" ] || continue
+        if ! docker cp "$f" "$NODE_CONTAINER:/tmp/rw-cfg-test.json" >/dev/null 2>&1; then
+            warn "$type: не удалось скопировать конфиг в контейнер"
+            rc=1
+            continue
+        fi
+        if out="$(xray_exec 'xray run -test -c /tmp/rw-cfg-test.json 2>&1 || /usr/local/bin/xray run -test -c /tmp/rw-cfg-test.json 2>&1')"; then
+            say "  OK   $type"
+        else
+            say "  FAIL $type"
+            printf '%s\n' "$out" | tail -n 6 | sed 's/^/       /'
+            rc=1
+        fi
+        docker exec "$NODE_CONTAINER" rm -f /tmp/rw-cfg-test.json >/dev/null 2>&1 || true
+    done
+    return "$rc"
+}
+
+load_conf
+
+case "${1:-brief}" in
+    generate) shift || true; generate "${1:-}" ;;
+    brief|status|list) brief ;;
+    show) shift || true; show "${1:-all}" ;;
+    path) shift || true; path_cmd "${1:-xhttp}" ;;
+    keys) keys ;;
+    test) shift || true; test_configs "${1:-all}" ;;
+    -h|--help|help) usage ;;
+    *)
+        say "неизвестная команда: $1"
+        usage
+        exit 1
+        ;;
+esac
+CONFIGS_EOF
+chmod 0755 /usr/local/sbin/rw-configs.sh
+
 mkdir -p /var/log/remnanode
 cat > /etc/logrotate.d/remnanode <<'EOF'
 /var/log/remnanode/*.log {
@@ -2037,9 +2787,24 @@ chmod 644 /etc/cron.d/remnawave-maintenance /etc/logrotate.d/remnanode
 ok "logrotate для ноды + cron-обслуживание"
 
 # ============================================================================
-# 13. Проверка
+# 13. Готовые конфиги для панели
 # ============================================================================
-hdr "13. Проверка"
+hdr "13. Готовые конфиги для панели"
+if /usr/local/sbin/rw-configs.sh generate; then
+    /usr/local/sbin/rw-configs.sh brief | sed 's/^/  /' || true
+    if /usr/local/sbin/rw-configs.sh test >/dev/null 2>&1; then
+        ok "конфиги проверены через xray -test"
+    else
+        note "проверку xray -test не прошли — смотрите: nodego → Готовые конфиги → проверить"
+    fi
+else
+    warn "конфиги не сгенерировались — позже: nodego → Готовые конфиги"
+fi
+
+# ============================================================================
+# 14. Проверка
+# ============================================================================
+hdr "14. Проверка"
 sleep 3
 
 say "  ${C_BLD}Контейнеры:${C_OFF}"
@@ -2047,14 +2812,24 @@ docker ps --format '    {{.Names}}  {{.Status}}  {{.Image}}' 2>/dev/null || warn
 
 say ""
 say "  ${C_BLD}Слушающие порты:${C_OFF}"
-for p in "$NODE_PORT" "$XHTTP_PORT" "$GRPC_PORT" "$TCP_PORT" 80 443; do
+for p in "$NODE_PORT" "$CONNECT_PORT" 80 "$SELFSTEAL_PORT"; do
     [ -n "$p" ] || continue
     if ss -tlnH "sport = :$p" 2>/dev/null | grep -q .; then
-        say "    :$p — слушается"
+        say "    :$p/tcp — слушается"
     else
-        note "    :$p — свободен"
+        note "    :$p/tcp — свободен"
     fi
 done
+if [ "$HYSTERIA" = "yes" ]; then
+    if ss -ulnH "sport = :$CONNECT_PORT" 2>/dev/null | grep -q .; then
+        say "    :$CONNECT_PORT/udp — слушается (Hysteria2)"
+    else
+        note "    :$CONNECT_PORT/udp — свободен: слушается, когда hysteria-инбаунд появится в профиле панели"
+    fi
+fi
+
+say ""
+say "  ${C_BLD}Ядро ноды:${C_OFF} $(docker exec remnanode sh -c 'xray version 2>/dev/null || /usr/local/bin/xray version 2>/dev/null' 2>/dev/null | head -n1 || echo n/a)"
 
 if [ "$USE_SELFSTEAL" = "yes" ]; then
     say ""
@@ -2119,7 +2894,7 @@ if [ "$USE_DNS" = "yes" ]; then
 fi
 
 # ============================================================================
-# 14. Что дальше
+# 15. Что дальше
 # ============================================================================
 hdr "Готово"
 say ""
@@ -2130,12 +2905,30 @@ say "       • Port: $NODE_PORT"
 say "       • SECRET_KEY: тот, что вы вставили при установке"
 say "     Затем «Next» → выберите Config Profile → Create."
 say ""
+say "  ${C_BLD}2) Готовые конфиги для Config Profile:${C_OFF}"
+say "     nodego → 1 (или: nodego configs; файлы в /etc/remnawave-setup/configs/)"
+if [ "$HYSTERIA" = "yes" ]; then
+    say "     xHTTP, gRPC, TCP и Hysteria2 — порт $CONNECT_PORT,"
+else
+    say "     xHTTP, gRPC, TCP — порт $CONNECT_PORT,"
+fi
+say "     privateKey/shortIds/tag уже сгенерированы, при selfsteal target = 127.0.0.1:$SELFSTEAL_PORT."
+say "     Скопируйте нужный JSON в Config Profile (или перенесите inbound'ы в один профиль),"
+say "     затем Squads → Inbounds, Hosts → привязка к инбаунду."
+say ""
 if [ "$USE_SELFSTEAL" = "yes" ]; then
-    say "  ${C_BLD}2) Для selfsteal в панели:${C_OFF}"
-    say "     В inbound'ах xHTTP/gRPC включите Self-steal и укажите:"
-    say "       • dest: 127.0.0.1:$SELFSTEAL_PORT"
-    say "       • domain: $DOMAIN"
-    say "     Reality/xHTTP будут отдавать этот домен при обычном обращении."
+    say "  ${C_BLD}3) Selfsteal:${C_OFF}"
+    say "     Reality-инбаунды смотрят target 127.0.0.1:$SELFSTEAL_PORT, serverNames = $DOMAIN."
+    say "     Отдельно включать «Self-steal» в панели не нужно — это уже в конфигах."
+    say "     Проверка: https://${DOMAIN:-<ваш домен>} в браузере."
+    say ""
+fi
+if [ "$HYSTERIA" = "yes" ]; then
+    say "  ${C_BLD}Hysteria2:${C_OFF}"
+    say "     UDP/$CONNECT_PORT уже открыт в ufw; сертификат лежит в $NODE_DIR/cert,"
+    say "     таймер rw-cert-sync.timer обновляет его после продления Caddy."
+    say "     Инбаунд — в $STATE_DIR/configs/hysteria2.json (protocol: hysteria, version 2)."
+    say "     Управление: nodego → Hysteria2 (включить/выключить, сертификат, ядро)."
     say ""
 fi
 if [ "$DUAL_IP" = "yes" ]; then
@@ -2147,9 +2940,10 @@ if [ "$DUAL_IP" = "yes" ]; then
     say "     Inbound'ы держите на $IP1 (или 0.0.0.0)."
     say ""
 fi
-say "  ${C_BLD}3) Откройте в браузере:${C_OFF} https://${DOMAIN:-<ваш домен>}"
+say "  ${C_BLD}Открыть дополнительные порты:${C_OFF} nodego → 2 (порт + протокол + подпись)"
 say ""
 say "  ${C_BLD}Управление:${C_OFF}"
+say "     nodego                       # меню: конфиги, порты, Hysteria2, сеть, бэкапы"
 say "     systemctl status remnanode selfsteal"
 say "     docker logs -f remnanode"
 say "     docker logs -f selfsteal"
