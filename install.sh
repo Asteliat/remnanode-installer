@@ -53,7 +53,7 @@
 
 set -euo pipefail
 
-VERSION="1.3.2"
+VERSION="1.3.3"
 
 REPO_OWNER="Asteliat"
 REPO_NAME="remnanode-installer"

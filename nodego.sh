@@ -8,6 +8,7 @@
 #  Без меню:          nodego status | logs | restart | update | net | preset <имя>
 #                     nodego configs [xhttp|grpc|tcp|hysteria2] | keys
 #                     nodego ports | nodego hysteria [status|on|off|cert|core|test]
+#                     nodego swap [auto|1G|2G]
 #                     nodego check [ip|region|bench-ru|bench|yabs|dpi|cpu|quick]
 # ============================================================================
 
@@ -1294,6 +1295,121 @@ cli_hysteria() {
     esac
 }
 
+# --------------------------------------------------------------------- swap
+# Логика swap живёт в одном месте — режим --swap-only установщика: там
+# рекомендация по размеру, проверки безопасности (swap на разделе,
+# MemAvailable) и запись в /etc/fstab. Меню её не дублирует, а запускает
+# установщик: две копии такой логики рано или поздно разойдутся.
+swap_show() {
+    local ram="" avail="" free_mb="" info="" tot="" used="" dev=""
+    ram="$(awk '/^MemTotal:/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null || true)"
+    avail="$(awk '/^MemAvailable:/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null || true)"
+    free_mb="$(df -Pm / 2>/dev/null | awk 'NR==2{print $4}' || true)"
+    info="$(awk '/^SwapTotal:/{t=int($2/1024)} /^SwapFree:/{f=int($2/1024)} END{printf "%d %d", t+0, t-f}' /proc/meminfo 2>/dev/null || true)"
+    tot="${info%% *}"
+    used="${info##* }"
+    case "$tot"  in ''|*[!0-9]*) tot=0 ;; esac
+    case "$used" in ''|*[!0-9]*) used=0 ;; esac
+    say "  RAM: ${ram:-?} МБ (доступно ${avail:-?}) · диск: свободно ${free_mb:-?} МБ"
+    if [ "$tot" -gt 0 ]; then
+        dev="$(swapon --show=NAME --noheadings 2>/dev/null | awk 'NF{print $1; exit}' || true)"
+        say "  swap: ${C_BLD}${tot} МБ${C_OFF} (${dev:-файл}, занято ${used} МБ)"
+    else
+        say "  swap: ${C_BLD}не включён${C_OFF}"
+    fi
+}
+
+swap_apply() { # swap_apply [размер] — пересоздать swap через install.sh --swap-only
+    local size="${1:-}" tmp="" rc=0
+    tmp="$(mktemp)" || { err "mktemp не сработал"; return 1; }
+    dim "  загружаю установщик из репозитория…"
+    if ! curl -fsSL --retry 2 --max-time 30 "$RAW_BASE/install.sh" -o "$tmp"; then
+        rm -f "$tmp"
+        err "не удалось скачать install.sh — проверьте сеть и DNS"
+        return 1
+    fi
+    if ! head -c 128 "$tmp" | grep -q 'bash'; then
+        rm -f "$tmp"
+        err "по ссылке пришёл не скрипт — не запускаю"
+        return 1
+    fi
+    # Без размера установщик сам покажет рекомендацию и спросит (Enter =
+    # рекомендация). С размером — молча: пункт меню уже означает согласие.
+    if [ -n "$size" ]; then
+        bash "$tmp" --swap-only --swap-size "$size" --yes
+    else
+        bash "$tmp" --swap-only
+    fi
+    rc=$?
+    rm -f "$tmp"
+    return "$rc"
+}
+
+swap_details() {
+    local oom=""
+    say ""
+    say "  ${C_BLD}включённые swap:${C_OFF}"
+    swapon --show 2>/dev/null | sed 's/^/    /' || true
+    say ""
+    say "  ${C_BLD}/etc/fstab:${C_OFF}"
+    if grep -qE '[[:space:]]swap[[:space:]]' /etc/fstab 2>/dev/null; then
+        grep -E '[[:space:]]swap[[:space:]]' /etc/fstab 2>/dev/null | sed 's/^/    /'
+    else
+        say "    записей про swap нет"
+    fi
+    say ""
+    say "  ${C_BLD}память:${C_OFF}"
+    free -m 2>/dev/null | sed 's/^/    /' || true
+    say ""
+    say "  ${C_BLD}OOM-killer срабатывал:${C_OFF}"
+    oom="$(dmesg 2>/dev/null | grep -ci 'killed process' || true)"
+    case "$oom" in ''|*[!0-9]*) oom=0 ;; esac
+    if [ "$oom" -gt 0 ]; then
+        warn "    да, ${oom} раз(а) — swap пригодится, но это скорее нехватка RAM"
+    else
+        say "    нет"
+    fi
+    dim "  активная подкачка прямо сейчас: vmstat 1 5 (колонки si/so)"
+}
+
+menu_swap() {
+    local c=""
+    while true; do
+        hdr "Swap"
+        swap_show
+        say ""
+        say "  ${C_BLD}1)${C_OFF} пересоздать: размер по рекомендации ${C_DIM}(спросит подтверждение)${C_OFF}"
+        say "  ${C_BLD}2)${C_OFF} пересоздать: 1 ГБ"
+        say "  ${C_BLD}3)${C_OFF} пересоздать: 2 ГБ"
+        say "  ${C_BLD}4)${C_OFF} подробнее: swapon, /etc/fstab, OOM в dmesg"
+        say "  ${C_BLD}0)${C_OFF} назад"
+        dim "  docker, Caddy, конфиги и firewall не трогаются; нода не перезапускается"
+        say ""
+        read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" c || true
+        case "${c:-}" in
+            1) swap_apply ;;
+            2) if confirm "пересоздать swap на 1 ГБ?" "n"; then swap_apply 1G; fi; pause ;;
+            3) if confirm "пересоздать swap на 2 ГБ?" "n"; then swap_apply 2G; fi; pause ;;
+            4) swap_details; pause ;;
+            0|q|Q|"") return ;;
+            *) warn "нет такого пункта" ;;
+        esac
+    done
+}
+
+cli_swap() { # nodego swap [auto|512M|1G|2G]
+    local size="${1:-}"
+    case "$size" in
+        off|no|none|0)
+            warn "off в установщике означает «не создавать и не трогать существующий swap»"
+            dim "  убрать swap вручную: swapoff -a && sed -i '/ swap /d' /etc/fstab && rm -f /swapfile"
+            return 1
+            ;;
+        ''|auto) swap_apply ;;
+        *)       swap_apply "$size" ;;
+    esac
+}
+
 # ---------------------------------------------------------------- CLI-режим
 cli() {
     case "${1:-}" in
@@ -1326,6 +1442,11 @@ cli() {
             cli_hysteria "${1:-status}"
             ;;
         certsync) load_conf; "$CERT_SYNC" ;;
+        swap)
+            load_conf
+            shift || true
+            cli_swap "${1:-}"
+            ;;
         preset)
             load_conf
             load_templates
@@ -1369,6 +1490,7 @@ cli() {
             say "  nodego backup          бэкап конфигов"
             say "  nodego restore <файл>  восстановление из бэкапа"
             say "  nodego alerts          статус алертов"
+            say "  nodego swap [размер]   swap: состояние и пересоздание (auto | 1G | 2G)"
             say "  nodego check [что]     проверка сервера: ip | region | bench-ru | bench |"
             say "                         yabs | instagram | dpi | cpu | quick"
             ;;
@@ -1417,6 +1539,7 @@ while true; do
     say "  ${C_BLD}20)${C_OFF} Восстановить из бэкапа"
     say "  ${C_BLD}21)${C_OFF} Алерты Telegram: включить/выключить"
     say "  ${C_BLD}22)${C_OFF} Проверка сервера: IP, бенчмарки, DPI"
+    say "  ${C_BLD}23)${C_OFF} Swap: состояние, пересоздать, размер"
     say "  ${C_BLD}0)${C_OFF} Выход"
     say ""
     read -r -p "$(echo -e "${C_BLD}Выбор: ${C_OFF}")" choice || true
@@ -1443,6 +1566,7 @@ while true; do
         20) restore_menu ;;
         21) toggle_alerts ;;
         22) menu_checks ;;
+        23) menu_swap ;;
         0|q|Q|"") say ""; dim "выход"; exit 0 ;;
         *) warn "нет такого пункта" ;;
     esac
