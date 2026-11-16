@@ -532,6 +532,11 @@ swap_section() {
     fi
     unset _swap_is_file _do_swap 2>/dev/null || true
 
+    # В /etc/fstab поменялась строка swap — systemd мог сгенерировать .swap-юнит
+    # от прежней записи, перечитываем (в режиме --swap-only это единственное
+    # место, где случается daemon-reload).
+    systemctl daemon-reload 2>/dev/null || true
+
     # Запоминаем выбор для повторного запуска: auto остаётся auto (при следующем
     # запуске размер пересчитается под сервер), явный размер — как есть.
     if [ -f "$ANSWERS_FILE" ]; then
