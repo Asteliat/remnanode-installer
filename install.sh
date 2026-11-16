@@ -53,7 +53,7 @@
 
 set -euo pipefail
 
-VERSION="1.3.1"
+VERSION="1.3.2"
 
 REPO_OWNER="Asteliat"
 REPO_NAME="remnanode-installer"
@@ -98,6 +98,7 @@ ASSUME_YES=false
 SKIP_TUNING=false
 SKIP_FIREWALL=false
 SKIP_NETCHECK=false
+SWAP_ONLY=false        # --swap-only: показать/пересоздать swap и выйти
 
 # Ответы прошлого запуска читаем ДО разбора флагов — чтобы флаги имели приоритет.
 for _arg in "$@"; do
@@ -145,6 +146,9 @@ Remnawave Node + Caddy selfsteal — установщик
   --autoupdate yes|no    автообновление ноды (по умолчанию yes)
   --alerts yes|no        алерты в Telegram (плюс --tg-token и --tg-chat)
   --swap-size auto|off|1024M|2G   размер swap (auto — подбор под сервер)
+  --swap-only            только swap: показать состояние, при необходимости
+                         пересоздать и выйти; docker, Caddy, конфиги и
+                         firewall не трогает (для уже установленной ноды)
   --skip-tuning          не трогать sysctl/swap/лимиты
   --skip-firewall        не настраивать ufw
   --skip-netcheck        не проверять сеть и DNS перед установкой
@@ -171,6 +175,7 @@ while [[ $# -gt 0 ]]; do
         --reconfigure)     : ;;   # учтён на этапе пред-сканирования аргументов
         --skip-tuning)     SKIP_TUNING=true ;;
         --swap-size)       SWAP_SIZE="${2:?}"; shift ;;
+        --swap-only)       SWAP_ONLY=true ;;
         --skip-firewall)   SKIP_FIREWALL=true ;;
         --skip-netcheck)   SKIP_NETCHECK=true ;;
         --panel-ip)        PANEL_IP="${2:?}"; shift ;;
@@ -359,6 +364,189 @@ fstab_swap_drop() { # убрать строку прежнего swap из /etc/
     sed -i "\|^[[:space:]]*${f}[[:space:]]|d" /etc/fstab
 }
 
+# --- swap ---------------------------------------------------------------
+# Пересоздание swap по характеристикам сервера. Функция нужна дважды: в
+# основном потоке (раздел «Тюнинг системы») и в режиме --swap-only — чтобы
+# не держать две копии логики с проверками безопасности.
+swap_section() {
+    # RAM и диск читаем из /proc/meminfo и df: free/swapon из procps на
+    # минимальном образе может отсутствовать, а /proc есть всегда.
+    # Главное отличие от прежней версии: показываем и учитываем swap, который уже
+    # включён провайдером (типовая картинка VPS — /swapfile или /swap.img на
+    # 512 МБ). Раньше такой swap молча оставляли, и «на любом сервере выходило
+    # 512 МБ», хотя рекомендация была другой.
+    RAM_MB="$(awk '/^MemTotal:/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null || true)"
+    RAM_MB="${RAM_MB:-1024}"
+    FREE_MB="$(df -Pm / 2>/dev/null | awk 'NR==2{print $4}')"
+    FREE_MB="${FREE_MB:-0}"
+    REC_SWAP="$(detect_swap_mb "$RAM_MB" "$FREE_MB")"
+
+    _swapinfo="$(awk '/^SwapTotal:/{t=int($2/1024)} /^SwapFree:/{f=int($2/1024)} END{printf "%d %d", t+0, t-f}' /proc/meminfo 2>/dev/null || true)"
+    CUR_SWAP_MB="${_swapinfo%% *}"
+    SWAP_USED_MB="${_swapinfo##* }"
+    unset _swapinfo 2>/dev/null || true
+    case "$CUR_SWAP_MB" in ''|*[!0-9]*) CUR_SWAP_MB=0 ;; esac
+    case "$SWAP_USED_MB" in ''|*[!0-9]*) SWAP_USED_MB=0 ;; esac
+    SWAP_DEV="$(swapon --show=NAME --noheadings 2>/dev/null | awk 'NF{print $1; exit}' || true)"
+
+    if [ "$CUR_SWAP_MB" -gt 0 ]; then
+        say "  RAM: ${RAM_MB} МБ · диск: свободно ${FREE_MB} МБ · swap: включён ${CUR_SWAP_MB} МБ (${SWAP_DEV:-?}, занято ${SWAP_USED_MB} МБ)"
+    else
+        say "  RAM: ${RAM_MB} МБ · диск: свободно ${FREE_MB} МБ · swap: не включён"
+    fi
+    if [ "$REC_SWAP" -gt 0 ]; then
+        say "  рекомендация для этого сервера: ${REC_SWAP} МБ — $(swap_hint "$RAM_MB" "$FREE_MB")"
+    else
+        warn "  рекомендация для этого сервера: swap не создавать — $(swap_hint "$RAM_MB" "$FREE_MB")"
+    fi
+
+    # ---- сколько ставить -------------------------------------------------
+    SWAP_TARGET=""
+    SWAP_AUTO_CHOICE=false
+    case "${SWAP_SIZE,,}" in
+        auto|'')
+            SWAP_TARGET="$REC_SWAP"
+            SWAP_AUTO_CHOICE=true
+            if [ "$ASSUME_YES" = false ]; then
+                # В подсказке стоит само число, поэтому Enter = ровно то, что
+                # написано в «рекомендация», без «угадай, что будет».
+                _swap_def="$REC_SWAP"
+                [ "${_swap_def:-0}" -eq 0 ] && _swap_def="off"
+                while :; do
+                    swap_choice=""
+                    ask swap_choice "Размер swap (1024M / 2G / off; Enter — рекомендация)" "$_swap_def"
+                    case "${swap_choice,,}" in
+                        ''|auto|да|д|yes|y|on)
+                            SWAP_TARGET="$REC_SWAP"; SWAP_AUTO_CHOICE=true; break ;;
+                        off|no|none|0|нет|н)
+                            SWAP_TARGET=0; SWAP_AUTO_CHOICE=false; break ;;
+                        *)
+                            _mb="$(to_mb "$swap_choice")"
+                            case "${_mb:-x}" in
+                                ''|*[!0-9]*)
+                                    warn "не понял «$swap_choice» — напишите размер: 1024M, 2G или off"
+                                    continue ;;
+                            esac
+                            if [ "$_mb" -lt 128 ]; then
+                                warn "меньше 128 МБ swap не делаю — 1024M, 2G или off"
+                                continue
+                            fi
+                            SWAP_TARGET="$_mb"
+                            [ "$_mb" -eq "$REC_SWAP" ] || SWAP_AUTO_CHOICE=false
+                            break ;;
+                    esac
+                done
+                unset _swap_def _mb 2>/dev/null || true
+            fi
+            ;;
+        off|no|none|0)
+            SWAP_TARGET=0
+            ;;
+        *)
+            SWAP_TARGET="$(to_mb "$SWAP_SIZE")"
+            if ! [[ "${SWAP_TARGET:-}" =~ ^[0-9]+$ ]] || [ "${SWAP_TARGET:-0}" -lt 128 ]; then
+                warn "некорректный --swap-size «$SWAP_SIZE» — беру рекомендацию ${REC_SWAP} МБ"
+                SWAP_TARGET="$REC_SWAP"
+                SWAP_AUTO_CHOICE=true
+            fi
+            ;;
+    esac
+
+    # ---- применяем -------------------------------------------------------
+    SWAP_APPLIED_MB="$CUR_SWAP_MB"
+    _swap_is_file=true
+    case "$SWAP_DEV" in
+        /dev/*) _swap_is_file=false ;;   # swap на разделе — не трогаем
+    esac
+
+    if [ "${SWAP_TARGET:-0}" -eq 0 ]; then
+        if [ "$CUR_SWAP_MB" -gt 0 ]; then
+            note "swap не трогаю: уже включён ${CUR_SWAP_MB} МБ${SWAP_DEV:+ ($SWAP_DEV)}"
+        else
+            warn "Swap не создаётся (мало места или выключено вручную)"
+        fi
+    elif [ "$CUR_SWAP_MB" -gt 0 ] && [ "$CUR_SWAP_MB" -eq "$SWAP_TARGET" ]; then
+        ok "Swap ${SWAP_TARGET} МБ уже включён — как и планировалось"
+    else
+        _do_swap=true
+        if [ "$CUR_SWAP_MB" -gt 0 ]; then
+            if [ "$_swap_is_file" = false ]; then
+                _do_swap=false
+                warn "swap на разделе ${SWAP_DEV:-?} — разделы не трогаю (нужно ${SWAP_TARGET} МБ)"
+            elif [ "$SWAP_USED_MB" -gt $(( CUR_SWAP_MB / 5 )) ]; then
+                _do_swap=false
+                warn "в swap занято ${SWAP_USED_MB} МБ из ${CUR_SWAP_MB} — не пересоздаю (нужно ${SWAP_TARGET} МБ)"
+            elif [ "$ASSUME_YES" = false ]; then
+                say "  сейчас: swap ${CUR_SWAP_MB} МБ (${SWAP_DEV:-?}), занято ${SWAP_USED_MB} МБ"
+                say "  по плану: swap ${SWAP_TARGET} МБ"
+                SWAP_RESIZE=""
+                ask_yesno SWAP_RESIZE "Пересоздать swap под размер сервера?" "д"
+                [ "$SWAP_RESIZE" = "no" ] && _do_swap=false
+            fi
+        fi
+
+        if [ "$_do_swap" = true ]; then
+            _swap_tmp="/swapfile.new"
+            _ok_swap=false
+            _file_mb=0
+            [ -f /swapfile ] && _file_mb=$(( $(stat -c %s /swapfile 2>/dev/null || echo 0) / 1048576 ))
+            if [ "$CUR_SWAP_MB" -eq 0 ] && [ "$_file_mb" -eq "$SWAP_TARGET" ]; then
+                # уже нужного размера и не включён — только переформатировать
+                chmod 600 /swapfile 2>/dev/null || true
+                mkswap /swapfile >/dev/null 2>&1 || true
+                _ok_swap=true
+            elif ! swap_format "$_swap_tmp" "$SWAP_TARGET"; then
+                warn "не удалось подготовить swap-файл ${SWAP_TARGET} МБ — оставляю как есть"
+            elif [ "$CUR_SWAP_MB" -gt 0 ] && ! swapoff "$SWAP_DEV" 2>/dev/null; then
+                rm -f "$_swap_tmp" 2>/dev/null || true
+                warn "swapoff ${SWAP_DEV:-?} не удался — swap оставляю прежним"
+            else
+                if [ "$CUR_SWAP_MB" -gt 0 ]; then
+                    case "$SWAP_DEV" in
+                        /swapfile|/swap.img|/swap) rm -f "$SWAP_DEV" 2>/dev/null || true ;;
+                    esac
+                    fstab_swap_drop "$SWAP_DEV"
+                fi
+                mv -f "$_swap_tmp" /swapfile 2>/dev/null || \
+                    cp -f "$_swap_tmp" /swapfile 2>/dev/null || true
+                rm -f "$_swap_tmp" 2>/dev/null || true
+                chmod 600 /swapfile 2>/dev/null || true
+                _ok_swap=true
+            fi
+
+            if [ "$_ok_swap" = true ]; then
+                if swapon /swapfile 2>/dev/null; then
+                    fstab_swap_ensure /swapfile
+                    SWAP_APPLIED_MB="$SWAP_TARGET"
+                    if [ "$CUR_SWAP_MB" -gt 0 ]; then
+                        ok "Swap пересоздан: ${CUR_SWAP_MB} МБ → ${SWAP_TARGET} МБ (закреплён в /etc/fstab)"
+                    else
+                        ok "Swap ${SWAP_TARGET} МБ создан и закреплён в /etc/fstab (RAM ${RAM_MB} МБ, диск ${FREE_MB} МБ)"
+                    fi
+                else
+                    warn "swapon не сработал — swap выключен, включите вручную: swapon /swapfile"
+                fi
+            fi
+            unset _swap_tmp _file_mb _ok_swap 2>/dev/null || true
+        fi
+    fi
+    unset _swap_is_file _do_swap 2>/dev/null || true
+
+    # Запоминаем выбор для повторного запуска: auto остаётся auto (при следующем
+    # запуске размер пересчитается под сервер), явный размер — как есть.
+    if [ -f "$ANSWERS_FILE" ]; then
+        if [ "$SWAP_AUTO_CHOICE" = true ]; then
+            SWAP_REC="auto"
+        elif [ "${SWAP_APPLIED_MB:-0}" -gt 0 ]; then
+            SWAP_REC="${SWAP_APPLIED_MB}M"
+        else
+            SWAP_REC="off"
+        fi
+        sed -i '/^SWAP_SIZE=/d' "$ANSWERS_FILE"
+        printf "SWAP_SIZE='%s'\n" "$SWAP_REC" >> "$ANSWERS_FILE"
+    fi
+}
+
 ask() { # ask VAR "текст" "дефолт"
     local __var="$1" __prompt="$2" __def="${3:-}" __val=""
     if [ "$ASSUME_YES" = true ] && [ -n "${!__var:-}" ]; then return 0; fi
@@ -520,6 +708,16 @@ say ""
 
 [ "$(id -u)" -eq 0 ] || die "Запускать от root: sudo bash $0"
 log "=== start v$VERSION args: $* ==="
+
+# --- режим «только swap» ----------------------------------------------------
+# Починить swap на уже установленной ноде: показать состояние, при
+# необходимости пересоздать и выйти. Docker, Caddy, конфиги и firewall не
+# трогаются, поэтому запускать на рабочей ноде безопасно.
+if [ "$SWAP_ONLY" = true ]; then
+    hdr "swap"
+    swap_section
+    exit 0
+fi
 
 if ! command -v apt-get >/dev/null 2>&1; then
     die "Поддерживаются только Debian/Ubuntu (apt-get не найден)."
@@ -1036,182 +1234,9 @@ else
     hdr "5. Тюнинг системы"
 
     # --- swap -------------------------------------------------------------
-    # RAM и диск читаем из /proc/meminfo и df: free/swapon из procps на
-    # минимальном образе может отсутствовать, а /proc есть всегда.
-    # Главное отличие от прежней версии: показываем и учитываем swap, который уже
-    # включён провайдером (типовая картинка VPS — /swapfile или /swap.img на
-    # 512 МБ). Раньше такой swap молча оставляли, и «на любом сервере выходило
-    # 512 МБ», хотя рекомендация была другой.
-    RAM_MB="$(awk '/^MemTotal:/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null || true)"
-    RAM_MB="${RAM_MB:-1024}"
-    FREE_MB="$(df -Pm / 2>/dev/null | awk 'NR==2{print $4}')"
-    FREE_MB="${FREE_MB:-0}"
-    REC_SWAP="$(detect_swap_mb "$RAM_MB" "$FREE_MB")"
-
-    _swapinfo="$(awk '/^SwapTotal:/{t=int($2/1024)} /^SwapFree:/{f=int($2/1024)} END{printf "%d %d", t+0, t-f}' /proc/meminfo 2>/dev/null || true)"
-    CUR_SWAP_MB="${_swapinfo%% *}"
-    SWAP_USED_MB="${_swapinfo##* }"
-    unset _swapinfo 2>/dev/null || true
-    case "$CUR_SWAP_MB" in ''|*[!0-9]*) CUR_SWAP_MB=0 ;; esac
-    case "$SWAP_USED_MB" in ''|*[!0-9]*) SWAP_USED_MB=0 ;; esac
-    SWAP_DEV="$(swapon --show=NAME --noheadings 2>/dev/null | awk 'NF{print $1; exit}' || true)"
-
-    if [ "$CUR_SWAP_MB" -gt 0 ]; then
-        say "  RAM: ${RAM_MB} МБ · диск: свободно ${FREE_MB} МБ · swap: включён ${CUR_SWAP_MB} МБ (${SWAP_DEV:-?}, занято ${SWAP_USED_MB} МБ)"
-    else
-        say "  RAM: ${RAM_MB} МБ · диск: свободно ${FREE_MB} МБ · swap: не включён"
-    fi
-    if [ "$REC_SWAP" -gt 0 ]; then
-        say "  рекомендация для этого сервера: ${REC_SWAP} МБ — $(swap_hint "$RAM_MB" "$FREE_MB")"
-    else
-        warn "  рекомендация для этого сервера: swap не создавать — $(swap_hint "$RAM_MB" "$FREE_MB")"
-    fi
-
-    # ---- сколько ставить -------------------------------------------------
-    SWAP_TARGET=""
-    SWAP_AUTO_CHOICE=false
-    case "${SWAP_SIZE,,}" in
-        auto|'')
-            SWAP_TARGET="$REC_SWAP"
-            SWAP_AUTO_CHOICE=true
-            if [ "$ASSUME_YES" = false ]; then
-                # В подсказке стоит само число, поэтому Enter = ровно то, что
-                # написано в «рекомендация», без «угадай, что будет».
-                _swap_def="$REC_SWAP"
-                [ "${_swap_def:-0}" -eq 0 ] && _swap_def="off"
-                while :; do
-                    swap_choice=""
-                    ask swap_choice "Размер swap (1024M / 2G / off; Enter — рекомендация)" "$_swap_def"
-                    case "${swap_choice,,}" in
-                        ''|auto|да|д|yes|y|on)
-                            SWAP_TARGET="$REC_SWAP"; SWAP_AUTO_CHOICE=true; break ;;
-                        off|no|none|0|нет|н)
-                            SWAP_TARGET=0; SWAP_AUTO_CHOICE=false; break ;;
-                        *)
-                            _mb="$(to_mb "$swap_choice")"
-                            case "${_mb:-x}" in
-                                ''|*[!0-9]*)
-                                    warn "не понял «$swap_choice» — напишите размер: 1024M, 2G или off"
-                                    continue ;;
-                            esac
-                            if [ "$_mb" -lt 128 ]; then
-                                warn "меньше 128 МБ swap не делаю — 1024M, 2G или off"
-                                continue
-                            fi
-                            SWAP_TARGET="$_mb"
-                            [ "$_mb" -eq "$REC_SWAP" ] || SWAP_AUTO_CHOICE=false
-                            break ;;
-                    esac
-                done
-                unset _swap_def _mb 2>/dev/null || true
-            fi
-            ;;
-        off|no|none|0)
-            SWAP_TARGET=0
-            ;;
-        *)
-            SWAP_TARGET="$(to_mb "$SWAP_SIZE")"
-            if ! [[ "${SWAP_TARGET:-}" =~ ^[0-9]+$ ]] || [ "${SWAP_TARGET:-0}" -lt 128 ]; then
-                warn "некорректный --swap-size «$SWAP_SIZE» — беру рекомендацию ${REC_SWAP} МБ"
-                SWAP_TARGET="$REC_SWAP"
-                SWAP_AUTO_CHOICE=true
-            fi
-            ;;
-    esac
-
-    # ---- применяем -------------------------------------------------------
-    SWAP_APPLIED_MB="$CUR_SWAP_MB"
-    _swap_is_file=true
-    case "$SWAP_DEV" in
-        /dev/*) _swap_is_file=false ;;   # swap на разделе — не трогаем
-    esac
-
-    if [ "${SWAP_TARGET:-0}" -eq 0 ]; then
-        if [ "$CUR_SWAP_MB" -gt 0 ]; then
-            note "swap не трогаю: уже включён ${CUR_SWAP_MB} МБ${SWAP_DEV:+ ($SWAP_DEV)}"
-        else
-            warn "Swap не создаётся (мало места или выключено вручную)"
-        fi
-    elif [ "$CUR_SWAP_MB" -gt 0 ] && [ "$CUR_SWAP_MB" -eq "$SWAP_TARGET" ]; then
-        ok "Swap ${SWAP_TARGET} МБ уже включён — как и планировалось"
-    else
-        _do_swap=true
-        if [ "$CUR_SWAP_MB" -gt 0 ]; then
-            if [ "$_swap_is_file" = false ]; then
-                _do_swap=false
-                warn "swap на разделе ${SWAP_DEV:-?} — разделы не трогаю (нужно ${SWAP_TARGET} МБ)"
-            elif [ "$SWAP_USED_MB" -gt $(( CUR_SWAP_MB / 5 )) ]; then
-                _do_swap=false
-                warn "в swap занято ${SWAP_USED_MB} МБ из ${CUR_SWAP_MB} — не пересоздаю (нужно ${SWAP_TARGET} МБ)"
-            elif [ "$ASSUME_YES" = false ]; then
-                say "  сейчас: swap ${CUR_SWAP_MB} МБ (${SWAP_DEV:-?}), занято ${SWAP_USED_MB} МБ"
-                say "  по плану: swap ${SWAP_TARGET} МБ"
-                SWAP_RESIZE=""
-                ask_yesno SWAP_RESIZE "Пересоздать swap под размер сервера?" "д"
-                [ "$SWAP_RESIZE" = "no" ] && _do_swap=false
-            fi
-        fi
-
-        if [ "$_do_swap" = true ]; then
-            _swap_tmp="/swapfile.new"
-            _ok_swap=false
-            _file_mb=0
-            [ -f /swapfile ] && _file_mb=$(( $(stat -c %s /swapfile 2>/dev/null || echo 0) / 1048576 ))
-            if [ "$CUR_SWAP_MB" -eq 0 ] && [ "$_file_mb" -eq "$SWAP_TARGET" ]; then
-                # уже нужного размера и не включён — только переформатировать
-                chmod 600 /swapfile 2>/dev/null || true
-                mkswap /swapfile >/dev/null 2>&1 || true
-                _ok_swap=true
-            elif ! swap_format "$_swap_tmp" "$SWAP_TARGET"; then
-                warn "не удалось подготовить swap-файл ${SWAP_TARGET} МБ — оставляю как есть"
-            elif [ "$CUR_SWAP_MB" -gt 0 ] && ! swapoff "$SWAP_DEV" 2>/dev/null; then
-                rm -f "$_swap_tmp" 2>/dev/null || true
-                warn "swapoff ${SWAP_DEV:-?} не удался — swap оставляю прежним"
-            else
-                if [ "$CUR_SWAP_MB" -gt 0 ]; then
-                    case "$SWAP_DEV" in
-                        /swapfile|/swap.img|/swap) rm -f "$SWAP_DEV" 2>/dev/null || true ;;
-                    esac
-                    fstab_swap_drop "$SWAP_DEV"
-                fi
-                mv -f "$_swap_tmp" /swapfile 2>/dev/null || \
-                    cp -f "$_swap_tmp" /swapfile 2>/dev/null || true
-                rm -f "$_swap_tmp" 2>/dev/null || true
-                chmod 600 /swapfile 2>/dev/null || true
-                _ok_swap=true
-            fi
-
-            if [ "$_ok_swap" = true ]; then
-                if swapon /swapfile 2>/dev/null; then
-                    fstab_swap_ensure /swapfile
-                    SWAP_APPLIED_MB="$SWAP_TARGET"
-                    if [ "$CUR_SWAP_MB" -gt 0 ]; then
-                        ok "Swap пересоздан: ${CUR_SWAP_MB} МБ → ${SWAP_TARGET} МБ (закреплён в /etc/fstab)"
-                    else
-                        ok "Swap ${SWAP_TARGET} МБ создан и закреплён в /etc/fstab (RAM ${RAM_MB} МБ, диск ${FREE_MB} МБ)"
-                    fi
-                else
-                    warn "swapon не сработал — swap выключен, включите вручную: swapon /swapfile"
-                fi
-            fi
-            unset _swap_tmp _file_mb _ok_swap 2>/dev/null || true
-        fi
-    fi
-    unset _swap_is_file _do_swap 2>/dev/null || true
-
-    # Запоминаем выбор для повторного запуска: auto остаётся auto (при следующем
-    # запуске размер пересчитается под сервер), явный размер — как есть.
-    if [ -f "$ANSWERS_FILE" ]; then
-        if [ "$SWAP_AUTO_CHOICE" = true ]; then
-            SWAP_REC="auto"
-        elif [ "${SWAP_APPLIED_MB:-0}" -gt 0 ]; then
-            SWAP_REC="${SWAP_APPLIED_MB}M"
-        else
-            SWAP_REC="off"
-        fi
-        sed -i '/^SWAP_SIZE=/d' "$ANSWERS_FILE"
-        printf "SWAP_SIZE='%s'\n" "$SWAP_REC" >> "$ANSWERS_FILE"
-    fi
+    # состояние, размер и применение — в swap_section: та же функция
+    # используется режимом --swap-only.
+    swap_section
 
     # --- nofile -----------------------------------------------------------
     cat > /etc/security/limits.d/99-remnawave.conf <<'EOF'
