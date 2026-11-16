@@ -53,7 +53,7 @@ load_templates() { # список сайтов из templates/manifest.tsv
     rm -f "$tmp"
     if [ "${#TEMPLATE_KEYS[@]}" -eq 0 ]; then
         warn "не удалось получить список шаблонов (нет сети?)"
-        TEMPLATE_KEYS=(studio)
+        TEMPLATE_KEYS=(shop)
         TEMPLATE_DESCS=("магазин керамики — каталог, фильтры, корзина")
     fi
 }
@@ -292,7 +292,7 @@ show_status() {
     say "  ${C_BLD}Порты:${C_OFF}"
     say "    панель: ${PANEL_IP:-—}   порт ноды: ${NODE_PORT:-—} (только с IP панели)"
     if [ "$USE_SELFSTEAL" = "yes" ]; then
-        say "    selfsteal: ${DOMAIN:-—} (80/443 → 127.0.0.1:${SELFSTEAL_PORT:-9443}), шаблон: ${TEMPLATE:-studio}"
+        say "    selfsteal: ${DOMAIN:-—} (80/443 → 127.0.0.1:${SELFSTEAL_PORT:-9443}), шаблон: ${TEMPLATE:-shop}"
     else
         say "    selfsteal: выключен"
     fi

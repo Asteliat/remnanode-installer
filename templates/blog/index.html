@@ -259,7 +259,7 @@ h1,h2,h3{font-family:var(--serif);font-weight:400;overflow-wrap:break-word}
 }
 .results-line .results-note{font-family:var(--sans);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
 .post-grid{
-  display:grid;grid-template-columns:1fr;gap:clamp(30px,4vw,40px) clamp(18px,2.2vw,28px);
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(30px,4vw,40px) clamp(18px,2.2vw,28px);
   margin:0;padding:0;list-style:none;
 }
 .card{min-width:0;transition:transform 220ms var(--ease)}
@@ -1878,8 +1878,674 @@ function artSvg(variant, seed, label) {
   var aria = label ? ' role="img" aria-label="' + escAttr(label) + '"' : ' aria-hidden="true"';
   return '<svg class="art-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice"' + aria + '>' + artOpen(uid) + inner + '</svg>';
 }
-/*__RENDER__*/
-/*__INIT__*/
+/* ------------------------------------------------------------------
+   Рендер. Один hash-роутер поверх POSTS, AUTHORS и рисунков:
+     #/                    текущий номер: главный материал + подборка
+     #/essays              эссе
+     #/interviews          интервью
+     #/architecture        материалы с темой «Architecture»
+     #/archive             всё по годам
+     #/about               редакция
+     #/read/<slug>         статья
+   ------------------------------------------------------------------ */
+
+var VIEW = document.getElementById('view');
+var BODY = document.body;
+
+function esc(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function byDate() {
+  return POSTS.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+}
+
+function postBySlug(slug) {
+  for (var i = 0; i < POSTS.length; i++) if (POSTS[i].slug === slug) return POSTS[i];
+  return null;
+}
+
+function dateText(iso) {
+  var d = new Date(iso + 'T12:00:00');
+  if (isNaN(d.getTime())) return iso;
+  return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function dateShort(iso) {
+  var d = new Date(iso + 'T12:00:00');
+  if (isNaN(d.getTime())) return iso;
+  return MONTHS_SHORT[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function yearOf(iso) { return String(iso).slice(0, 4); }
+
+function authorOf(post) { return AUTHORS[post.author] || { name: 'Field Notes', initials: 'FN', role: 'Editors', bio: '' }; }
+
+function readTime(post) {
+  var words = 0;
+  (post.body || []).forEach(function (block) {
+    if (block.text) words += String(block.text).split(/\s+/).length;
+    if (block.items) block.items.forEach(function (item) { words += String(item).split(/\s+/).length; });
+    if (block.caption) words += String(block.caption).split(/\s+/).length;
+  });
+  words += String(post.deck || '').split(/\s+/).length;
+  return Math.max(1, Math.round(words / 190)) + ' min read';
+}
+
+function artFrame(post, extraClass) {
+  return '<div class="art-frame' + (extraClass ? ' ' + extraClass : '') + '">' +
+    artSvg(post.art, post.seed, post.artAlt) + '</div>';
+}
+
+function postHref(post) { return '#/read/' + post.slug; }
+
+function kicker(post) {
+  return '<p class="kicker">' +
+    '<span class="kicker-tag">' + esc(post.tag) + '</span>' +
+    '<span class="dot" aria-hidden="true"></span>' +
+    '<span>' + esc(post.section) + '</span>' +
+    '<span class="kicker-issue">' + esc(post.issue) + '</span>' +
+    '</p>';
+}
+
+function byline(post) {
+  var author = authorOf(post);
+  return '<p class="byline">' +
+    '<span class="avatar avatar--sm" aria-hidden="true">' + esc(author.initials) + '</span>' +
+    '<span class="byline-author">' + esc(author.name) + '</span>' +
+    '<span class="sep" aria-hidden="true">·</span>' +
+    '<time datetime="' + esc(post.date) + '">' + esc(dateText(post.date)) + '</time>' +
+    '<span class="sep" aria-hidden="true">·</span>' +
+    '<span class="read-time">' + esc(readTime(post)) + '</span>' +
+    '</p>';
+}
+
+function card(post) {
+  return '<li class="card reveal" data-tag="' + esc(post.tag) + '">' +
+    '<a class="card-link" href="' + postHref(post) + '">' +
+      artFrame(post) +
+      '<p class="card-tag"><span class="tag-mark" aria-hidden="true"></span>' + esc(post.tag) + '</p>' +
+      '<h3 class="card-title">' + esc(post.title) + '</h3>' +
+      '<p class="card-meta"><span>' + esc(post.section) + '</span><span class="sep" aria-hidden="true">·</span>' +
+        '<span>' + esc(dateShort(post.date)) + '</span><span class="sep" aria-hidden="true">·</span>' +
+        '<span>' + esc(readTime(post)) + '</span></p>' +
+    '</a></li>';
+}
+
+function tagsIn(posts) {
+  var seen = {};
+  var out = [];
+  posts.forEach(function (post) {
+    if (seen[post.tag]) return;
+    seen[post.tag] = true;
+    out.push(post.tag);
+  });
+  return out.sort();
+}
+
+function countByTag(posts, tag) {
+  return posts.filter(function (post) { return post.tag === tag; }).length;
+}
+
+function filterBar(posts) {
+  var tags = tagsIn(posts);
+  var chips = '<button class="chip" type="button" data-filter="*" aria-pressed="true">Everything' +
+      '<span class="chip-count">' + posts.length + '</span></button>' +
+    tags.map(function (tag) {
+      return '<button class="chip" type="button" data-filter="' + esc(tag) + '" aria-pressed="false">' +
+        esc(tag) + '<span class="chip-count">' + countByTag(posts, tag) + '</span></button>';
+    }).join('');
+  return '<div class="filter-bar" role="group" aria-label="Filter by theme">' +
+    '<span class="filter-label">Theme</span>' + chips + '</div>';
+}
+
+function postingBlock(posts, opts) {
+  var settings = opts || {};
+  if (!posts.length) {
+    return '<div class="empty">' +
+      '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>' +
+      '<h3>Nothing filed under this theme yet</h3>' +
+      '<p>The next issue is on the press now. In the meantime the archive has everything we have published since 2024.</p>' +
+      '<a class="btn" href="#/archive">Open the archive</a></div>';
+  }
+  return filterBar(posts) +
+    '<p class="results-line"><span data-results>' + posts.length + ' pieces</span>' +
+    '<span class="results-note">' + esc(settings.note || 'Sorted by date') + '</span></p>' +
+    '<ul class="post-grid grid-wrap" data-grid>' + posts.map(card).join('') + '</ul>';
+}
+
+function sectionHead(eyebrow, title, aside) {
+  return '<div class="section-head"><div>' +
+    (eyebrow ? '<p class="eyebrow">' + esc(eyebrow) + '</p>' : '') +
+    '<h2 class="section-title">' + esc(title) + '</h2></div>' +
+    (aside ? '<p class="section-aside">' + esc(aside) + '</p>' : '') + '</div>';
+}
+
+function pageHead(eyebrow, title, deck) {
+  return '<header class="page-head">' +
+    '<p class="kicker"><span class="kicker-tag">' + esc(eyebrow) + '</span></p>' +
+    '<h1 class="page-title" id="page-title" tabindex="-1">' + esc(title) + '</h1>' +
+    (deck ? '<p class="page-deck">' + esc(deck) + '</p>' : '') +
+    '</header><div class="page-head-rule"></div>';
+}
+
+/* ---- views ------------------------------------------------------ */
+
+function viewHome() {
+  var posts = byDate();
+  var lead = posts[0];
+  var rest = posts.slice(1);
+  return '<div class="screen">' +
+    '<section class="feature" aria-labelledby="feature-title">' +
+      '<div class="container feature-grid">' +
+        '<div class="feature-copy">' +
+          kicker(lead) +
+          '<h2 class="feature-title" id="feature-title"><a href="' + postHref(lead) + '">' + esc(lead.title) + '</a></h2>' +
+          '<p class="feature-standfirst">' + esc(lead.deck) + '</p>' +
+          byline(lead) +
+          '<a class="cta" href="' + postHref(lead) + '">Read the piece ' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>' +
+        '</div>' +
+        '<figure class="feature-art">' + artFrame(lead) +
+          '<figcaption class="figure-caption">' + esc(lead.artAlt) + '</figcaption>' +
+        '</figure>' +
+      '</div>' +
+    '</section>' +
+    '<section class="listing container" aria-labelledby="issue-title">' +
+      sectionHead('Issue 07', 'In this issue', 'Winter 2026. Fourteen pieces from London, the Basque hills and a summer of repair.') +
+      '<div data-listing data-posts="issue">' + postingBlock(rest, { note: 'Newest first' }) + '</div>' +
+    '</section>' +
+    '<section class="listing container" aria-labelledby="sections-title">' +
+      sectionHead('Sections', 'Where the pieces live', 'Essays, interviews and the architecture file — the three doors into the journal.') +
+      '<ul class="post-grid grid-wrap">' +
+        [['essays', 'Essays', 'Long reads about rooms, repair and the afterlife of public buildings.'],
+         ['interviews', 'Interviews', 'Conversations with the people who make things, on the bench where they make them.'],
+         ['architecture', 'Architecture', 'The architecture file: houses, monuments and the colour of a wall at six in the morning.']]
+          .map(function (row) {
+            return '<li class="card"><a class="card-link" href="#/' + row[0] + '">' +
+              '<p class="card-tag"><span class="tag-mark" aria-hidden="true"></span>Section</p>' +
+              '<h3 class="card-title">' + esc(row[1]) + '</h3>' +
+              '<p class="card-meta">' + esc(row[2]) + '</p></a></li>';
+          }).join('') +
+      '</ul>' +
+    '</section>' +
+  '</div>';
+}
+
+var SECTIONS = {
+  essays: { title: 'Essays', eyebrow: 'Section', deck: 'Long reads about rooms, repair and the afterlife of public buildings. Filed from London, mostly on foot.', match: function (post) { return post.section === 'Essay'; } },
+  interviews: { title: 'Interviews', eyebrow: 'Section', deck: 'Conversations with the people who make things, usually in the workshop, usually with the kettle on.', match: function (post) { return post.section === 'Interview'; } },
+  architecture: { title: 'Architecture', eyebrow: 'Theme file', deck: 'Houses, chapels, bridges and one very quiet monument. The architecture file gathers everything filed under the theme.', match: function (post) { return post.tag === 'Architecture'; } }
+};
+
+function viewSection(key) {
+  var section = SECTIONS[key];
+  var posts = byDate().filter(section.match);
+  return '<div class="screen">' +
+    '<div class="container">' + pageHead(section.eyebrow, section.title, section.deck) + '</div>' +
+    '<section class="listing container" data-listing>' +
+      postingBlock(posts, { note: posts.length + ' pieces · newest first' }) +
+    '</section>' +
+  '</div>';
+}
+
+function viewArchive() {
+  var posts = byDate();
+  var years = [];
+  posts.forEach(function (post) {
+    var year = yearOf(post.date);
+    if (years.indexOf(year) === -1) years.push(year);
+  });
+  var blocks = years.map(function (year) {
+    var list = posts.filter(function (post) { return yearOf(post.date) === year; });
+    return '<section class="year-block" aria-labelledby="year-' + year + '">' +
+      '<div class="year-head"><h2 class="year-title" id="year-' + year + '">' + year + '</h2>' +
+        '<p class="year-count">' + list.length + (list.length === 1 ? ' piece' : ' pieces') + '</p></div>' +
+      '<ul class="archive-list">' + list.map(function (post, index) {
+        return '<li class="archive-item"><a class="archive-row" href="' + postHref(post) + '">' +
+          '<span class="archive-num" aria-hidden="true">' + String(index + 1).padStart(2, '0') + '</span>' +
+          '<span class="archive-body">' +
+            '<span class="archive-title">' + esc(post.title) + '</span>' +
+            '<span class="archive-meta"><span>' + esc(post.section) + '</span><span class="sep" aria-hidden="true">·</span>' +
+              '<span>' + esc(post.tag) + '</span><span class="sep" aria-hidden="true">·</span>' +
+              '<span>' + esc(dateText(post.date)) + '</span></span>' +
+          '</span>' +
+          '<span class="archive-read">' + esc(readTime(post)) + '</span>' +
+        '</a></li>';
+      }).join('') + '</ul>' +
+    '</section>';
+  }).join('');
+
+  return '<div class="screen">' +
+    '<div class="container archive-head">' + pageHead('The archive', 'Everything we have published',
+      'Fourteen pieces since 2024, kept in the order they were filed. Issue 04 and 05 are sold out; the writing is not.') +
+      '<div class="archive-summary">' +
+        '<span>' + posts.length + ' pieces</span><span class="dot" aria-hidden="true"></span>' +
+        '<span>' + years.length + ' years</span><span class="dot" aria-hidden="true"></span>' +
+        '<span>Issues 04–07</span><span class="dot" aria-hidden="true"></span>' +
+        '<span>Updated 15 November 2026</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="container">' + blocks + '</div>' +
+  '</div>';
+}
+
+function viewAbout() {
+  var keys = Object.keys(AUTHORS);
+  return '<div class="screen">' +
+    '<div class="container about-intro">' + pageHead('The editors', 'A journal of rooms, objects and the people who make them',
+      'Field Notes is an independent journal published twice a year in London since 2019. Issue 07 is on the press now.') + '</div>' +
+    '<div class="container about-grid">' +
+      '<div class="about-copy">' +
+        '<p class="about-lede">We are four editors and a copy editor, working from a room above a print shop in Clerkenwell. Nobody on the masthead has an office with a door.</p>' +
+        '<p>The journal began in 2019 with a piece about a stairwell in Bermondsey and a borrowed camera. Six years later the ambition is the same: to write about buildings and objects the way people actually live with them — slowly, with attention, and without the press release.</p>' +
+        '<p>Each issue takes about seven months. We visit everything we publish, usually twice, and we pay for our own travel. Illustrations are drawn in-house, in ink, and reproduced from the original drawings. The paper is uncoated and the ink is vegetable-based, because a journal about repair should not be disposable.</p>' +
+        '<p>We publish two issues a year and a letter once a month. There is no advertising and no sponsored content, which is why the subscription costs what it costs.</p>' +
+      '</div>' +
+      '<aside class="about-facts">' +
+        '<dl>' +
+          '<div><dt>Founded</dt><dd>2019, London</dd></div>' +
+          '<div><dt>Issues</dt><dd>Seven, twice a year</dd></div>' +
+          '<div><dt>Editors</dt><dd>' + keys.length + '</dd></div>' +
+          '<div><dt>Paper</dt><dd>Uncoated 120 gsm</dd></div>' +
+          '<div><dt>Print run</dt><dd>1,400 copies</dd></div>' +
+          '<div><dt>ISSN</dt><dd>2753-4882</dd></div>' +
+        '</dl>' +
+      '</aside>' +
+    '</div>' +
+    '<div class="container editors">' +
+      sectionHead('The masthead', 'Who makes it', 'Four editors, one copy desk, and a printer in Suffolk who has never missed a deadline.') +
+      '<div class="editor-grid">' + keys.map(function (key) {
+        var author = AUTHORS[key];
+        return '<article class="editor-card reveal">' +
+          '<span class="avatar avatar--lg" aria-hidden="true">' + esc(author.initials) + '</span>' +
+          '<h3 class="editor-name">' + esc(author.name) + '</h3>' +
+          '<p class="editor-role">' + esc(author.role) + '</p>' +
+          '<p class="editor-bio">' + esc(author.bio) + '</p>' +
+        '</article>';
+      }).join('') + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function bodyBlocks(post) {
+  var notes = [];
+  var html = '';
+  var firstParagraph = true;
+  (post.body || []).forEach(function (block) {
+    if (block.type === 'p') {
+      html += '<p' + (firstParagraph ? ' class="lead"' : '') + '>' + esc(block.text) + '</p>';
+      firstParagraph = false;
+    } else if (block.type === 'h2') {
+      html += '<h2>' + esc(block.text) + '</h2>';
+    } else if (block.type === 'quote') {
+      html += '<blockquote class="pullquote"><p>' + esc(block.text) + '</p>' +
+        (block.cite ? '<footer>' + esc(block.cite) + '</footer>' : '') + '</blockquote>';
+    } else if (block.type === 'list') {
+      html += '<ol class="post-list">' + (block.items || []).map(function (item, index) {
+        return '<li data-index="' + String(index + 1).padStart(2, '0') + '">' + esc(item) + '</li>';
+      }).join('') + '</ol>';
+    } else if (block.type === 'figure') {
+      var figure = { art: block.art, seed: block.seed, artAlt: block.alt };
+      html += '<figure class="post-figure">' + artFrame(figure) +
+        (block.caption ? '<figcaption class="figure-caption">' + esc(block.caption) + '</figcaption>' : '') +
+        '</figure>';
+    } else if (block.type === 'note') {
+      notes.push(block.text);
+    }
+  });
+  if (notes.length) {
+    html += '<section class="notes" aria-labelledby="notes-title"><h3 class="notes-title" id="notes-title">Notes</h3>' +
+      '<ol>' + notes.map(function (note) { return '<li>' + esc(note) + '</li>'; }).join('') + '</ol></section>';
+  }
+  return html;
+}
+
+function viewPost(slug) {
+  var post = postBySlug(slug);
+  if (!post) return viewNotFound();
+  var author = authorOf(post);
+  var posts = byDate();
+  var related = posts.filter(function (other) { return other.slug !== post.slug && other.tag === post.tag; }).slice(0, 3);
+  if (related.length < 3) {
+    posts.forEach(function (other) {
+      if (related.length >= 3 || other.slug === post.slug) return;
+      if (related.indexOf(other) === -1) related.push(other);
+    });
+  }
+  var back = post.section === 'Interview' ? '#/interviews' : (post.section === 'Essay' ? '#/essays' : '#/');
+  return '<article class="post">' +
+    '<div class="container back-row"><a class="back-link" href="' + back + '">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>' +
+      'All ' + esc(post.section === 'Interview' ? 'interviews' : 'essays') + '</a></div>' +
+    '<header class="post-head">' +
+      kicker(post) +
+      '<h1 class="post-title" id="post-title" tabindex="-1">' + esc(post.title) + '</h1>' +
+      '<p class="post-standfirst">' + esc(post.deck) + '</p>' +
+      '<div class="post-meta">' +
+        '<span class="avatar avatar--sm" aria-hidden="true">' + esc(author.initials) + '</span>' +
+        '<span class="byline-author">' + esc(author.name) + '</span>' +
+        '<span class="sep" aria-hidden="true">·</span>' +
+        '<time datetime="' + esc(post.date) + '">' + esc(dateText(post.date)) + '</time>' +
+        '<span class="sep" aria-hidden="true">·</span>' +
+        '<span class="read-time">' + esc(readTime(post)) + '</span>' +
+        '<span class="meta-issue">' + esc(post.issue) + '</span>' +
+      '</div>' +
+    '</header>' +
+    '<figure class="post-hero">' + artFrame(post) +
+      '<figcaption class="figure-caption">' + esc(post.artAlt) + '</figcaption>' +
+    '</figure>' +
+    '<div class="post-body">' +
+      bodyBlocks(post) +
+      '<div class="post-actions">' +
+        '<button class="action-btn" type="button" data-action="copy-link">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>' +
+          'Copy link</button>' +
+        '<button class="action-btn" type="button" data-action="print">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V4h10v5M7 18H5V9h14v9h-2"/><path d="M7 14h10v7H7z"/></svg>' +
+          'Print</button>' +
+        '<span class="action-note">' + esc(post.issue) + '</span>' +
+      '</div>' +
+      '<aside class="author-box">' +
+        '<span class="avatar" aria-hidden="true">' + esc(author.initials) + '</span>' +
+        '<div><p class="author-name">' + esc(author.name) + '</p>' +
+          '<p class="author-role">' + esc(author.role) + '</p>' +
+          '<p class="author-bio">' + esc(author.bio) + '</p></div>' +
+      '</aside>' +
+      '<section class="related" aria-labelledby="related-title">' +
+        '<div class="related-head"><h2 class="related-title" id="related-title">Filed nearby</h2>' +
+          '<p class="related-note">' + esc(post.tag) + '</p></div>' +
+        '<div class="related-grid">' + related.map(function (other) {
+          return '<article class="related-card"><a href="' + postHref(other) + '">' +
+            artFrame(other) +
+            '<h3>' + esc(other.title) + '</h3>' +
+            '<p class="related-meta">' + esc(other.section) + ' · ' + esc(dateShort(other.date)) + '</p>' +
+          '</a></article>';
+        }).join('') + '</div>' +
+      '</section>' +
+      '<div class="post-back"><a class="back-link" href="#/archive">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>' +
+        'The archive</a></div>' +
+    '</div>' +
+  '</article>';
+}
+
+function viewNotFound() {
+  return '<div class="screen"><div class="container">' +
+    pageHead('404', 'This page is not in the issue',
+      'The link may be from an old issue, or a piece may have moved in the archive. Everything we have published is two clicks away.') +
+    '<div class="empty"><h3>Nothing filed here</h3>' +
+      '<p>Try the current issue, the three sections, or the full archive — all fourteen pieces since 2024 are listed there.</p>' +
+    '<a class="btn" href="#/">Current issue</a> <a class="btn" href="#/archive">The archive</a></div>' +
+  '</div></div>';
+}
+
+/* ---- router ------------------------------------------------------ */
+
+var lastRouteKey = '';
+
+function parseHash() {
+  return String(location.hash || '').replace(/^#!?\/?/, '').split('?')[0];
+}
+
+function render() {
+  var route = parseHash();
+  var parts = route.split('/').filter(Boolean);
+  var key = parts.join('/');
+  var html;
+  var title;
+  var navKey = '';
+
+  if (!parts.length) {
+    html = viewHome();
+    title = null;
+    navKey = '';
+  } else if (parts[0] === 'essays' || parts[0] === 'interviews' || parts[0] === 'architecture') {
+    html = viewSection(parts[0]);
+    title = SECTIONS[parts[0]].title;
+    navKey = parts[0];
+  } else if (parts[0] === 'archive') {
+    html = viewArchive();
+    title = 'The archive';
+    navKey = 'archive';
+  } else if (parts[0] === 'about') {
+    html = viewAbout();
+    title = 'The editors';
+    navKey = 'about';
+  } else if (parts[0] === 'read' && parts[1]) {
+    var post = postBySlug(parts[1]);
+    html = viewPost(parts[1]);
+    title = post ? post.title : 'Not found';
+    navKey = post && SECTIONS[post.section === 'Essay' ? 'essays' : 'interviews'] ? (post.section === 'Essay' ? 'essays' : 'interviews') : '';
+  } else {
+    html = viewNotFound();
+    title = 'Not found';
+    navKey = '';
+  }
+
+  if (!VIEW) return;
+  VIEW.innerHTML = html;
+  document.title = title ? title + ' — Field Notes' : 'Field Notes — A journal of rooms, objects and the people who make them';
+
+  var links = document.querySelectorAll('.nav-link[data-nav]');
+  for (var i = 0; i < links.length; i++) {
+    var link = links[i];
+    if (link.getAttribute('data-nav') === navKey) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+
+  bindListing();
+  bindPostActions();
+  observeReveals(VIEW);
+
+  var changed = key !== lastRouteKey;
+  lastRouteKey = key;
+  if (changed) {
+    window.scrollTo(0, 0);
+    var heading = VIEW.querySelector('.page-title, .post-title, .feature-title');
+    if (heading) {
+      if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+      try { heading.focus({ preventScroll: true }); } catch (err) { /* старый браузер */ }
+    }
+    closeNav();
+    updateProgress();
+  }
+}
+
+function bindListing() {
+  var blocks = VIEW.querySelectorAll('[data-listing]');
+  for (var i = 0; i < blocks.length; i++) {
+    (function (block) {
+      var grid = block.querySelector('[data-grid]');
+      if (!grid) return;
+      var results = block.querySelector('[data-results]');
+      var chips = block.querySelectorAll('.chip[data-filter]');
+      var cards = grid.querySelectorAll('.card[data-tag]');
+      function applyChip(chip) {
+        var tag = chip.getAttribute('data-filter');
+        var shown = 0;
+        for (var c = 0; c < chips.length; c++) chips[c].setAttribute('aria-pressed', chips[c] === chip ? 'true' : 'false');
+        for (var k = 0; k < cards.length; k++) {
+          var match = tag === '*' || cards[k].getAttribute('data-tag') === tag;
+          cards[k].hidden = !match;
+          if (match) shown++;
+        }
+        if (results) results.textContent = shown + (shown === 1 ? ' piece' : ' pieces') + (tag === '*' ? '' : ' · ' + tag);
+      }
+      for (var c2 = 0; c2 < chips.length; c2++) {
+        chips[c2].addEventListener('click', function () { applyChip(this); });
+      }
+    }(blocks[i]));
+  }
+}
+
+function bindPostActions() {
+  var copy = VIEW.querySelector('[data-action="copy-link"]');
+  if (copy) {
+    copy.addEventListener('click', function () {
+      var url = location.href;
+      function done() { toast('Link copied'); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, function () { toast('Copy failed — the address is in the bar above'); });
+      } else {
+        toast('Press Ctrl+C to copy the address');
+      }
+    });
+  }
+  var print = VIEW.querySelector('[data-action="print"]');
+  if (print) print.addEventListener('click', function () { window.print(); });
+}
+
+/* ---- reading progress, toast, reveal ----------------------------- */
+
+var progressEl = document.getElementById('reading-progress');
+function updateProgress() {
+  if (!progressEl) return;
+  var article = VIEW ? VIEW.querySelector('.post') : null;
+  if (!article) {
+    progressEl.hidden = true;
+    return;
+  }
+  progressEl.hidden = false;
+  var total = article.offsetTop + article.offsetHeight - window.innerHeight;
+  var progress = total > 0 ? Math.min(1, Math.max(0, window.pageYOffset / total)) : 0;
+  var bar = progressEl.querySelector('span');
+  if (bar) bar.style.transform = 'scaleX(' + progress + ')';
+  progressEl.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
+}
+
+var toastRegion = null;
+function toast(message) {
+  if (!toastRegion) {
+    toastRegion = document.createElement('div');
+    toastRegion.className = 'toast-region';
+    toastRegion.setAttribute('role', 'status');
+    toastRegion.setAttribute('aria-live', 'polite');
+    BODY.appendChild(toastRegion);
+  }
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>' +
+    '<span>' + esc(message) + '</span>';
+  toastRegion.appendChild(el);
+  window.requestAnimationFrame(function () { el.classList.add('is-visible'); });
+  window.setTimeout(function () {
+    el.classList.add('is-leaving');
+    window.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 220);
+  }, 2600);
+}
+
+var revealObserver = null;
+if ('IntersectionObserver' in window) {
+  revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-in');
+      revealObserver.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px -4% 0px', threshold: 0.04 });
+}
+function observeReveals(root) {
+  var scope = root || document;
+  var items = scope.querySelectorAll('.reveal');
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].classList.contains('is-in') || items[i].getAttribute('data-watched') === '1') continue;
+    items[i].setAttribute('data-watched', '1');
+    if (revealObserver) revealObserver.observe(items[i]);
+    else items[i].classList.add('is-in');
+  }
+}
+/* ------------------------------------------------------------------
+   Инициализация: меню, рассылка, hashchange, прогресс чтения.
+   ------------------------------------------------------------------ */
+
+var siteHeader = document.querySelector('.site-header');
+var menuToggle = document.getElementById('menu-toggle');
+
+function closeNav() {
+  if (!siteHeader || !menuToggle) return;
+  siteHeader.classList.remove('nav-open');
+  menuToggle.setAttribute('aria-expanded', 'false');
+}
+
+if (menuToggle) {
+  menuToggle.addEventListener('click', function () {
+    if (!siteHeader) return;
+    var open = siteHeader.classList.toggle('nav-open');
+    menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+}
+
+document.addEventListener('keydown', function (event) {
+  if (event.key === 'Escape') closeNav();
+});
+
+var newsForm = document.getElementById('newsletter-form');
+var newsEmail = document.getElementById('newsletter-email');
+var newsFields = document.getElementById('newsletter-fields');
+var newsNote = document.getElementById('newsletter-note');
+var newsError = document.getElementById('newsletter-error');
+var newsSuccess = document.getElementById('newsletter-success');
+var newsSubmit = document.getElementById('newsletter-submit');
+var newsReset = document.getElementById('newsletter-reset');
+
+function newsErrorShow(message) {
+  if (!newsError) return;
+  newsError.textContent = message;
+  newsError.hidden = false;
+  if (newsEmail) {
+    newsEmail.setAttribute('aria-invalid', 'true');
+    newsEmail.focus();
+  }
+}
+function newsErrorClear() {
+  if (!newsError) return;
+  newsError.hidden = true;
+  newsError.textContent = '';
+  if (newsEmail) newsEmail.removeAttribute('aria-invalid');
+}
+
+if (newsForm) {
+  newsForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var value = newsEmail ? newsEmail.value.trim() : '';
+    if (!value) { newsErrorShow('Enter an email address so we know where to send the letter.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+      newsErrorShow('That address looks incomplete — try name@example.com.');
+      return;
+    }
+    newsErrorClear();
+    if (newsFields) newsFields.hidden = true;
+    if (newsNote) newsNote.hidden = true;
+    if (newsSubmit) newsSubmit.disabled = true;
+    if (newsSuccess) newsSuccess.hidden = false;
+    toast('Subscribed — the next letter goes out with Issue 08');
+  });
+}
+
+if (newsReset) {
+  newsReset.addEventListener('click', function () {
+    if (newsSuccess) newsSuccess.hidden = true;
+    if (newsFields) newsFields.hidden = false;
+    if (newsNote) newsNote.hidden = false;
+    if (newsSubmit) newsSubmit.disabled = false;
+    newsErrorClear();
+    if (newsEmail) {
+      newsEmail.value = '';
+      newsEmail.focus();
+    }
+  });
+}
+
+if (newsEmail) newsEmail.addEventListener('input', newsErrorClear);
+
+BODY.classList.add('js-reveal');
+render();
+window.addEventListener('hashchange', render);
+window.addEventListener('scroll', updateProgress, { passive: true });
+window.addEventListener('resize', updateProgress);
 })();
 </script>
 </body>
