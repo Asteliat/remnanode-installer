@@ -473,15 +473,25 @@ swap_section() {
             if [ "$_swap_is_file" = false ]; then
                 _do_swap=false
                 warn "swap на разделе ${SWAP_DEV:-?} — разделы не трогаю (нужно ${SWAP_TARGET} МБ)"
-            elif [ "$SWAP_USED_MB" -gt $(( CUR_SWAP_MB / 5 )) ]; then
-                _do_swap=false
-                warn "в swap занято ${SWAP_USED_MB} МБ из ${CUR_SWAP_MB} — не пересоздаю (нужно ${SWAP_TARGET} МБ)"
-            elif [ "$ASSUME_YES" = false ]; then
-                say "  сейчас: swap ${CUR_SWAP_MB} МБ (${SWAP_DEV:-?}), занято ${SWAP_USED_MB} МБ"
-                say "  по плану: swap ${SWAP_TARGET} МБ"
-                SWAP_RESIZE=""
-                ask_yesno SWAP_RESIZE "Пересоздать swap под размер сервера?" "д"
-                [ "$SWAP_RESIZE" = "no" ] && _do_swap=false
+            else
+                # swapoff возвращает занятое в RAM, поэтому решение не «сколько
+                # процентов занято», а «хватит ли памяти это принять». Прежнее
+                # правило «больше 20% — не трогаем» ложно срабатывало на
+                # провайдерских 512 МБ: 110 МБ занято = 21%, а вернуть их в 2 ГБ
+                # RAM безопасно.
+                _avail_mb="$(awk '/^MemAvailable:/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null || true)"
+                case "$_avail_mb" in ''|*[!0-9]*) _avail_mb=0 ;; esac
+                if [ "$SWAP_USED_MB" -gt 1024 ] || [ $(( _avail_mb - SWAP_USED_MB )) -lt 128 ]; then
+                    _do_swap=false
+                    warn "в swap занято ${SWAP_USED_MB} МБ, доступно RAM ${_avail_mb} МБ — swapoff рискован, не пересоздаю (нужно ${SWAP_TARGET} МБ)"
+                elif [ "$ASSUME_YES" = false ]; then
+                    say "  сейчас: swap ${CUR_SWAP_MB} МБ (${SWAP_DEV:-?}), занято ${SWAP_USED_MB} МБ"
+                    say "  по плану: swap ${SWAP_TARGET} МБ"
+                    SWAP_RESIZE=""
+                    ask_yesno SWAP_RESIZE "Пересоздать swap под размер сервера?" "д"
+                    [ "$SWAP_RESIZE" = "no" ] && _do_swap=false
+                fi
+                unset _avail_mb 2>/dev/null || true
             fi
         fi
 
