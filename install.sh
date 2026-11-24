@@ -53,7 +53,7 @@
 
 set -euo pipefail
 
-VERSION="1.3.4"
+VERSION="1.3.5"
 
 REPO_OWNER="Asteliat"
 REPO_NAME="remnanode-installer"
@@ -135,17 +135,22 @@ Remnawave Node + Caddy selfsteal — установщик
                          при включённом selfsteal)
   --no-hysteria          не включать Hysteria2
   --selfsteal yes|no     разворачивать сайт-заглушку
+  --no-selfsteal         не разворачивать сайт-заглушку (то же, что --selfsteal no)
   --domain DOMAIN        домен для selfsteal
   --selfsteal-port PORT  внутренний порт Caddy (9443)
   --template NAME        сайт-заглушка: shop (по умолчанию), studio, saas, docs,
                          blog, dashboard, restaurant, travel, forum, hosting
   --one-ip | --two-ip    схема сети (2 IP: клиенты входят на --ip1, нода выходит с --ip2)
+  --dual-ip yes|no       схема сети (yes = вход на IP1, выход через IP2)
   --ip1 IP               IP для входа (по умолчанию — автоопределённый IP сервера;
                          можно указать докупленный адрес)
   --ip2 IP               IP для выхода в интернет (для схемы с двумя IP)
   --dns yes|no           DNS-фильтр AdGuard (по умолчанию yes)
+  --no-dns               без DNS-фильтра AdGuard (то же, что --dns no)
   --autoupdate yes|no    автообновление ноды (по умолчанию yes)
+  --no-autoupdate        без автообновления ноды (то же, что --autoupdate no)
   --alerts yes|no        алерты в Telegram (плюс --tg-token и --tg-chat)
+  --no-alerts            без алертов в Telegram (то же, что --alerts no)
   --swap-size auto|off|1024M|2G   размер swap (auto — подбор под сервер)
   --swap-only            только swap: показать состояние, при необходимости
                          пересоздать и выйти; docker, Caddy, конфиги и
@@ -220,6 +225,17 @@ done
 
 # ---- нормализация булевых флагов (yes/no/true/да ...) ----------------------
 norm_yn() { case "${1,,}" in yes|y|да|д|true|1|on) echo yes ;; *) echo no ;; esac; }
+
+# Значение для answers.env/alerts.env: файлы читаются через `.`, поэтому
+# одинарные кавычки и переводы строк обязаны пережить запись и чтение.
+# Апостроф экранируется в стиле '\''; перевод строки — через $'...'.
+env_quote() {
+    local val="${1-}"
+    case "$val" in
+        *$'\n'*|*$'\r'*) printf '%q' "$val"; return 0 ;;
+    esac
+    printf "'%s'" "${val//\'/\'\\\'\'}"
+}
 USE_SELFSTEAL="$(norm_yn "$USE_SELFSTEAL")"
 DUAL_IP="$(norm_yn "$DUAL_IP")"
 USE_DNS="$(norm_yn "$USE_DNS")"
@@ -264,7 +280,32 @@ is_ipv4() {
     return 0
 }
 
+# Строгий host-IP: без маски, ведущих нулей, 0.0.0.0 и 255.255.255.255.
+# is_ipv4 выше допускает CIDR (нужен для ufw), но IP2 идёт в net.env и в
+# `ip addr add "$IP2/32"` — «1.2.3.4/24», «010.0.0.1» и 0.0.0.0 ломают юнит молча.
+is_host_ipv4() {
+    local ip="${1:-}" o x
+    [[ "$ip" =~ ^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$ ]] || return 1
+    IFS='.' read -r -a o <<< "$ip"
+    for x in "${o[@]}"; do [ "$x" -le 255 ] || return 1; done
+    case "$ip" in
+        0.0.0.0|255.255.255.255) return 1 ;;
+    esac
+    return 0
+}
+
 is_domain() { [[ "${1:-}" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; }
+
+# SECRET_KEY пишется в answers.env (через env_quote) и в /opt/remnanode/.env
+# без кавычек. Пробел, #, $ и \ ломают .env ноды, апостроф/перевод строки —
+# нечитаемый при source answers.env (у старых версий). Такой ключ отвергаем
+# до записи: иначе повторный запуск и nodego падают на нечитаемом файле.
+secret_key_valid() {
+    case "${1:-}" in
+        ''|*"'"*|*$'\n'*|*'"'*|*[\\]*|*' '*|*'#'*|*'$'*) return 1 ;;
+    esac
+    return 0
+}
 
 detect_primary_ip() {
     ip -4 route get 1.1.1.1 2>/dev/null \
@@ -273,13 +314,22 @@ detect_primary_ip() {
 
 # "2G" / "512M" / "1024" → мегабайты; "auto"/"off" → пустая строка
 to_mb() {
-    local v="${1:-}"
+    local v="${1:-}" n=""
     case "${v,,}" in
-        ''|auto|off|no|none|0) echo "" ;;
-        *g) echo $(( ${v%[Gg]} * 1024 )) ;;
-        *m) echo "${v%[Mm]}" ;;
-        *[!0-9]*) echo "" ;;
-        *) echo "$v" ;;
+        ''|auto|off|no|none|0) echo ""; return 0 ;;
+        *g) n="${v%[Gg]}" ;;
+        *m) n="${v%[Mm]}" ;;
+        *[!0-9]*) echo ""; return 0 ;;
+        *) echo "$v"; return 0 ;;
+    esac
+    # Числовая часть — только целое: «1.5G», «0.5g», «G», «abcG», «1,5G» —
+    # мусор, а не размер. Иначе $(( )) роняет установщик посреди раздела 5.
+    case "$n" in
+        ''|*[!0-9]*) echo ""; return 0 ;;
+    esac
+    case "${v,,}" in
+        *g) echo $(( n * 1024 )) ;;
+        *)  echo "$n" ;;
     esac
 }
 
@@ -604,7 +654,8 @@ backup() {
 
 fetch() { # fetch URL DEST
     local url="$1" dest="$2"
-    curl -fsSL --retry 3 --connect-timeout 15 "$url" -o "$dest"
+    # --max-time: без него загрузка шаблона/скрипта может висеть бесконечно.
+    curl -fsSL --retry 3 --connect-timeout 15 --max-time 120 "$url" -o "$dest"
 }
 
 compose() { docker compose "$@"; }
@@ -716,7 +767,19 @@ start_caddy() {
 
 # UFW аддитивен: узкое правило не отменяет прежние широкие разрешения.
 check_api_firewall() {
-    local rules sshports
+    local rules sshports status
+    # UFW может быть активен с «default allow incoming»: широких правил нет,
+    # а API всё равно открыт всему интернету. Политику проверяем отдельно.
+    status="$(LC_ALL=C ufw status verbose 2>/dev/null || true)"
+    if printf '%s\n' "$status" | grep -q '^Status: active'; then
+        if ! printf '%s\n' "$status" | grep -qE '^Default: deny \(incoming\)'; then
+            warn "UFW активен, но политика по умолчанию не «deny incoming» — API $NODE_PORT открыт всем. Выполните: ufw default deny incoming"
+            return 1
+        fi
+    elif ! grep -qE '^DEFAULT_INPUT_POLICY="?DROP"?$' /etc/default/ufw 2>/dev/null; then
+        warn "UFW выключен, а /etc/default/ufw не задаёт DEFAULT_INPUT_POLICY=\"DROP\" — после включения API $NODE_PORT будет открыт всем. Выполните: ufw default deny incoming"
+        return 1
+    fi
     rules="$(LC_ALL=C ufw show added)" || return 1
     # OpenSSH часто уже разрешён на VPS; доверяем не имени, а портам профиля.
     sshports="$(LC_ALL=C ufw app info OpenSSH 2>/dev/null | awk '/^Ports?:/ {found=1; next} found && NF {gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print; exit}' || true)"
@@ -740,6 +803,27 @@ check_api_firewall() {
         warn "UFW: прежние разрешения могут открывать API $NODE_PORT не только панели. Чужие правила не удалены; проверьте ufw show added."
         return 1
     fi
+}
+
+# Все SSH-порты. При «Port 22» + «Port 2222» админ ходит на второй, а раньше
+# в ufw открывался только первый — после ufw enable это lockout. Если sshd -T
+# не отработал, смотрим фактические слушатели sshd; пустой список — не гадаем
+# про 22, а честно падаем до включения ufw.
+ssh_ports() {
+    local ports="" p out=""
+    ports="$(sshd -T 2>/dev/null | awk '/^port /{print $2}' | sort -un || true)"
+    if [ -z "$ports" ] && command -v ss >/dev/null 2>&1; then
+        ports="$(ss -tlnpH 2>/dev/null | awk '/users:\(\("sshd"/ {n=split($4,a,":"); print a[n]}' | sort -un || true)"
+    fi
+    if [ -z "$ports" ] && command -v netstat >/dev/null 2>&1; then
+        ports="$(netstat -tlnp 2>/dev/null | awk '/sshd/ {n=split($4,a,":"); print a[n]}' | sort -un || true)"
+    fi
+    for p in $ports; do
+        is_port "$p" || continue
+        out="${out}${out:+$'\n'}$p"
+    done
+    [ -n "$out" ] || return 1
+    printf '%s\n' "$out"
 }
 
 # Сохраняем только булев DNS-флаг после успешной транзакции.
@@ -811,6 +895,29 @@ dns_restore() {
     fi
 }
 
+# Совпадает ли текущее состояние с полным снимком. Нужно, чтобы отличить
+# «прошлый сбой: trap уже вернул исходные файлы, снимок можно переиспользовать»
+# от «файлы после сбоя меняли руками, перезаписывать их нельзя».
+dns_snapshot_matches() {
+    local snap="$1" key path
+    [ -f "$snap/complete" ] || return 1
+    for key in resolved.conf resolv.conf cloud.conf adguard.conf; do
+        path="$(dns_path "$key")" || return 1
+        if [ -f "$snap/$key.absent" ]; then
+            # В снимке файла не было — сейчас его тоже быть не должно.
+            if [ -e "$path" ] || [ -L "$path" ]; then return 1; fi
+        elif [ -L "$snap/$key" ]; then
+            # В снимке был симлинк — сверяем и тип, и цель.
+            if [ ! -L "$path" ]; then return 1; fi
+            if [ "$(readlink -- "$snap/$key")" != "$(readlink -- "$path")" ]; then return 1; fi
+        else
+            if [ ! -f "$path" ] || [ -L "$path" ]; then return 1; fi
+            cmp -s -- "$snap/$key" "$path" || return 1
+        fi
+    done
+    return 0
+}
+
 dns_probe() {
     # Проверяем реальное разрешение имён, а не только статус службы.
     timeout 20 getent ahostsv4 example.com >/dev/null 2>&1
@@ -829,12 +936,26 @@ dns_change() (
     trap 'exit 129' HUP
     conf="$(dns_path adguard.conf)" || return 1
     if [ "$mode" = on ]; then
-        if [ -e "$conf" ] || [ -L "$conf" ] || [ -e "$backup" ]; then
+        if [ -e "$conf" ] || [ -L "$conf" ]; then
             err "DNS уже настроен или остался снимок $backup; сначала восстановите исходное состояние"
             return 1
         fi
-        dns_snapshot "$backup" || { err "снимок DNS не создан полностью; проверьте $backup перед повтором"; return 1; }
-        rollback="$backup"
+        if [ -e "$backup" ] || [ -L "$backup" ]; then
+            # Прошлое включение не удалось: снимок полный, trap уже вернул файлы,
+            # но каталог остался и раньше блокировал повтор навсегда. Повторяем
+            # с этим же снимком (не удаляя его), но только если текущее состояние
+            # ему соответствует — иначе не перезаписываем чужие правки.
+            if dns_snapshot_matches "$backup"; then
+                note "снимок прошлого запуска подходит — повторяю с ним"
+                rollback="$backup"
+            else
+                err "DNS уже настроен или остался снимок $backup; сначала восстановите исходное состояние"
+                return 1
+            fi
+        else
+            dns_snapshot "$backup" || { err "снимок DNS не создан полностью; проверьте $backup перед повтором"; return 1; }
+            rollback="$backup"
+        fi
         mkdir -p "$(dirname "$conf")" || return 1
         # Списки сбрасываем в drop-in, основной resolved.conf не редактируем.
         cat > "$conf" <<'EOF' || return 1
@@ -1085,8 +1206,14 @@ if [ -z "$SECRET_KEY" ]; then
         if [ -z "$SECRET_KEY" ]; then
             if [ ! -t 0 ]; then die "Ввод недоступен — передайте --secret-key KEY"; fi
             warn "Ключ обязателен."
+        elif ! secret_key_valid "$SECRET_KEY"; then
+            warn "В ключе недопустимые символы (' \" \\ \$ # пробел или перевод строки) — они ломают answers.env и .env ноды. Скопируйте ключ ещё раз."
+            SECRET_KEY=""
         fi
     done
+fi
+if ! secret_key_valid "$SECRET_KEY"; then
+    die "Некорректный SECRET_KEY: недопустимы ' \" \\ \$ # пробел и перевод строки — они ломают answers.env и .env ноды"
 fi
 [ "${#SECRET_KEY}" -ge 16 ] || warn "SECRET_KEY короче 16 символов — проверьте, что скопировали целиком."
 ok "SECRET_KEY: ${SECRET_KEY:0:6}…${SECRET_KEY: -4} (${#SECRET_KEY} символов)"
@@ -1190,9 +1317,13 @@ if [ "$USE_SELFSTEAL" = "yes" ]; then
         while true; do
             read -r -p "$(echo -e "  ${C_BLD}Выбор [1-${#TEMPLATE_KEYS[@]}]${C_OFF} [${TEMPLATE}]: ")" tsel || true
             [ -z "$tsel" ] && break
-            if [[ "$tsel" =~ ^[0-9]+$ ]] && [ "$tsel" -ge 1 ] && [ "$tsel" -le "${#TEMPLATE_KEYS[@]}" ]; then
-                TEMPLATE="${TEMPLATE_KEYS[$((tsel-1))]}"
-                break
+            if [[ "$tsel" =~ ^[0-9]+$ ]]; then
+                # 10#: иначе ввод «010» bash читает как восьмеричное 8.
+                tsel=$((10#$tsel))
+                if [ "$tsel" -ge 1 ] && [ "$tsel" -le "${#TEMPLATE_KEYS[@]}" ]; then
+                    TEMPLATE="${TEMPLATE_KEYS[$((tsel-1))]}"
+                    break
+                fi
             fi
             warn "Введите число от 1 до ${#TEMPLATE_KEYS[@]}"
         done
@@ -1288,11 +1419,11 @@ if [ "$DUAL_IP" = "yes" ]; then
         done
     fi
 
-    if [ -z "$IP2" ] || ! is_ipv4 "$IP2"; then
+    if [ -z "$IP2" ] || ! is_host_ipv4 "$IP2"; then
         while true; do
             ask IP2 "IP для выхода (через него нода ходит в интернет)" "${IP2:-$DETECTED_IP1}"
-            is_ipv4 "$IP2" && break
-            warn "Некорректный IPv4: '$IP2'"
+            is_host_ipv4 "$IP2" && break
+            warn "Некорректный IPv4: '$IP2' — нужен адрес хоста без маски (например 198.51.100.5)"
             [ "$ASSUME_YES" = true ] && die "Укажите корректный --ip2"
         done
     fi
@@ -1417,25 +1548,25 @@ fi
 umask 077
 cat > "$ANSWERS_FILE" <<EOF
 # Сгенерировано remnawave node installer v$VERSION $(date '+%F %T')
-PANEL_IP='$PANEL_IP'
-PANEL_PORT='$PANEL_PORT'
-NODE_PORT='$NODE_PORT'
-SECRET_KEY='$SECRET_KEY'
-CONNECT_PORT='$CONNECT_PORT'
-HYSTERIA='$HYSTERIA'
-USE_SELFSTEAL='$USE_SELFSTEAL'
-DOMAIN='$DOMAIN'
-SELFSTEAL_PORT='$SELFSTEAL_PORT'
-TEMPLATE='$TEMPLATE'
-DUAL_IP='$DUAL_IP'
-IP1='$IP1'
-IP2='$IP2'
-USE_DNS='$USE_DNS'
-AUTO_UPDATE='$AUTO_UPDATE'
-SWAP_SIZE='$SWAP_SIZE'
-ALERTS='$ALERTS'
-TG_TOKEN='$TG_TOKEN'
-TG_CHAT='$TG_CHAT'
+PANEL_IP=$(env_quote "$PANEL_IP")
+PANEL_PORT=$(env_quote "$PANEL_PORT")
+NODE_PORT=$(env_quote "$NODE_PORT")
+SECRET_KEY=$(env_quote "$SECRET_KEY")
+CONNECT_PORT=$(env_quote "$CONNECT_PORT")
+HYSTERIA=$(env_quote "$HYSTERIA")
+USE_SELFSTEAL=$(env_quote "$USE_SELFSTEAL")
+DOMAIN=$(env_quote "$DOMAIN")
+SELFSTEAL_PORT=$(env_quote "$SELFSTEAL_PORT")
+TEMPLATE=$(env_quote "$TEMPLATE")
+DUAL_IP=$(env_quote "$DUAL_IP")
+IP1=$(env_quote "$IP1")
+IP2=$(env_quote "$IP2")
+USE_DNS=$(env_quote "$USE_DNS")
+AUTO_UPDATE=$(env_quote "$AUTO_UPDATE")
+SWAP_SIZE=$(env_quote "$SWAP_SIZE")
+ALERTS=$(env_quote "$ALERTS")
+TG_TOKEN=$(env_quote "$TG_TOKEN")
+TG_CHAT=$(env_quote "$TG_CHAT")
 EOF
 chmod 600 "$ANSWERS_FILE"
 umask 022   # дальше создаём каталоги/файлы с обычными правами
@@ -1694,28 +1825,32 @@ cat > /usr/local/sbin/rw-secondary-ip.sh <<'SCRIPT_EOF'
 #!/bin/bash
 # Применяет схему сети из /etc/remnawave-setup/net.env.
 #   dual   : вход на IP1, выход через IP2 (SNAT только для новых соединений)
-#   single : правила не добавляются, все прежние снимаются
+#   single : правила не добавляются, свои прежние снимаются
 set -uo pipefail
 
 CONF=/etc/remnawave-setup/net.env
 TABLE=100
+RULE_PRIO=1000
 log() { echo "[$(date '+%F %T')] $*"; }
 
 [ -f "$CONF" ] || { log "нет $CONF"; exit 1; }
 # shellcheck disable=SC1090
 . "$CONF"
 
-# --- снимаем прежние правила этого типа (прошлый IP2 / прошлая схема) -------
-while ip rule show | grep -q "lookup $TABLE"; do
-    ip rule del table "$TABLE" 2>/dev/null || break
+# --- снимаем ТОЛЬКО свои прежние правила (прошлый IP2 / прошлая схема) ------
+# На общем сервере рядом живут чужие policy-rule и SNAT соседнего проекта:
+# снимать «всё по table $TABLE» или «любой SNAT» нельзя — правило помечено
+# комментарием и фиксированным priority.
+while ip rule show 2>/dev/null | grep -q "^${RULE_PRIO}:"; do
+    ip rule del priority "$RULE_PRIO" 2>/dev/null || break
 done
 while read -r spec; do
     [ -n "${spec:-}" ] || continue
     # shellcheck disable=SC2086
     iptables -t nat -D POSTROUTING $spec 2>/dev/null || true
 done < <(iptables -t nat -S POSTROUTING 2>/dev/null \
-         | grep -- '-m conntrack --ctstate NEW -j SNAT' \
-         | sed 's/^-A POSTROUTING //' || true)
+         | grep -F -- 'rw-secondary-ip' \
+         | sed 's/^-A POSTROUTING //; s/"//g' || true)
 
 if [ "${MODE:-single}" != "dual" ]; then
     log "режим single — правила сняты"
@@ -1731,9 +1866,10 @@ ip -o -4 addr show dev "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | g
     || ip addr add "$IP1/32" dev "$IFACE" 2>/dev/null || true
 ip -o -4 addr show dev "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -qx "$IP2" \
     || ip addr add "$IP2/32" dev "$IFACE" 2>/dev/null || true
-ip rule add from "$IP2/32" table "$TABLE"
+ip rule add priority "$RULE_PRIO" from "$IP2/32" table "$TABLE"
 ip route replace default via "$GW" dev "$IFACE" src "$IP2" table "$TABLE"
-iptables -t nat -A POSTROUTING -o "$IFACE" -m conntrack --ctstate NEW -j SNAT --to-source "$IP2"
+iptables -t nat -A POSTROUTING -o "$IFACE" -m conntrack --ctstate NEW \
+    -m comment --comment rw-secondary-ip -j SNAT --to-source "$IP2"
 log "dual: вход ${IP1:-?}, выход $IP2 ($IFACE via $GW)"
 SCRIPT_EOF
 chmod 0755 /usr/local/sbin/rw-secondary-ip.sh
@@ -1779,10 +1915,15 @@ if [ "$SKIP_FIREWALL" = true ]; then
     warn "Пропущено (--skip-firewall)"
 else
     check_api_firewall || die "Нельзя гарантировать доступ к API только панели: исправьте конфликтующие правила UFW вручную."
-    SSH_PORT="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}' || true)"
-    SSH_PORT="${SSH_PORT:-22}"
-
-    ufw allow "$SSH_PORT/tcp" comment 'SSH' >/dev/null
+    SSH_PORTS="$(ssh_ports || true)"
+    if [ -z "$SSH_PORTS" ]; then
+        die "Не удалось определить SSH-порт(ы) — ufw не включаю, иначе можно потерять доступ. Проверьте вручную: sshd -T | grep '^port '"
+    fi
+    # Открываем каждый найденный порт: админ может ходить на любой из них.
+    for _p in $SSH_PORTS; do
+        ufw allow "$_p/tcp" comment 'SSH' >/dev/null
+    done
+    unset _p
 
     if [ "$USE_SELFSTEAL" = "yes" ]; then
         ufw allow 80/tcp comment 'ACME HTTP-01 + redirect' >/dev/null
@@ -2017,18 +2158,6 @@ EOF
     sed -i "s|__BIND_IP__|$BIND_IP|g" "$SELFSTEAL_DIR/Caddyfile"
     note "Caddy :80 слушает $BIND_IP"
 
-    # Если сертификат уже лежит в ./ssl (выпущен вручную или через acme.sh),
-    # используем его и не полагаемся на ACME — иначе повторная установка
-    # сломала бы работающий HTTPS.
-    HAS_CERT=false
-    if [ -f "$SELFSTEAL_DIR/ssl/fullchain.crt" ] && [ -f "$SELFSTEAL_DIR/ssl/private.key" ]; then
-        HAS_CERT=true
-        # shellcheck disable=SC2016  # здесь нужны литеральные {$SELF_STEAL_DOMAIN}
-        sed -i 's|^https://{\$SELF_STEAL_DOMAIN} {|https://{$SELF_STEAL_DOMAIN} {\n\ttls /etc/caddy/ssl/fullchain.crt /etc/caddy/ssl/private.key|' \
-            "$SELFSTEAL_DIR/Caddyfile"
-        ok "найден готовый сертификат в $SELFSTEAL_DIR/ssl — ACME для домена не используется"
-    fi
-
     # --- compose ----------------------------------------------------------
     # export:selfsteal-compose
     cat > "$SELFSTEAL_DIR/docker-compose.yml" <<EOF
@@ -2066,6 +2195,30 @@ EOF
     # export:end
 
     fi  # новый selfsteal; существующий стек не перезаписываем
+
+    # Готовый сертификат в ./ssl (выпущен вручную или через acme.sh) подключаем
+    # и на сохранённом стеке: иначе повторная установка ждёт ACME, режет
+    # проверку HTTPS до 3 попыток и падает «Установка неполная» при живом
+    # сертификате. Правим только свой site-блок, чужой Caddyfile не трогаем.
+    if [ "$HAS_CERT" = true ]; then
+        if [ -f "$SELFSTEAL_DIR/Caddyfile" ] \
+            && grep -qF "https://{\$SELF_STEAL_DOMAIN} {" "$SELFSTEAL_DIR/Caddyfile"; then
+            if ! grep -qF 'tls /etc/caddy/ssl/fullchain.crt' "$SELFSTEAL_DIR/Caddyfile"; then
+                # shellcheck disable=SC2016  # здесь нужны литеральные {$SELF_STEAL_DOMAIN}
+                sed -i 's|^https://{\$SELF_STEAL_DOMAIN} {|https://{$SELF_STEAL_DOMAIN} {\n\ttls /etc/caddy/ssl/fullchain.crt /etc/caddy/ssl/private.key|' \
+                    "$SELFSTEAL_DIR/Caddyfile" || true
+            fi
+            if grep -qF 'tls /etc/caddy/ssl/fullchain.crt' "$SELFSTEAL_DIR/Caddyfile"; then
+                ok "найден готовый сертификат в $SELFSTEAL_DIR/ssl — ACME для домена не используется"
+            else
+                HAS_CERT=false
+                warn "сертификат в $SELFSTEAL_DIR/ssl есть, но tls в Caddyfile подключить не удалось — считаю, что он не используется"
+            fi
+        else
+            HAS_CERT=false
+            warn "сертификат в ssl/ есть, но Caddyfile не наш (нет site-блока https://{\$SELF_STEAL_DOMAIN}) — чужой конфиг не правлю, ACME не отключаю"
+        fi
+    fi
 
     # --- DNS-проверка (не блокирующая) ------------------------------------
     # Сверяем A-запись с адресами, реально назначенными на этом сервере, а не с
@@ -2418,9 +2571,9 @@ hdr "12. Обслуживание"
 # ============================================================ healthcheck ===
 cat > "$STATE_DIR/alerts.env" <<EOF
 # Настройки алертов (меняются через nodego)
-ALERTS='$ALERTS'
-TG_TOKEN='$TG_TOKEN'
-TG_CHAT='$TG_CHAT'
+ALERTS=$(env_quote "$ALERTS")
+TG_TOKEN=$(env_quote "$TG_TOKEN")
+TG_CHAT=$(env_quote "$TG_CHAT")
 EOF
 chmod 600 "$STATE_DIR/alerts.env"
 
@@ -2444,12 +2597,15 @@ REPORT=false
 
 ALERTS=no; TG_TOKEN=""; TG_CHAT=""
 MODE=single; IP1=""; IP2=""; DOMAIN=""; SELFSTEAL_PORT="9443"
-# shellcheck disable=SC1090
-[ -f "$CONF" ]    && . "$CONF"
+# Порядок важен: alerts.env читается ПОСЛЕДНИМ. В answers.env лежат ALERTS/TG_*
+# на момент установки, и если прочитать их после alerts.env, настройки алертов,
+# изменённые через nodego, молча теряются.
 # shellcheck disable=SC1090
 [ -f "$ANSWERS" ] && . "$ANSWERS"
 # shellcheck disable=SC1090
 [ -f "$NET" ]     && . "$NET"
+# shellcheck disable=SC1090
+[ -f "$CONF" ]    && . "$CONF"
 
 NODE_PORT="${NODE_PORT:-2222}"
 if [ -f "$NODE_ENV" ]; then
@@ -2783,7 +2939,10 @@ usage() {
 
 load_conf() {
     CONNECT_PORT=""
-    HYSTERIA="no"; USE_SELFSTEAL="no"; DOMAIN=""; SELFSTEAL_PORT="9443"
+    # Наш пресет — selfsteal (дефолт установщика тоже yes). В старом answers.env
+    # ключа USE_SELFSTEAL нет; дефолт no молча давал target www.apple.com:443
+    # вместо 127.0.0.1:9443. Явное значение из answers.env по-прежнему главнее.
+    HYSTERIA="no"; USE_SELFSTEAL="yes"; DOMAIN=""; SELFSTEAL_PORT="9443"
     XHTTP_PORT=""; GRPC_PORT=""; TCP_PORT=""
     # shellcheck disable=SC1090
     if [ -f "$ANSWERS" ]; then . "$ANSWERS"; fi

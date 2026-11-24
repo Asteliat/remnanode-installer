@@ -112,6 +112,19 @@ is_ipv4() {
     return 0
 }
 
+is_host_ipv4() { # строгий адрес хоста: без маски, ведущих нулей и служебных адресов
+    # is_ipv4() выше допускает маску (это нужно ufw) — для IP2 нужен именно хост:
+    # rw-secondary-ip делает ip addr add "$IP2/32", поэтому «1.2.3.4/24» и 0.0.0.0 ломают юнит.
+    local ip="${1:-}" o x
+    [[ "$ip" =~ ^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$ ]] || return 1
+    IFS='.' read -r -a o <<< "$ip"
+    for x in "${o[@]}"; do [ "$x" -le 255 ] || return 1; done
+    case "$ip" in
+        0.0.0.0|255.255.255.255) return 1 ;;
+    esac
+    return 0
+}
+
 is_port() {
     [[ "${1:-}" =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
 }
@@ -163,6 +176,13 @@ load_conf() {
     [ -f "$NET_ENV" ] && . "$NET_ENV"
     # shellcheck disable=SC1090
     [ -f "$ALERTS_ENV" ] && . "$ALERTS_ENV"
+    # В net.env мог остаться мусор от ручной правки или прежней версии;
+    # кривой IP2 роняет rw-secondary-ip (ip addr add "$IP2/32") тихо, с exit 0.
+    if [ -n "${IP2:-}" ] && ! is_host_ipv4 "$IP2"; then
+        warn "в net.env некорректный IP2 ($IP2) — схема «два IP» отключена"
+        IP2=""
+        MODE="single"
+    fi
     if [ -z "${CONNECT_PORT:-}" ]; then
         for _p in "${XHTTP_PORT:-}" "${GRPC_PORT:-}" "${TCP_PORT:-}"; do
             if [ -n "$_p" ]; then CONNECT_PORT="$_p"; break; fi
@@ -212,13 +232,32 @@ sync_answers() { # держим answers.env согласованным с net.en
     sed -i -E "s|^IP2=.*|IP2='$IP2'|" "$ANSWERS"
 }
 
-set_answer() { # set_answer KEY VALUE
-    local key="$1" val="$2"
+env_quote() { # env_quote <значение> — безопасно записать в answers.env/alerts.env (потом source)
+    local val="${1-}"
+    case "$val" in
+        # Перевод строки в одинарных кавычках не экранируется — для таких значений
+        # берём printf %q: "$'a\nb'" bash прочитает обратно тем же значением.
+        *$'\n'*|*$'\r'*) printf '%q' "$val"; return 0 ;;
+    esac
+    printf "'%s'" "${val//\'/\'\\\'\'}"
+}
+
+sed_repl() { # sed_repl <текст> — экранировать для правой части s|...|...| (| & \)
+    local out="${1//\\/\\\\}"
+    out="${out//&/\\&}"
+    out="${out//|/\\|}"
+    printf '%s' "$out"
+}
+
+set_answer() { # set_answer KEY VALUE — значение переживает source, кавычка не рвёт файл
+    local key="$1" val="${2-}" quoted="" repl=""
     [ -f "$ANSWERS" ] || return 0
+    quoted="$(env_quote "$val")" || return 1
+    repl="$(sed_repl "$quoted")" || return 1
     if grep -q "^${key}=" "$ANSWERS"; then
-        sed -i -E "s|^${key}=.*|${key}='${val}'|" "$ANSWERS"
+        sed -i -E "s|^${key}=.*|${key}=${repl}|" "$ANSWERS" || return 1
     else
-        printf '%s=%s\n' "$key" "'$val'" >> "$ANSWERS"
+        printf '%s=%s\n' "$key" "$quoted" >> "$ANSWERS" || return 1
     fi
 }
 
@@ -319,13 +358,24 @@ show_status() {
 
 logs_node() {
     hdr "Логи ноды (Ctrl+C — выход)"
-    docker logs --tail 80 -f remnanode 2>&1 || warn "контейнер remnanode не найден"
+    local rc=0
+    docker logs --tail 80 -f remnanode 2>&1 || rc=$?
+    # 130/143 — штатное прерывание по Ctrl+C, а не «контейнер не найден».
+    case "$rc" in
+        0|130|143) : ;;
+        *) warn "docker logs завершился с кодом $rc — контейнер remnanode не найден?" ;;
+    esac
     pause
 }
 
 logs_caddy() {
     hdr "Логи selfsteal (Ctrl+C — выход)"
-    docker logs --tail 80 -f selfsteal 2>&1 || warn "контейнер selfsteal не найден"
+    local rc=0
+    docker logs --tail 80 -f selfsteal 2>&1 || rc=$?
+    case "$rc" in
+        0|130|143) : ;;
+        *) warn "docker logs завершился с кодом $rc — контейнер selfsteal не найден?" ;;
+    esac
     pause
 }
 
@@ -404,18 +454,33 @@ change_preset() {
     say ""
     read -r -p "$(echo -e "${C_BLD}Выбор [1-${#TEMPLATE_KEYS[@]}, Enter — отмена]${C_OFF}: ")" choice || true
     [ -z "$choice" ] && return
-    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#TEMPLATE_KEYS[@]}" ]; then
+    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+        warn "неверный номер"
+        pause; return
+    fi
+    choice=$((10#$choice))   # 010 — это десятый пункт, а не восьмой (bash читает ведущий 0 как восьмеричное)
+    if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#TEMPLATE_KEYS[@]}" ]; then
         warn "неверный номер"
         pause; return
     fi
     key="${TEMPLATE_KEYS[$((choice-1))]}"
+    if ! [[ "$key" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        err "недопустимое имя шаблона: '$key'"
+        pause; return 1
+    fi
 
     tmp="$(mktemp)"
-    if curl -fsSL --retry 2 --connect-timeout 15 "$TEMPLATES_BASE/$key/index.html" -o "$tmp"; then
-        mkdir -p "$SELFSTEAL_DIR/html"
-        cp "$tmp" "$SELFSTEAL_DIR/html/index.html"
+    if curl -fsSL --retry 2 --connect-timeout 15 --max-time 30 "$TEMPLATES_BASE/$key/index.html" -o "$tmp"; then
+        if ! mkdir -p "$SELFSTEAL_DIR/html" || ! cp "$tmp" "$SELFSTEAL_DIR/html/index.html"; then
+            rm -f "$tmp"
+            err "шаблон «$key» не записан в $SELFSTEAL_DIR/html"
+            pause; return 1
+        fi
         rm -f "$tmp"
-        set_answer TEMPLATE "$key"
+        if ! set_answer TEMPLATE "$key"; then
+            err "шаблон «$key» записан, но ключ TEMPLATE не сохранён — проверьте $ANSWERS"
+            pause; return 1
+        fi
         TEMPLATE="$key"
         ok "шаблон «$key» установлен (текущий: $TEMPLATE)"
         if confirm "перезапустить Caddy, чтобы применить?" "y"; then
@@ -454,8 +519,12 @@ net_dual_enable() {
     [ -n "${IP1:-}" ] || IP1="$(primary_ip)"
     say "  вход будет с: ${C_BLD}${IP1:-?}${C_OFF}"
     ask want "Дополнительный (выходной) IP" "${IP2:-}"
-    if ! is_ipv4 "$want"; then err "некорректный IPv4"; pause; return; fi
-    if [ "$want" = "$IP1" ]; then err "выходной IP совпадает с основным"; pause; return; fi
+    want="${want//[[:space:]]/}"
+    if ! is_host_ipv4 "$want"; then
+        err "нужен адрес хоста без маски и порта (например 192.0.2.10); 0.0.0.0 и 255.255.255.255 не подходят"
+        pause; return 1
+    fi
+    if [ "$want" = "$IP1" ]; then err "выходной IP совпадает с основным"; pause; return 1; fi
 
     IP2="$want"
     MODE="dual"
@@ -602,6 +671,29 @@ dns_restore() {
     fi
 }
 
+# Совпадает ли текущее состояние с полным снимком. Нужно, чтобы отличить
+# «прошлый сбой: trap уже вернул исходные файлы, снимок можно переиспользовать»
+# от «файлы после сбоя меняли руками, перезаписывать их нельзя».
+dns_snapshot_matches() {
+    local snap="$1" key path
+    [ -f "$snap/complete" ] || return 1
+    for key in resolved.conf resolv.conf cloud.conf adguard.conf; do
+        path="$(dns_path "$key")" || return 1
+        if [ -f "$snap/$key.absent" ]; then
+            # В снимке файла не было — сейчас его тоже быть не должно.
+            if [ -e "$path" ] || [ -L "$path" ]; then return 1; fi
+        elif [ -L "$snap/$key" ]; then
+            # В снимке был симлинк — сверяем и тип, и цель.
+            if [ ! -L "$path" ]; then return 1; fi
+            if [ "$(readlink -- "$snap/$key")" != "$(readlink -- "$path")" ]; then return 1; fi
+        else
+            if [ ! -f "$path" ] || [ -L "$path" ]; then return 1; fi
+            cmp -s -- "$snap/$key" "$path" || return 1
+        fi
+    done
+    return 0
+}
+
 dns_probe() {
     # Проверяем реальное разрешение имён, а не только статус службы.
     timeout 20 getent ahostsv4 example.com >/dev/null 2>&1
@@ -620,12 +712,26 @@ dns_change() (
     trap 'exit 129' HUP
     conf="$(dns_path adguard.conf)" || return 1
     if [ "$mode" = on ]; then
-        if [ -e "$conf" ] || [ -L "$conf" ] || [ -e "$backup" ]; then
+        if [ -e "$conf" ] || [ -L "$conf" ]; then
             err "DNS уже настроен или остался снимок $backup; сначала восстановите исходное состояние"
             return 1
         fi
-        dns_snapshot "$backup" || { err "снимок DNS не создан полностью; проверьте $backup перед повтором"; return 1; }
-        rollback="$backup"
+        if [ -e "$backup" ] || [ -L "$backup" ]; then
+            # Прошлое включение не удалось: снимок полный, trap уже вернул файлы,
+            # но каталог остался и раньше блокировал повтор навсегда. Повторяем
+            # с этим же снимком (не удаляя его), но только если текущее состояние
+            # ему соответствует — иначе не перезаписываем чужие правки.
+            if dns_snapshot_matches "$backup"; then
+                note "снимок прошлого запуска подходит — повторяю с ним"
+                rollback="$backup"
+            else
+                err "DNS уже настроен или остался снимок $backup; сначала восстановите исходное состояние"
+                return 1
+            fi
+        else
+            dns_snapshot "$backup" || { err "снимок DNS не создан полностью; проверьте $backup перед повтором"; return 1; }
+            rollback="$backup"
+        fi
         mkdir -p "$(dirname "$conf")" || return 1
         # Списки сбрасываем в drop-in, основной resolved.conf не редактируем.
         cat > "$conf" <<'EOF' || return 1
@@ -691,8 +797,10 @@ toggle_dns() {
 
 doctor() {
     hdr "Диагностика"
+    local rc=0
     if [ -x /usr/local/sbin/rw-healthcheck.sh ]; then
         /usr/local/sbin/rw-healthcheck.sh --report 2>&1 | sed 's/^/  /'
+        rc=${PIPESTATUS[0]}   # pause и sed вернули бы свой статус, а не статус healthcheck
     else
         warn "healthcheck-скрипт не найден (/usr/local/sbin/rw-healthcheck.sh)"
     fi
@@ -700,7 +808,11 @@ doctor() {
     dim "последние события docker за сутки:"
     docker events --since 24h --until 0s --filter 'event=restart' \
         --format '  {{.Time}} {{.Actor.Attributes.name}} restart' 2>/dev/null | tail -5 || true
+    if [ "$rc" -ne 0 ]; then
+        err "healthcheck завершился с кодом $rc — отчёт может быть неполным"
+    fi
     pause
+    return "$rc"
 }
 
 # ============================================================================
@@ -970,7 +1082,11 @@ restore_menu() {
     say ""
     read -r -p "$(echo -e "${C_BLD}Номер [Enter — отмена]: ${C_OFF}")" choice || true
     [ -z "$choice" ] && return
-    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#files[@]}" ]; then
+    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+        warn "неверный номер"; pause; return 1
+    fi
+    choice=$((10#$choice))   # 010 — десятый файл; иначе bash считает номер восьмеричным
+    if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#files[@]}" ]; then
         warn "неверный номер"; pause; return 1
     fi
     local file="${files[$((choice-1))]}"
@@ -996,13 +1112,17 @@ restore_menu() {
 }
 
 write_alerts_env() {
-    mkdir -p "$STATE_DIR"
-    cat > "$ALERTS_ENV" <<EOF
-# Настройки алертов (меняются через nodego)
-ALERTS='$ALERTS'
-TG_TOKEN='$TG_TOKEN'
-TG_CHAT='$TG_CHAT'
-EOF
+    local a="" t="" c=""
+    mkdir -p "$STATE_DIR" || return 1
+    a="$(env_quote "${ALERTS:-no}")" || return 1
+    t="$(env_quote "${TG_TOKEN:-}")" || return 1
+    c="$(env_quote "${TG_CHAT:-}")" || return 1
+    {
+        printf '%s\n' '# Настройки алертов (меняются через nodego)'
+        printf 'ALERTS=%s\n' "$a"
+        printf 'TG_TOKEN=%s\n' "$t"
+        printf 'TG_CHAT=%s\n' "$c"
+    } > "$ALERTS_ENV" || return 1
     chmod 600 "$ALERTS_ENV"
 }
 
@@ -1025,6 +1145,17 @@ toggle_alerts() {
             fi
             if [ -z "$TG_TOKEN" ] || [ -z "$TG_CHAT" ]; then
                 err "нужны и токен, и chat_id"
+                pause; return
+            fi
+            # Формат бота-токена (как в установщике, длину не проверяем): иначе
+            # значение с кавычкой/пробелом рвёт alerts.env (он читается через `.`),
+            # и теряются строки ниже.
+            if ! [[ "$TG_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]+$ ]]; then
+                err "токен бота должен быть вида 123456789:AA... (цифры, двоеточие, буквы/цифры/-/_)"
+                pause; return
+            fi
+            if ! [[ "$TG_CHAT" =~ ^-?[0-9]+$ ]]; then
+                err "chat_id — это число (для канала с минусом)"
                 pause; return
             fi
             ALERTS="yes"
@@ -1299,9 +1430,19 @@ hy_enable() {
         ufw allow "$CONNECT_PORT/udp" comment "hysteria2 QUIC $CONNECT_PORT" >/dev/null 2>&1 || { err "UDP не открыт"; pause; return 1; }
         ok "UDP/$CONNECT_PORT открыт в ufw"
     fi
-    set_answer HYSTERIA yes || return 1
+    local prev_hy="$HYSTERIA"
+    set_answer HYSTERIA yes || { err "не удалось сохранить HYSTERIA=yes в $ANSWERS"; pause; return 1; }
     HYSTERIA="yes"
-    cfg_run generate || { err "генерация конфига не удалась"; pause; return 1; }
+    if ! cfg_run generate; then
+        # Без hysteria2.json флаг «включена» врёт: возвращаем прежнее значение.
+        if set_answer HYSTERIA "$prev_hy"; then
+            HYSTERIA="$prev_hy"
+        else
+            warn "не удалось вернуть HYSTERIA=$prev_hy — исправьте $ANSWERS вручную"
+        fi
+        err "генерация конфига не удалась — Hysteria2 не включена"
+        pause; return 1
+    fi
     cfg_run brief || return 1
     ok "Hysteria2 включена: конфиг $CONFIGS_DIR/hysteria2.json"
     note "дальше: вставьте его в Config Profile, включите в Squads и Hosts, перезапустите ноду"
@@ -1318,7 +1459,7 @@ hy_disable() {
             ok "UDP/$CONNECT_PORT закрыт в ufw"
         fi
     fi
-    set_answer HYSTERIA no
+    set_answer HYSTERIA no || { err "не удалось сохранить HYSTERIA=no в $ANSWERS — Hysteria2 остаётся включённой"; pause; return 1; }
     HYSTERIA="no"
     cfg_run generate >/dev/null 2>&1 || { err "обновление конфигов не удалось"; pause; return 1; }
     ok "Hysteria2 выключена, конфиг hysteria2.json удалён"
@@ -1583,9 +1724,13 @@ cli() {
                 err "укажите имя шаблона: ${TEMPLATE_KEYS[*]}"
                 exit 1
             fi
+            if ! [[ "$2" =~ ^[A-Za-z0-9_-]+$ ]]; then
+                err "недопустимое имя шаблона: '$2'"
+                exit 1
+            fi
             local tmp
             tmp="$(mktemp)" || return 1
-            if curl -fsSL --retry 2 "$TEMPLATES_BASE/$2/index.html" -o "$tmp"; then
+            if curl -fsSL --retry 2 --connect-timeout 15 --max-time 30 "$TEMPLATES_BASE/$2/index.html" -o "$tmp"; then
                 if ! mkdir -p "$SELFSTEAL_DIR/html" || ! cp "$tmp" "$SELFSTEAL_DIR/html/index.html"; then
                     rm -f "$tmp"; err "шаблон не записан"; return 1
                 fi
@@ -1616,6 +1761,7 @@ cli() {
             say "  nodego keys            publicKey и shortIds для ручных клиентов"
             say "  nodego ports           открытые порты в ufw"
             say "  nodego dns on|off      AdGuard: включить / восстановить исходный DNS"
+            say "  nodego certsync        синхронизировать сертификат selfsteal → ноде"
             say "  nodego hysteria ...    status | on | off | cert | core | test"
             say "  nodego preset <имя>    сменить сайт-заглушку"
             say "  nodego doctor          диагностика (7 проверок)"

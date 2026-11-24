@@ -1,3 +1,9 @@
 # Локальные артефакты Python-тестов
 __pycache__/
 *.py[cod]
+
+# Рабочие каталоги прогонов и отладочный вывод
+buildtmp/
+.verify-head/
+shellcheck.out
+dbg.*

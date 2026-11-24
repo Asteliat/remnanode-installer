@@ -333,5 +333,259 @@ grep -qx 'nameserver 192.0.2.53' "$ROOT/original-resolver"
 ''')
 
 
+    def test_net_dual_rejects_non_host_ip(self):
+        prelude = r'''
+MODE=single; IP1=192.0.2.10; IP2=""; BIND_IP=0.0.0.0; IFACE=""; GW=""
+NET_ENV=$ROOT/state/net.env
+iface_for_ip() { echo eth0; }
+default_iface() { echo eth0; }
+default_gw() { echo 192.0.2.1; }
+apply_net() { echo applied >> "$ROOT/applied.log"; }
+is_host_ipv4 198.51.100.5 || exit 80
+is_host_ipv4 10.0.0.1 || exit 81
+! is_host_ipv4 198.51.100.5/24 || exit 82
+! is_host_ipv4 0.0.0.0 || exit 83
+! is_host_ipv4 255.255.255.255 || exit 84
+! is_host_ipv4 01.2.3.4 || exit 85
+net_dual_enable <<'INPUT'
+'''
+        invalid = r'''
+INPUT
+rc=$?
+[ "$rc" -ne 0 ] || exit 86
+[ -z "${IP2:-}" ] || exit 87
+[ ! -e "$ROOT/applied.log" ] || exit 88
+[ ! -e "$NET_ENV" ] || exit 89
+'''
+        for ip in ("198.51.100.5/24", "0.0.0.0", "255.255.255.255", "001.2.3.4"):
+            with self.subTest(ip=ip):
+                result = self.run_shell(["is_host_ipv4", "ask", "net_dual_enable"], prelude + ip + invalid)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn("адрес хоста", result.stdout)
+        accepted = prelude + "198.51.100.50" + r'''
+INPUT
+rc=$?
+[ "$rc" = 0 ] || exit 86
+[ "$IP2" = 198.51.100.50 ] || exit 87
+[ -e "$ROOT/applied.log" ] || exit 88
+'''
+        result = self.run_shell(["is_host_ipv4", "ask", "net_dual_enable"], accepted)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_preset_copy_failure_not_reported_success(self):
+        failure = r'''
+SELFSTEAL_DIR=$ROOT/caddy
+TEMPLATES_BASE=https://invalid.test
+mkdir -p "$SELFSTEAL_DIR"
+: > "$SELFSTEAL_DIR/html"
+load_templates() { TEMPLATE_KEYS=(shop); TEMPLATE_DESCS=("магазин керамики"); }
+curl() { printf '<html>new</html>' > "${@: -1}"; }
+docker() { return 0; }
+change_preset <<'INPUT'
+1
+INPUT
+rc=$?
+[ "$rc" -ne 0 ] || exit 80
+[ ! -e "$ROOT/answers.log" ] || exit 81
+[ -f "$SELFSTEAL_DIR/html" ] || exit 82
+'''
+        result = self.run_shell(["change_preset"], failure)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("OK", result.stdout)
+
+        success = r'''
+SELFSTEAL_DIR=$ROOT/caddy
+TEMPLATES_BASE=https://invalid.test
+mkdir -p "$SELFSTEAL_DIR"
+load_templates() { TEMPLATE_KEYS=(shop); TEMPLATE_DESCS=("магазин керамики"); }
+curl() { printf '<html>new</html>' > "${@: -1}"; }
+docker() { return 0; }
+change_preset <<'INPUT'
+1
+INPUT
+[ "$TEMPLATE" = shop ] || exit 80
+[ -f "$SELFSTEAL_DIR/html/index.html" ] || exit 81
+grep -qx 'TEMPLATE=shop' "$ROOT/answers.log" || exit 82
+'''
+        self.assert_shell(["change_preset"], success)
+
+    def test_set_answer_quote_roundtrip(self):
+        self.assert_shell(["env_quote", "sed_repl", "set_answer"], r'''
+ANSWERS=$ROOT/state/answers.env
+printf "TG_CHAT='старое'\nIP1='192.0.2.10'\n" > "$ANSWERS"
+val="a'b c&d|e\\f"
+set_answer TG_CHAT "$val" || exit 80
+set_answer IP1 192.0.2.11 || exit 81
+nl="первая
+вторая"
+set_answer TG_TOKEN "$nl" || exit 82
+set_answer TEMPLATE "x'; EVIL=1; #" || exit 83
+set_answer TG_CHAT "$nl" || exit 84
+( . "$ANSWERS"
+  [ "$TG_CHAT" = "$nl" ] || exit 85
+  [ "$IP1" = 192.0.2.11 ] || exit 86
+  [ "$TG_TOKEN" = "$nl" ] || exit 87
+  [ "$TEMPLATE" = "x'; EVIL=1; #" ] || exit 88
+  [ -z "${EVIL:-}" ] || exit 89
+) || exit 90
+''')
+
+    def test_alerts_env_quote_roundtrip(self):
+        self.assert_shell(["env_quote", "write_alerts_env"], r'''
+STATE_DIR=$ROOT/state; ALERTS_ENV=$ROOT/state/alerts.env
+ALERTS=yes
+TG_TOKEN="123:AA'&|\\bar"
+TG_CHAT="x'y
+z"
+write_alerts_env || exit 80
+( . "$ALERTS_ENV"
+  [ "$ALERTS" = yes ] || exit 81
+  [ "$TG_TOKEN" = "123:AA'&|\\bar" ] || exit 82
+  [ "$TG_CHAT" = "x'y
+z" ] || exit 83
+) || exit 84
+''')
+
+    def test_net_env_invalid_ip2_resets_scheme(self):
+        result = self.run_shell(["is_host_ipv4", "load_conf"], r'''
+STATE_DIR=$ROOT/state; ANSWERS=$ROOT/state/answers.env
+NET_ENV=$ROOT/state/net.env; ALERTS_ENV=$ROOT/state/alerts.env
+printf "MODE=dual\nIP1=192.0.2.10\nIP2=198.51.100.5/24\n" > "$NET_ENV"
+load_conf
+[ "$MODE" = single ] || exit 80
+[ -z "$IP2" ] || exit 81
+''')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("некорректный IP2", result.stdout)
+
+    def test_restore_index_is_decimal(self):
+        body = r'''
+confirm() { return 1; }
+du() { echo 1M; }
+ls() { i=1; while [ "$i" -le 12 ]; do printf '/var/backups/remnanode/remnanode-%02d.tar.gz\n' "$i"; i=$((i+1)); done; }
+restore_menu <<'INPUT'
+'''
+        for choice, expected in (("010", "remnanode-10.tar.gz"), ("08", "remnanode-08.tar.gz"),
+                                 ("12", "remnanode-12.tar.gz")):
+            with self.subTest(choice=choice):
+                result = self.run_shell(["restore_menu"], body + choice + "\nINPUT\n")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn("перезаписаны из " + expected, result.stdout)
+
+    def test_preset_index_is_decimal(self):
+        body = r'''
+SELFSTEAL_DIR=$ROOT/caddy
+TEMPLATES_BASE=https://invalid.test
+mkdir -p "$SELFSTEAL_DIR"
+load_templates() {
+    TEMPLATE_KEYS=(); TEMPLATE_DESCS=()
+    for i in 01 02 03 04 05 06 07 08 09 10 11 12; do TEMPLATE_KEYS+=("k$i"); TEMPLATE_DESCS+=("d$i"); done
+}
+curl() { printf '<html>new</html>' > "${@: -1}"; }
+docker() { return 0; }
+change_preset <<'INPUT'
+'''
+        for choice, expected in (("010", "k10"), ("08", "k08")):
+            with self.subTest(choice=choice):
+                tail = "\nINPUT\n[ \"$TEMPLATE\" = " + expected + " ] || exit 80\n"
+                tail += "grep -qx 'TEMPLATE=" + expected + "' \"$ROOT/answers.log\" || exit 81\n"
+                result = self.run_shell(["change_preset"], body + choice + tail)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_hy_enable_generate_failure_rolls_back(self):
+        result = self.run_shell(["env_quote", "sed_repl", "set_answer", "hy_enable"], r'''
+ANSWERS=$ROOT/state/answers.env
+printf "HYSTERIA='no'\n" > "$ANSWERS"
+USE_SELFSTEAL=yes; DOMAIN=node.example.com
+mkdir -p "$ROOT/bin" "$HY_CERT"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$CERT_SYNC"; chmod +x "$CERT_SYNC"
+printf 'cert' > "$HY_CERT/fullchain.crt"; printf 'key' > "$HY_CERT/private.key"
+have() { return 1; }
+cfg_run() { return 26; }
+hy_enable
+rc=$?
+[ "$rc" -ne 0 ] || exit 80
+[ "$HYSTERIA" = no ] || exit 81
+( . "$ANSWERS"; [ "$HYSTERIA" = no ] ) || exit 82
+! grep -q 'HYSTERIA=yes' "$ANSWERS" || exit 83
+''')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("ERROR", result.stdout)
+
+    def test_hy_disable_set_answer_failure_is_error(self):
+        result = self.run_shell(["hy_disable"], r'''
+HYSTERIA=yes; CONNECT_PORT=443; ANSWERS=$ROOT/state/answers.env
+have() { return 1; }
+cfg_run() { return 0; }
+set_answer() { return 33; }
+hy_disable
+rc=$?
+[ "$rc" -ne 0 ] || exit 80
+[ "$HYSTERIA" = yes ] || exit 81
+''')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("OK", result.stdout)
+
+    def test_doctor_propagates_healthcheck_failure(self):
+        result = self.run_shell(["doctor"], r'''
+printf '#!/usr/bin/env bash\necho "healthcheck report"\nexit 37\n' > "$ROOT/bin/rw-healthcheck.sh"
+chmod +x "$ROOT/bin/rw-healthcheck.sh"
+doctor
+rc=$?
+[ "$rc" = 37 ] || exit 80
+''')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("healthcheck report", result.stdout)
+        self.assertIn("ERROR", result.stdout)
+
+    def test_logs_interrupt_not_reported_as_missing(self):
+        for rc, expect_warn in ((0, False), (130, False), (143, False), (19, True)):
+            with self.subTest(rc=rc):
+                result = self.run_shell(["logs_node", "logs_caddy"],
+                                        'docker() { return ' + str(rc) + '; }\nlogs_node\nlogs_caddy\n')
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                if expect_warn:
+                    self.assertIn("WARN", result.stdout)
+                else:
+                    self.assertNotIn("WARN", result.stdout)
+
+    def test_preset_cli_download_has_timeout(self):
+        self.assert_shell(["cli"], r'''
+SELFSTEAL_DIR=$ROOT/caddy
+TEMPLATES_BASE=https://invalid.test
+TEMPLATE_KEYS=(shop); TEMPLATE_DESCS=("магазин керамики")
+load_conf() { :; }
+load_templates() { :; }
+curl() { printf '%s\n' "$*" >> "$ROOT/curl.args"; printf '<html>new</html>' > "${@: -1}"; }
+docker() { return 0; }
+cli preset shop
+[ "$?" = 0 ] || exit 80
+grep -q -- '--max-time' "$ROOT/curl.args" || exit 81
+grep -q -- '--connect-timeout' "$ROOT/curl.args" || exit 82
+grep -qx 'TEMPLATE=shop' "$ROOT/answers.log" || exit 83
+''')
+
+    def test_preset_cli_rejects_unsafe_name(self):
+        self.assert_shell(["cli"], r'''
+SELFSTEAL_DIR=$ROOT/caddy
+TEMPLATES_BASE=https://invalid.test
+load_conf() { :; }
+load_templates() { :; }
+curl() { printf '%s\n' "$*" >> "$ROOT/curl.args"; return 0; }
+( cli preset ../evil ); rc=$?
+[ "$rc" = 1 ] || exit 80
+[ ! -e "$ROOT/curl.args" ] || exit 81
+''')
+
+    def test_help_lists_certsync(self):
+        result = self.assert_shell(["cli"], "load_conf() { :; }\ncli --help\n")
+        expected = ("status", "logs", "restart", "update", "doctor", "backup", "restore",
+                    "alerts", "net", "configs", "keys", "ports", "hysteria", "dns",
+                    "certsync", "swap", "preset", "check")
+        for name in expected:
+            with self.subTest(command=name):
+                self.assertIn("nodego " + name, result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
