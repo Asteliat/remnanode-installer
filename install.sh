@@ -53,7 +53,7 @@
 
 set -euo pipefail
 
-VERSION="1.3.3"
+VERSION="1.3.4"
 
 REPO_OWNER="Asteliat"
 REPO_NAME="remnanode-installer"
@@ -98,6 +98,7 @@ ASSUME_YES=false
 SKIP_TUNING=false
 SKIP_FIREWALL=false
 SKIP_NETCHECK=false
+UPGRADE_SYSTEM=false   # обновление всех пакетов — только по явному запросу
 SWAP_ONLY=false        # --swap-only: показать/пересоздать swap и выйти
 
 # Ответы прошлого запуска читаем ДО разбора флагов — чтобы флаги имели приоритет.
@@ -149,6 +150,7 @@ Remnawave Node + Caddy selfsteal — установщик
   --swap-only            только swap: показать состояние, при необходимости
                          пересоздать и выйти; docker, Caddy, конфиги и
                          firewall не трогает (для уже установленной ноды)
+  --upgrade-system       обновить все пакеты ОС (может перезапустить чужие службы)
   --skip-tuning          не трогать sysctl/swap/лимиты
   --skip-firewall        не настраивать ufw
   --skip-netcheck        не проверять сеть и DNS перед установкой
@@ -174,6 +176,7 @@ while [[ $# -gt 0 ]]; do
         --yes|-y)          ASSUME_YES=true ;;
         --reconfigure)     : ;;   # учтён на этапе пред-сканирования аргументов
         --skip-tuning)     SKIP_TUNING=true ;;
+        --upgrade-system)  UPGRADE_SYSTEM=true ;;
         --swap-size)       SWAP_SIZE="${2:?}"; shift ;;
         --swap-only)       SWAP_ONLY=true ;;
         --skip-firewall)   SKIP_FIREWALL=true ;;
@@ -605,6 +608,283 @@ fetch() { # fetch URL DEST
 }
 
 compose() { docker compose "$@"; }
+
+# Проверяем API, а не клиентские inbound'ы: их панель ещё могла не прислать.
+wait_service() { # контейнер, TCP-порт, число попыток
+    local container="$1" port="$2" attempts="${3:-30}" n=0 good=0
+    while [ "$n" -lt "$attempts" ]; do
+        if [ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null || true)" = true ] \
+            && ss -tlnH "sport = :$port" 2>/dev/null | grep -q . \
+            && check_port_owner "$port" "$container"; then
+            good=$((good + 1))
+            [ "$good" -ge 3 ] && return 0
+        else
+            good=0
+        fi
+        n=$((n + 1))
+        sleep 2
+    done
+    return 1
+}
+
+# Разрешаем занятый порт только при доказанном владельце из нашего контейнера.
+check_port_owner() { # порт, контейнер
+    local port="$1" container="$2" listeners pids pid owners listener
+    listeners="$(ss -tlnpH "sport = :$port" 2>/dev/null)" || return 1
+    [ -n "$listeners" ] || return 0
+    owners="$(docker top "$container" -eo pid 2>/dev/null | awk 'NR>1 {print $1}')" || return 1
+    while IFS= read -r listener; do
+        pids="$(printf '%s\n' "$listener" | grep -oE 'pid=[0-9]+' | cut -d= -f2)" || return 1
+        [ -n "$pids" ] || return 1
+        for pid in $pids; do
+            printf '%s\n' "$owners" | grep -qx "$pid" || return 1
+        done
+    done <<< "$listeners"
+}
+
+snapshot_node() {
+    NODE_SNAPSHOT="$(mktemp -d "$NODE_DIR/.install-backup.XXXXXXXX")" || return 1
+    chmod 700 "$NODE_SNAPSHOT"
+    local name
+    for name in .env docker-compose.yml; do
+        if [ -e "$NODE_DIR/$name" ]; then
+            cp -a "$NODE_DIR/$name" "$NODE_SNAPSHOT/$name" || return 1
+        fi
+    done
+    NODE_OLD_IMAGE="$(docker inspect -f '{{.Image}}' remnanode 2>/dev/null || true)"
+    NODE_OLD_REF="$(docker inspect -f '{{.Config.Image}}' remnanode 2>/dev/null || true)"
+    if [ -n "$NODE_OLD_IMAGE" ]; then
+        docker tag "$NODE_OLD_IMAGE" remnawave/node:installer-rollback || return 1
+    fi
+}
+
+rollback_node() {
+    local name old_port
+    # На новой установке нечего восстанавливать; оставляем файлы для диагностики.
+    [ -f "$NODE_SNAPSHOT/docker-compose.yml" ] || return 0
+    for name in .env docker-compose.yml; do
+        if [ -e "$NODE_SNAPSHOT/$name" ]; then
+            cp -a "$NODE_SNAPSHOT/$name" "$NODE_DIR/$name" || return 1
+        fi
+    done
+    [ -n "$NODE_OLD_IMAGE" ] || return 1
+    printf 'services:\n  remnanode:\n    image: %s\n' "$NODE_OLD_IMAGE" > "$NODE_SNAPSHOT/rollback.yml" || return 1
+    ( cd "$NODE_DIR" && compose -f docker-compose.yml -f "$NODE_SNAPSHOT/rollback.yml" up -d --pull never remnanode ) || return 1
+    old_port="$(sed -n 's/^NODE_PORT=//p' "$NODE_DIR/.env" | tr -d '\"\047\r' | head -n1)"
+    wait_service remnanode "$old_port" || return 1
+    case "$NODE_OLD_REF" in
+        ''|*@*|sha256:*) : ;;
+        *) docker tag "$NODE_OLD_IMAGE" "$NODE_OLD_REF" || return 1 ;;
+    esac
+}
+
+start_node() {
+    (
+        cd "$NODE_DIR" || exit 1
+        compose pull -q || warn "образ не скачался — пробую локальный"
+        compose up -d || exit 1
+    ) || return 1
+    wait_service remnanode "$NODE_PORT"
+}
+
+start_caddy() {
+    local old_image rollback
+    # Одноразовый контейнер видит актуальные bind-mount, не старый inode.
+    (
+        cd "$SELFSTEAL_DIR" || exit 1
+        compose config -q || exit 1
+        compose run --rm --no-deps --entrypoint caddy caddy validate \
+            --config /etc/caddy/Caddyfile --adapter caddyfile
+    ) || return 1
+    old_image="$(docker inspect -f '{{.Image}}' selfsteal 2>/dev/null || true)"
+    if ( cd "$SELFSTEAL_DIR" && compose up -d ) && wait_service selfsteal "$SELFSTEAL_PORT"; then
+        return 0
+    fi
+    if [ -n "$old_image" ]; then
+        rollback="$(mktemp "$SELFSTEAL_DIR/.rollback.XXXXXX.yml")" || return 1
+        printf 'services:\n  caddy:\n    image: %s\n' "$old_image" > "$rollback" || return 1
+        if ( cd "$SELFSTEAL_DIR" && compose -f docker-compose.yml -f "$rollback" up -d --pull never caddy ) \
+            && wait_service selfsteal "$SELFSTEAL_PORT"; then
+            warn "Восстановлен прежний образ Caddy; текущая установка завершится ошибкой."
+            rm -f "$rollback"
+        else
+            warn "Откат Caddy не прошёл проверку; override сохранён: $rollback"
+        fi
+    fi
+    return 1
+}
+
+# UFW аддитивен: узкое правило не отменяет прежние широкие разрешения.
+check_api_firewall() {
+    local rules sshports
+    rules="$(LC_ALL=C ufw show added)" || return 1
+    # OpenSSH часто уже разрешён на VPS; доверяем не имени, а портам профиля.
+    sshports="$(LC_ALL=C ufw app info OpenSSH 2>/dev/null | awk '/^Ports?:/ {found=1; next} found && NF {gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print; exit}' || true)"
+    if printf '%s\n' "$rules" | awk -v port="$NODE_PORT" -v panel="$PANEL_IP" -v sshports="$sshports" '
+        /^ufw allow / {
+            if (index($0, "from " panel " to ") || index($0, "from " panel "/32 to ")) next
+            dest=$3
+            if (dest=="OpenSSH") dest=sshports
+            for (i=3;i<=NF;i++) if ($i=="port") dest=$(i+1)
+            sub(/\/(tcp|udp)$/, "", dest)
+            # Неизвестный профиль приложения/Anywhere тоже требует ручной проверки.
+            if (dest !~ /^[0-9,:]+$/) { bad=1; next }
+            count=split(dest, items, ",")
+            for (j=1;j<=count;j++) {
+                n=split(items[j], bounds, ":")
+                if ((n==1 && bounds[1]==port) || (n==2 && bounds[1]<=port && bounds[2]>=port)) bad=1
+            }
+        }
+        END { exit !bad }
+    '; then
+        warn "UFW: прежние разрешения могут открывать API $NODE_PORT не только панели. Чужие правила не удалены; проверьте ufw show added."
+        return 1
+    fi
+}
+
+# Сохраняем только булев DNS-флаг после успешной транзакции.
+set_answer() {
+    [ "$1" = USE_DNS ] || return 1
+    sed -i '/^USE_DNS=/d' "$ANSWERS_FILE" || return 1
+    printf "USE_DNS='%s'\n" "$2" >> "$ANSWERS_FILE"
+}
+
+# BEGIN DNS_TRANSACTION — общий формат снимка для установщика и nodego.
+dns_path() {
+    case "$1" in
+        resolved.conf) printf '%s\n' /etc/systemd/resolved.conf ;;
+        resolv.conf) printf '%s\n' /etc/resolv.conf ;;
+        cloud.conf) printf '%s\n' /etc/cloud/cloud.cfg.d/99-remnawave-resolv.cfg ;;
+        adguard.conf) printf '%s\n' /etc/systemd/resolved.conf.d/99-adguard-dot.conf ;;
+        *) return 1 ;;
+    esac
+}
+
+dns_snapshot() {
+    local dest="$1" key path enabled active
+    enabled="$(systemctl is-enabled systemd-resolved 2>/dev/null)" || true
+    active="$(systemctl is-active systemd-resolved 2>/dev/null)" || true
+    case "$enabled" in enabled|enabled-runtime|disabled|static|indirect) ;; *) err "неподдерживаемое состояние systemd-resolved: $enabled"; return 1 ;; esac
+    case "$active" in active|inactive) ;; *) err "нестабильное состояние systemd-resolved: $active"; return 1 ;; esac
+    mkdir -m 700 "$dest" || return 1
+    for key in resolved.conf resolv.conf cloud.conf adguard.conf; do
+        path="$(dns_path "$key")" || return 1
+        if [ -e "$path" ] || [ -L "$path" ]; then
+            [ ! -d "$path" ] || return 1
+            cp -a -- "$path" "$dest/$key" || return 1
+        else
+            : > "$dest/$key.absent" || return 1
+        fi
+    done
+    printf '%s\n' "$enabled" > "$dest/enabled" || return 1
+    printf '%s\n' "$active" > "$dest/active" || return 1
+    : > "$dest/complete"
+}
+
+dns_restore() {
+    local src="$1" key path enabled active
+    [ -f "$src/complete" ] || return 1
+    read -r enabled < "$src/enabled" || return 1
+    read -r active < "$src/active" || return 1
+    # Проверяем весь снимок до первого изменения.
+    case "$enabled" in enabled|enabled-runtime|disabled|static|indirect) ;; *) return 1 ;; esac
+    case "$active" in active|inactive) ;; *) return 1 ;; esac
+    for key in resolved.conf resolv.conf cloud.conf adguard.conf; do
+        [ -e "$src/$key" ] || [ -L "$src/$key" ] || [ -f "$src/$key.absent" ] || return 1
+    done
+    for key in resolved.conf resolv.conf cloud.conf adguard.conf; do
+        path="$(dns_path "$key")" || return 1
+        rm -f -- "$path" || return 1
+        if [ ! -f "$src/$key.absent" ]; then
+            cp -a -- "$src/$key" "$path" || return 1
+        fi
+    done
+    case "$enabled" in
+        enabled) systemctl enable systemd-resolved >/dev/null 2>&1 || return 1 ;;
+        enabled-runtime) systemctl disable systemd-resolved >/dev/null 2>&1 && systemctl enable --runtime systemd-resolved >/dev/null 2>&1 || return 1 ;;
+        *) systemctl disable systemd-resolved >/dev/null 2>&1 || return 1 ;;
+    esac
+    if [ "$active" = active ]; then
+        systemctl restart systemd-resolved >/dev/null 2>&1
+    else
+        systemctl stop systemd-resolved >/dev/null 2>&1
+    fi
+}
+
+dns_probe() {
+    # Проверяем реальное разрешение имён, а не только статус службы.
+    timeout 20 getent ahostsv4 example.com >/dev/null 2>&1
+}
+
+dns_change() (
+    local mode="$1" backup="$STATE_DIR/dns-backup" lock="$STATE_DIR/dns-lock"
+    local work="" rollback="" committed=false conf rc=0
+    umask 077
+    mkdir -p "$STATE_DIR" || return 1
+    mkdir -m 700 "$lock" 2>/dev/null || { err "DNS уже изменяется; проверьте $lock"; return 1; }
+    # Ловушки действуют только в этой подоболочке; при сбое снимок сохраняется.
+    trap 'rc=$?; if [ "$committed" = false ]; then err "изменение DNS не завершено"; if [ -n "$rollback" ]; then dns_restore "$rollback" || err "откат DNS не завершён; снимок: $rollback"; warn "снимок сохранён для восстановления: $rollback"; fi; fi; rmdir "$lock"; exit "$rc"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    trap 'exit 129' HUP
+    conf="$(dns_path adguard.conf)" || return 1
+    if [ "$mode" = on ]; then
+        if [ -e "$conf" ] || [ -L "$conf" ] || [ -e "$backup" ]; then
+            err "DNS уже настроен или остался снимок $backup; сначала восстановите исходное состояние"
+            return 1
+        fi
+        dns_snapshot "$backup" || { err "снимок DNS не создан полностью; проверьте $backup перед повтором"; return 1; }
+        rollback="$backup"
+        mkdir -p "$(dirname "$conf")" || return 1
+        # Списки сбрасываем в drop-in, основной resolved.conf не редактируем.
+        cat > "$conf" <<'EOF' || return 1
+[Resolve]
+DNS=
+DNS=94.140.14.14#dns.adguard-dns.com 94.140.15.15#dns.adguard-dns.com
+FallbackDNS=
+FallbackDNS=1.1.1.1#cloudflare-dns.com 8.8.8.8#dns.google
+Domains=~.
+DNSOverTLS=yes
+DNSSEC=allow-downgrade
+Cache=yes
+EOF
+        local cloud
+        cloud="$(dns_path cloud.conf)" || return 1
+        if [ -d "$(dirname "$cloud")" ]; then
+            # Не пишем через возможную ссылку на чужой конфиг.
+            rm -f -- "$cloud" || return 1
+            printf '%s\n' '# Remnawave: resolv.conf управляется systemd-resolved' 'manage_resolv_conf: false' > "$cloud" || return 1
+        fi
+        systemctl enable systemd-resolved >/dev/null 2>&1 || return 1
+        systemctl restart systemd-resolved >/dev/null 2>&1 || return 1
+        systemctl is-active --quiet systemd-resolved || return 1
+        ln -sfn /run/systemd/resolve/stub-resolv.conf "$(dns_path resolv.conf)" || return 1
+        resolvectl flush-caches >/dev/null 2>&1 || return 1
+        timeout 20 resolvectl query example.com >/dev/null 2>&1 || return 1
+        dns_probe || { err "DNS не отвечает; восстанавливаю исходные настройки"; return 1; }
+        set_answer USE_DNS yes || return 1
+        committed=true
+        ok "AdGuard включён, исходный DNS сохранён в $backup"
+    elif [ "$mode" = off ]; then
+        if [ ! -f "$backup/complete" ]; then
+            err "нет исходного снимка DNS (старая установка): автоматический откат небезопасен"
+            warn "восстановите исходные resolved.conf и resolv.conf из своего бэкапа; текущие файлы не изменены"
+            return 1
+        fi
+        work="$(mktemp -d "$STATE_DIR/dns-current.XXXXXXXXXX")" || return 1
+        dns_snapshot "$work/snapshot" || return 1
+        rollback="$work/snapshot"
+        dns_restore "$backup" || return 1
+        dns_probe || { err "исходный DNS не отвечает; возвращаю AdGuard"; return 1; }
+        set_answer USE_DNS no || return 1
+        committed=true
+        rm -rf -- "$backup" "$work" || return 1
+        ok "AdGuard выключен, исходные файлы и состояние службы восстановлены"
+    else
+        return 1
+    fi
+)
+# END DNS_TRANSACTION
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
 
@@ -1114,6 +1394,25 @@ if [ "$ASSUME_YES" = false ]; then
     esac
 fi
 
+# На общем сервере сначала проверяем конфликт, только потом меняем конфиги.
+command -v ss >/dev/null 2>&1 || die "Для проверки портов установите iproute2 (ss) и повторите запуск"
+check_port_owner "$NODE_PORT" remnanode || die "API-порт $NODE_PORT занят другой службой или владелец неизвестен; нода не изменена."
+if [ "$USE_SELFSTEAL" = yes ]; then
+    command -v ss >/dev/null 2>&1 || die "Для проверки портов установите iproute2 (ss) и повторите запуск"
+    for _port in 80 "$SELFSTEAL_PORT"; do
+        check_port_owner "$_port" selfsteal || die "Порт $_port занят чужой службой или владелец неизвестен. Существующий Caddy не трогаю; объедините конфиги вручную."
+    done
+    if [ -e "$SELFSTEAL_DIR/Caddyfile" ]; then
+        [ -f "$SELFSTEAL_DIR/docker-compose.yml" ] && [ -f "$SELFSTEAL_DIR/.env" ] \
+            || die "Неполный существующий selfsteal: нужны compose и .env. Автоматическая перезапись запрещена."
+        if ! grep -qxF "SELF_STEAL_DOMAIN=$DOMAIN" "$SELFSTEAL_DIR/.env" \
+            || ! grep -qxF "SELF_STEAL_PORT=$SELFSTEAL_PORT" "$SELFSTEAL_DIR/.env"; then
+            die "Домен/порт существующего selfsteal отличаются. Сначала согласуйте Caddyfile, compose и .env вручную."
+        fi
+        warn "Существующий selfsteal сохраняется целиком, включая дополнительные сайты. --template не применяется."
+    fi
+fi
+
 # сохраняем ответы для повторного запуска
 umask 077
 cat > "$ANSWERS_FILE" <<EOF
@@ -1157,9 +1456,11 @@ fi
 hdr "2. Зависимости"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get upgrade -y -qq \
-    -o Dpkg::Options::=--force-confdef \
-    -o Dpkg::Options::=--force-confold || warn "apt upgrade завершился с ошибкой (продолжаем)"
+if [ "$UPGRADE_SYSTEM" = true ]; then
+    apt-get upgrade -y -qq \
+        -o Dpkg::Options::=--force-confdef \
+        -o Dpkg::Options::=--force-confold || die "apt upgrade завершился с ошибкой"
+fi
 apt-get install -y -qq \
     curl wget ca-certificates openssl jq ufw logrotate dnsutils cron \
     gnupg lsb-release tzdata iptables iproute2 || warn "Часть пакетов не установилась"
@@ -1477,6 +1778,7 @@ hdr "7. Firewall"
 if [ "$SKIP_FIREWALL" = true ]; then
     warn "Пропущено (--skip-firewall)"
 else
+    check_api_firewall || die "Нельзя гарантировать доступ к API только панели: исправьте конфликтующие правила UFW вручную."
     SSH_PORT="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}' || true)"
     SSH_PORT="${SSH_PORT:-22}"
 
@@ -1525,6 +1827,7 @@ done
 hdr "8. Remnawave Node"
 mkdir -p "$NODE_DIR" /var/log/remnanode "$NODE_DIR/cert"
 chmod 700 "$NODE_DIR/cert"
+snapshot_node || die "Не удалось сохранить ноду для отката"
 backup "$NODE_DIR/docker-compose.yml"; backup "$NODE_DIR/.env"
 
 cat > "$NODE_DIR/.env" <<EOF
@@ -1589,9 +1892,12 @@ WantedBy=multi-user.target
 EOF
 
 note "Запускаю ноду…"
-( cd "$NODE_DIR" && { compose pull -q >/dev/null 2>&1 || warn "образ не скачался — пробую локальный"; } ; compose up -d ) || warn "docker compose up вернул ошибку — смотрите: docker compose -f $NODE_DIR/docker-compose.yml logs"
+if ! start_node; then
+    rollback_node || warn "Откат ноды не восстановил API; снимок: $NODE_SNAPSHOT"
+    die "Нода не запустилась или API $NODE_PORT не слушает. Смотрите: docker compose -f $NODE_DIR/docker-compose.yml logs"
+fi
 systemctl daemon-reload
-systemctl enable remnanode.service >/dev/null 2>&1 || true
+systemctl enable remnanode.service >/dev/null 2>&1 || die "Не удалось включить автозапуск ноды"
 ok "Нода запущена, автозагрузка включена (remnanode.service)"
 
 # ============================================================================
@@ -1600,7 +1906,13 @@ ok "Нода запущена, автозагрузка включена (remnan
 if [ "$USE_SELFSTEAL" = "yes" ]; then
     hdr "9. Caddy selfsteal"
     mkdir -p "$SELFSTEAL_DIR/html" "$SELFSTEAL_DIR/logs"
-    backup "$SELFSTEAL_DIR/Caddyfile"; backup "$SELFSTEAL_DIR/docker-compose.yml"
+    HAS_CERT=false
+    if [ -f "$SELFSTEAL_DIR/ssl/fullchain.crt" ] && [ -f "$SELFSTEAL_DIR/ssl/private.key" ]; then
+        HAS_CERT=true
+    fi
+    # Не разбираем произвольные site-блоки: сохраняем также mounts/imports/контент.
+    if [ ! -e "$SELFSTEAL_DIR/Caddyfile" ]; then
+    backup "$SELFSTEAL_DIR/docker-compose.yml"; backup "$SELFSTEAL_DIR/.env"
 
     # --- сайт-заглушка ----------------------------------------------------
     TEMPLATE_SRC=""
@@ -1753,6 +2065,8 @@ volumes:
 EOF
     # export:end
 
+    fi  # новый selfsteal; существующий стек не перезаписываем
+
     # --- DNS-проверка (не блокирующая) ------------------------------------
     # Сверяем A-запись с адресами, реально назначенными на этом сервере, а не с
     # «внешним IP» из ifconfig.io: при NAT/дополнительных адресах автоопределение
@@ -1791,7 +2105,7 @@ EOF
     fi
 
     note "Запускаю Caddy…"
-    ( cd "$SELFSTEAL_DIR" && { compose pull -q >/dev/null 2>&1 || warn "образ не скачался — пробую локальный"; } ; compose up -d ) || warn "Caddy не стартовал — смотрите: docker compose -f $SELFSTEAL_DIR/docker-compose.yml logs"
+    start_caddy || die "Caddy: конфиг невалиден, запуск не удался или порт $SELFSTEAL_PORT не слушает. Проверьте docker logs selfsteal; существующие конфиги сохранены."
 
     cat > /etc/systemd/system/selfsteal.service <<EOF
 [Unit]
@@ -1814,7 +2128,7 @@ TimeoutStopSec=60
 WantedBy=multi-user.target
 EOF
     systemctl daemon-reload
-    systemctl enable selfsteal.service >/dev/null 2>&1 || true
+    systemctl enable selfsteal.service >/dev/null 2>&1 || die "Не удалось включить автозапуск Caddy"
     ok "Selfsteal запущен, автозагрузка включена (selfsteal.service)"
 
     # --- сертификат для Hysteria2 -----------------------------------------
@@ -1951,59 +2265,21 @@ fi
 # ============================================================================
 hdr "10. DNS"
 if [ "$USE_DNS" = "yes" ]; then
-    backup /etc/resolv.conf
-    mkdir -p /etc/systemd/resolved.conf.d
-    cat > /etc/systemd/resolved.conf.d/99-adguard-dot.conf <<'EOF'
-[Resolve]
-DNS=94.140.14.14#dns.adguard-dns.com 94.140.15.15#dns.adguard-dns.com
-FallbackDNS=1.1.1.1#cloudflare-dns.com 8.8.8.8#dns.google
-# "~." — использовать эти DNS по умолчанию для ВСЕХ доменов,
-# иначе systemd-resolved может предпочесть DNS, приехавшие из DHCP
-Domains=~.
-DNSOverTLS=yes
-DNSSEC=allow-downgrade
-Cache=yes
-EOF
-
-    # 1) гасим старые глобальные DNS в основном конфиге
-    if [ -f /etc/systemd/resolved.conf ]; then
-        sed -i -E 's/^[[:space:]]*(DNS|FallbackDNS)=/#\1=/' /etc/systemd/resolved.conf
-        ok "глобальные DNS в /etc/systemd/resolved.conf закомментированы"
-    fi
-
-    # 2) предупреждаем про другие drop-in'ы, которые тоже задают DNS
-    for _dnsf in /etc/systemd/resolved.conf.d/*.conf; do
-        [ -f "$_dnsf" ] || continue
-        [ "$_dnsf" = "/etc/systemd/resolved.conf.d/99-adguard-dot.conf" ] && continue
-        if grep -qE '^[[:space:]]*DNS=' "$_dnsf" 2>/dev/null; then
-            warn "найден ещё один DNS-конфиг: $_dnsf — он может перебивать AdGuard"
+    if [ -f /etc/systemd/resolved.conf.d/99-adguard-dot.conf ]; then
+        dns_probe || die "Существующий DNS не отвечает; конфиги не изменены"
+        note "Существующий DNS сохранён; изменение режима — через nodego dns"
+        if [ ! -f "$STATE_DIR/dns-backup/complete" ]; then
+            warn "Старая установка DNS без исходного снимка: автоматический dns off невозможен; нужен ручной бэкап."
         fi
-    done
-    unset _dnsf 2>/dev/null || true
-
-    # 3) cloud-init не должен возвращать свой resolv.conf после перезагрузки
-    if [ -d /etc/cloud/cloud.cfg.d ]; then
-        cat > /etc/cloud/cloud.cfg.d/99-remnawave-resolv.cfg <<'EOF'
-# remnawave-installer: не трогать /etc/resolv.conf — им управляет systemd-resolved
-manage_resolv_conf: false
-EOF
-        ok "cloud-init отключён от управления /etc/resolv.conf"
-    fi
-
-    systemctl enable systemd-resolved >/dev/null 2>&1 || true
-    systemctl restart systemd-resolved || warn "systemd-resolved не перезапустился"
-    ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || \
-        warn "не удалось подменить /etc/resolv.conf (файл защищён провайдером?)"
-    resolvectl flush-caches >/dev/null 2>&1 || true
-    sleep 1
-    if resolvectl query example.com >/dev/null 2>&1; then
-        ok "AdGuard DoT активен, резолвинг работает"
-        note "проверить: resolvectl status | grep -E 'DNS Servers|DNSOverTLS|Current DNS'"
+    elif ! systemctl cat systemd-resolved.service >/dev/null 2>&1; then
+        warn "systemd-resolved отсутствует: рабочий DNS не меняю, AdGuard не включён."
+        USE_DNS=no
+        set_answer USE_DNS no
     else
-        warn "DNS не отвечает — проверьте: resolvectl status"
+        dns_change on || die "DNS не включён; проверяйте сообщения отката и снимок $STATE_DIR/dns-backup"
     fi
 else
-    note "Пропущено: остаётся системный DNS"
+    note "Пропущено: текущий системный DNS не меняется (отключение AdGuard: nodego dns off)"
 fi
 
 # ============================================================================
@@ -2021,29 +2297,70 @@ LOG=/var/log/remnawave-update.log
 say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
 
 cd "$DIR" || exit 1
+# Не допускаем одновременно ручное и плановое обновление.
+exec 9> .update.lock
+flock -n 9 || { say "обновление уже выполняется"; exit 1; }
 OLD_ID="$(docker inspect --format '{{.Image}}' remnanode 2>/dev/null || true)"
+OLD_REF="$(docker inspect --format '{{.Config.Image}}' remnanode 2>/dev/null || true)"
+NODE_PORT="$(sed -n 's/^NODE_PORT=//p' .env | tr -d '\"\047\r' | head -n1)"
+[[ "$NODE_PORT" =~ ^[0-9]+$ ]] || { say "неизвестен NODE_PORT"; exit 1; }
+[ -n "$OLD_ID" ] && [ -n "$OLD_REF" ] || { say "нет образа для отката"; exit 1; }
+# Отдельный тег удерживает старый образ; глобальный prune не трогает соседей.
+docker tag "$OLD_ID" remnawave/node:rollback >>"$LOG" 2>&1 || exit 1
+
+check_port_owner() { # порт, контейнер
+    local port="$1" container="$2" listeners pids pid owners listener
+    listeners="$(ss -tlnpH "sport = :$port" 2>/dev/null)" || return 1
+    [ -n "$listeners" ] || return 0
+    owners="$(docker top "$container" -eo pid 2>/dev/null | awk 'NR>1 {print $1}')" || return 1
+    while IFS= read -r listener; do
+        pids="$(printf '%s\n' "$listener" | grep -oE 'pid=[0-9]+' | cut -d= -f2)" || return 1
+        [ -n "$pids" ] || return 1
+        for pid in $pids; do
+            printf '%s\n' "$owners" | grep -qx "$pid" || return 1
+        done
+    done <<< "$listeners"
+}
+
+node_ready() {
+    local n=0 good=0
+    while [ "$n" -lt 30 ]; do
+        if [ "$(docker inspect -f '{{.State.Running}}' remnanode 2>/dev/null)" = true ] \
+            && ss -tlnH "sport = :$NODE_PORT" 2>/dev/null | grep -q . \
+            && check_port_owner "$NODE_PORT" remnanode; then
+            good=$((good + 1))
+            [ "$good" -ge 3 ] && return 0
+        else
+            good=0
+        fi
+        n=$((n + 1)); sleep 2
+    done
+    return 1
+}
 
 say "== pull =="
 if ! docker compose pull -q >>"$LOG" 2>&1; then
     say "pull не удался — обновление пропущено"
-    exit 0
+    exit 1
 fi
 
 say "== up =="
-docker compose up -d --remove-orphans >>"$LOG" 2>&1 || say "compose up вернул ошибку"
-
-sleep 30
-if [ "$(docker inspect -f '{{.State.Running}}' remnanode 2>/dev/null)" != "true" ]; then
-    say "контейнер не поднялся — откатываю"
-    docker compose stop >>"$LOG" 2>&1 || true
-    if [ -n "$OLD_ID" ]; then
-        docker tag "$OLD_ID" remnawave/node:latest >>"$LOG" 2>&1 && say "восстановлен $OLD_ID"
+if docker compose up -d remnanode >>"$LOG" 2>&1 && node_ready; then
+    say "== ok (Running + API) =="
+else
+    say "запуск/API не прошёл проверку — откатываю"
+    # Override по ID не зависит от mutable latest и не правит основной compose.
+    rollback="$(mktemp "$DIR/.rollback.XXXXXX.yml")" || exit 1
+    printf 'services:\n  remnanode:\n    image: %s\n' "$OLD_ID" > "$rollback"
+    if docker compose -f docker-compose.yml -f "$rollback" up -d --pull never remnanode >>"$LOG" 2>&1 && node_ready; then
+        say "старый образ восстановлен"
+        case "$OLD_REF" in *@*) : ;; *) docker tag "$OLD_ID" "$OLD_REF" >>"$LOG" 2>&1 || true ;; esac
+    else
+        say "ОШИБКА: откат не восстановил API; требуется ручная проверка"
     fi
-    docker compose up -d --remove-orphans >>"$LOG" 2>&1 || true
+    rm -f "$rollback"
     exit 1
 fi
-say "== ok =="
-docker image prune -f >>"$LOG" 2>&1 || true
 EOS
     chmod 0755 /usr/local/sbin/rw-node-update.sh
 
@@ -2072,9 +2389,13 @@ Persistent=true
 WantedBy=timers.target
 EOF
     systemctl daemon-reload
-    systemctl enable --now rw-node-update.timer >/dev/null 2>&1 || warn "таймер автообновления не включился"
+    systemctl enable --now rw-node-update.timer >/dev/null 2>&1 || die "Таймер автообновления не включился"
     ok "Нода обновляется автоматически (~04:30, лог /var/log/remnawave-update.log)"
 else
+    if systemctl cat rw-node-update.timer >/dev/null 2>&1; then
+        systemctl disable --now rw-node-update.timer >/dev/null 2>&1 \
+            || die "Не удалось остановить прежний таймер автообновления"
+    fi
     note "Автообновление ноды выключено"
 fi
 
@@ -3111,8 +3432,7 @@ cat > /etc/cron.d/remnawave-maintenance <<'EOF'
 # journald ограничен через /etc/systemd/journald.conf.d, отдельная чистка не нужна
 # страховка по логам docker (поверх log-opts)
 30 4 * * * root find /var/lib/docker/containers -name '*-json.log' -size +100M -exec truncate -s 50M {} \; 2>/dev/null || true
-# раз в неделю — неиспользуемые образы
-0 5 * * 0 root docker image prune -f >/dev/null 2>&1 || true
+# Образы не чистим: они могут понадобиться для отката других проектов.
 EOF
 chmod 644 /etc/cron.d/remnawave-maintenance /etc/logrotate.d/remnanode
 ok "logrotate для ноды + cron-обслуживание"
@@ -3227,6 +3547,11 @@ fi
 # ============================================================================
 # 15. Что дальше
 # ============================================================================
+wait_service remnanode "$NODE_PORT" || die "Итоговая проверка: нода/API недоступны"
+if [ "$USE_SELFSTEAL" = yes ]; then
+    wait_service selfsteal "$SELFSTEAL_PORT" || die "Итоговая проверка: Caddy недоступен"
+    [ "$CERT_OK" = true ] || die "Установка неполная: доверенный HTTPS selfsteal пока не работает"
+fi
 hdr "Готово"
 say ""
 say "  ${C_BLD}1) В панели Remnawave:${C_OFF}"

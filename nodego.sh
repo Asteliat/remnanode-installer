@@ -75,8 +75,11 @@ note() { dim "$*"; }
 hdr()  { echo; say "${C_BLU}▌ $*${C_OFF}"; }
 
 pause() {
-    [ "$NODEGO_CLI" = true ] && return 0
+    # Пауза не должна превращать ошибку предыдущей команды в успех.
+    local rc=$?
+    [ "$NODEGO_CLI" = true ] && return "$rc"
     read -r -p "$(echo -e "${C_DIM}Enter — продолжить…${C_OFF}")" _ || true
+    return "$rc"
 }
 
 ask() { # ask VAR "текст" "дефолт"
@@ -340,11 +343,12 @@ restart_node() {
     hdr "Перезапуск ноды"
     if [ ! -f "$NODE_DIR/docker-compose.yml" ]; then
         err "не найден $NODE_DIR/docker-compose.yml"
-        pause; return
+        pause; return 1
     fi
-    ( cd "$NODE_DIR" && docker compose restart ) 2>&1 | sed 's/^/  /'
+    ( cd "$NODE_DIR" && docker compose restart ) 2>&1 | sed 's/^/  /' || { pause; return 1; }
     sleep 3
-    if node_running; then ok "нода работает"; else warn "нода не поднялась — смотрите логи ноды"; fi
+    if ! node_running; then err "нода не поднялась — смотрите логи"; pause; return 1; fi
+    ok "нода работает"
     pause
 }
 
@@ -352,30 +356,35 @@ restart_caddy() {
     hdr "Перезапуск selfsteal"
     if [ ! -f "$SELFSTEAL_DIR/docker-compose.yml" ]; then
         err "selfsteal не установлен"
-        pause; return
+        pause; return 1
     fi
-    ( cd "$SELFSTEAL_DIR" && docker compose restart ) 2>&1 | sed 's/^/  /'
+    ( cd "$SELFSTEAL_DIR" && docker compose restart ) 2>&1 | sed 's/^/  /' || { pause; return 1; }
     sleep 2
-    if caddy_running; then ok "Caddy работает"; else warn "Caddy не поднялся — смотрите логи"; fi
+    if ! caddy_running; then err "Caddy не поднялся — смотрите логи"; pause; return 1; fi
+    ok "Caddy работает"
     pause
 }
 
 restart_all() {
     hdr "Перезапуск всего"
-    restart_node
-    [ "$USE_SELFSTEAL" = "yes" ] && restart_caddy
+    local rc=0
+    restart_node || rc=$?
+    if [ "$USE_SELFSTEAL" = "yes" ]; then restart_caddy || rc=$?; fi
+    return "$rc"
 }
 
 update_now() {
     hdr "Обновление ноды"
     if [ ! -x /usr/local/sbin/rw-node-update.sh ]; then
         err "скрипт обновления не найден"
-        pause; return
+        pause; return 1
     fi
     dim "запускаю /usr/local/sbin/rw-node-update.sh (с откатом при сбое)…"
-    /usr/local/sbin/rw-node-update.sh 2>&1 | sed 's/^/  /'
+    local rc=0
+    /usr/local/sbin/rw-node-update.sh 2>&1 | sed 's/^/  /' || rc=$?
     [ -f "$UPDATE_LOG" ] && { say ""; dim "последние строки лога:"; tail -n 10 "$UPDATE_LOG" | sed 's/^/  /'; }
     pause
+    return "$rc"
 }
 
 change_preset() {
@@ -513,67 +522,171 @@ toggle_autoupdate() {
     hdr "Автообновление ноды"
     if ! systemctl cat rw-node-update.timer >/dev/null 2>&1; then
         err "таймер не установлен"
-        pause; return
+        pause; return 1
     fi
     if systemctl is-enabled rw-node-update.timer >/dev/null 2>&1; then
         if confirm "сейчас включено. выключить?" "n"; then
-            systemctl disable --now rw-node-update.timer >/dev/null 2>&1
-            set_answer AUTO_UPDATE "no"
+            systemctl disable --now rw-node-update.timer >/dev/null 2>&1 || { err "таймер не выключен"; pause; return 1; }
+            set_answer AUTO_UPDATE "no" || return 1
             ok "автообновление выключено"
         fi
     else
         if confirm "сейчас выключено. включить (ежедневно ~04:30)?" "y"; then
-            systemctl enable --now rw-node-update.timer >/dev/null 2>&1
-            set_answer AUTO_UPDATE "yes"
+            systemctl enable --now rw-node-update.timer >/dev/null 2>&1 || { err "таймер не включён"; pause; return 1; }
+            set_answer AUTO_UPDATE "yes" || return 1
             ok "автообновление включено"
         fi
     fi
     pause
 }
 
-toggle_dns() {
-    hdr "DNS-фильтр AdGuard"
-    local conf="/etc/systemd/resolved.conf.d/99-adguard-dot.conf"
-    if [ -f "$conf" ]; then
-        if confirm "сейчас включён. выключить и вернуть системный DNS?" "n"; then
-            rm -f "$conf"
-            systemctl restart systemd-resolved >/dev/null 2>&1 || true
-            resolvectl flush-caches >/dev/null 2>&1 || true
-            set_answer USE_DNS "no"
-            ok "AdGuard выключен"
+# BEGIN DNS_TRANSACTION — общий формат снимка для установщика и nodego.
+dns_path() {
+    case "$1" in
+        resolved.conf) printf '%s\n' /etc/systemd/resolved.conf ;;
+        resolv.conf) printf '%s\n' /etc/resolv.conf ;;
+        cloud.conf) printf '%s\n' /etc/cloud/cloud.cfg.d/99-remnawave-resolv.cfg ;;
+        adguard.conf) printf '%s\n' /etc/systemd/resolved.conf.d/99-adguard-dot.conf ;;
+        *) return 1 ;;
+    esac
+}
+
+dns_snapshot() {
+    local dest="$1" key path enabled active
+    enabled="$(systemctl is-enabled systemd-resolved 2>/dev/null)" || true
+    active="$(systemctl is-active systemd-resolved 2>/dev/null)" || true
+    case "$enabled" in enabled|enabled-runtime|disabled|static|indirect) ;; *) err "неподдерживаемое состояние systemd-resolved: $enabled"; return 1 ;; esac
+    case "$active" in active|inactive) ;; *) err "нестабильное состояние systemd-resolved: $active"; return 1 ;; esac
+    mkdir -m 700 "$dest" || return 1
+    for key in resolved.conf resolv.conf cloud.conf adguard.conf; do
+        path="$(dns_path "$key")" || return 1
+        if [ -e "$path" ] || [ -L "$path" ]; then
+            [ ! -d "$path" ] || return 1
+            cp -a -- "$path" "$dest/$key" || return 1
+        else
+            : > "$dest/$key.absent" || return 1
         fi
+    done
+    printf '%s\n' "$enabled" > "$dest/enabled" || return 1
+    printf '%s\n' "$active" > "$dest/active" || return 1
+    : > "$dest/complete"
+}
+
+dns_restore() {
+    local src="$1" key path enabled active
+    [ -f "$src/complete" ] || return 1
+    read -r enabled < "$src/enabled" || return 1
+    read -r active < "$src/active" || return 1
+    # Проверяем весь снимок до первого изменения.
+    case "$enabled" in enabled|enabled-runtime|disabled|static|indirect) ;; *) return 1 ;; esac
+    case "$active" in active|inactive) ;; *) return 1 ;; esac
+    for key in resolved.conf resolv.conf cloud.conf adguard.conf; do
+        [ -e "$src/$key" ] || [ -L "$src/$key" ] || [ -f "$src/$key.absent" ] || return 1
+    done
+    for key in resolved.conf resolv.conf cloud.conf adguard.conf; do
+        path="$(dns_path "$key")" || return 1
+        rm -f -- "$path" || return 1
+        if [ ! -f "$src/$key.absent" ]; then
+            cp -a -- "$src/$key" "$path" || return 1
+        fi
+    done
+    case "$enabled" in
+        enabled) systemctl enable systemd-resolved >/dev/null 2>&1 || return 1 ;;
+        enabled-runtime) systemctl disable systemd-resolved >/dev/null 2>&1 && systemctl enable --runtime systemd-resolved >/dev/null 2>&1 || return 1 ;;
+        *) systemctl disable systemd-resolved >/dev/null 2>&1 || return 1 ;;
+    esac
+    if [ "$active" = active ]; then
+        systemctl restart systemd-resolved >/dev/null 2>&1
     else
-        if confirm "включить блокировку рекламы через AdGuard DoT?" "y"; then
-            mkdir -p /etc/systemd/resolved.conf.d
-            cat > "$conf" <<'EOF'
+        systemctl stop systemd-resolved >/dev/null 2>&1
+    fi
+}
+
+dns_probe() {
+    # Проверяем реальное разрешение имён, а не только статус службы.
+    timeout 20 getent ahostsv4 example.com >/dev/null 2>&1
+}
+
+dns_change() (
+    local mode="$1" backup="$STATE_DIR/dns-backup" lock="$STATE_DIR/dns-lock"
+    local work="" rollback="" committed=false conf rc=0
+    umask 077
+    mkdir -p "$STATE_DIR" || return 1
+    mkdir -m 700 "$lock" 2>/dev/null || { err "DNS уже изменяется; проверьте $lock"; return 1; }
+    # Ловушки действуют только в этой подоболочке; при сбое снимок сохраняется.
+    trap 'rc=$?; if [ "$committed" = false ]; then err "изменение DNS не завершено"; if [ -n "$rollback" ]; then dns_restore "$rollback" || err "откат DNS не завершён; снимок: $rollback"; warn "снимок сохранён для восстановления: $rollback"; fi; fi; rmdir "$lock"; exit "$rc"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    trap 'exit 129' HUP
+    conf="$(dns_path adguard.conf)" || return 1
+    if [ "$mode" = on ]; then
+        if [ -e "$conf" ] || [ -L "$conf" ] || [ -e "$backup" ]; then
+            err "DNS уже настроен или остался снимок $backup; сначала восстановите исходное состояние"
+            return 1
+        fi
+        dns_snapshot "$backup" || { err "снимок DNS не создан полностью; проверьте $backup перед повтором"; return 1; }
+        rollback="$backup"
+        mkdir -p "$(dirname "$conf")" || return 1
+        # Списки сбрасываем в drop-in, основной resolved.conf не редактируем.
+        cat > "$conf" <<'EOF' || return 1
 [Resolve]
+DNS=
 DNS=94.140.14.14#dns.adguard-dns.com 94.140.15.15#dns.adguard-dns.com
+FallbackDNS=
 FallbackDNS=1.1.1.1#cloudflare-dns.com 8.8.8.8#dns.google
 Domains=~.
 DNSOverTLS=yes
 DNSSEC=allow-downgrade
 Cache=yes
 EOF
-            # гасим старые глобальные DNS, иначе они могут выиграть у наших
-            if [ -f /etc/systemd/resolved.conf ]; then
-                sed -i -E 's/^[[:space:]]*(DNS|FallbackDNS)=/#\1=/' /etc/systemd/resolved.conf
-            fi
-            if [ -d /etc/cloud/cloud.cfg.d ]; then
-                cat > /etc/cloud/cloud.cfg.d/99-remnawave-resolv.cfg <<'EOF'
-# remnawave-installer: не трогать /etc/resolv.conf — им управляет systemd-resolved
-manage_resolv_conf: false
-EOF
-            fi
-            systemctl enable systemd-resolved >/dev/null 2>&1 || true
-            systemctl restart systemd-resolved >/dev/null 2>&1 || true
-            ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf 2>/dev/null || true
-            resolvectl flush-caches >/dev/null 2>&1 || true
-            set_answer USE_DNS "yes"
-            ok "AdGuard включён"
-            resolvectl status 2>/dev/null | grep -m1 'DNS Servers' | sed 's/^/  /' || true
+        local cloud
+        cloud="$(dns_path cloud.conf)" || return 1
+        if [ -d "$(dirname "$cloud")" ]; then
+            # Не пишем через возможную ссылку на чужой конфиг.
+            rm -f -- "$cloud" || return 1
+            printf '%s\n' '# Remnawave: resolv.conf управляется systemd-resolved' 'manage_resolv_conf: false' > "$cloud" || return 1
         fi
+        systemctl enable systemd-resolved >/dev/null 2>&1 || return 1
+        systemctl restart systemd-resolved >/dev/null 2>&1 || return 1
+        systemctl is-active --quiet systemd-resolved || return 1
+        ln -sfn /run/systemd/resolve/stub-resolv.conf "$(dns_path resolv.conf)" || return 1
+        resolvectl flush-caches >/dev/null 2>&1 || return 1
+        timeout 20 resolvectl query example.com >/dev/null 2>&1 || return 1
+        dns_probe || { err "DNS не отвечает; восстанавливаю исходные настройки"; return 1; }
+        set_answer USE_DNS yes || return 1
+        committed=true
+        ok "AdGuard включён, исходный DNS сохранён в $backup"
+    elif [ "$mode" = off ]; then
+        if [ ! -f "$backup/complete" ]; then
+            err "нет исходного снимка DNS (старая установка): автоматический откат небезопасен"
+            warn "восстановите исходные resolved.conf и resolv.conf из своего бэкапа; текущие файлы не изменены"
+            return 1
+        fi
+        work="$(mktemp -d "$STATE_DIR/dns-current.XXXXXXXXXX")" || return 1
+        dns_snapshot "$work/snapshot" || return 1
+        rollback="$work/snapshot"
+        dns_restore "$backup" || return 1
+        dns_probe || { err "исходный DNS не отвечает; возвращаю AdGuard"; return 1; }
+        set_answer USE_DNS no || return 1
+        committed=true
+        rm -rf -- "$backup" "$work" || return 1
+        ok "AdGuard выключен, исходные файлы и состояние службы восстановлены"
+    else
+        return 1
+    fi
+)
+# END DNS_TRANSACTION
+
+toggle_dns() {
+    hdr "DNS-фильтр AdGuard"
+    local rc=0
+    if [ -e "$(dns_path adguard.conf)" ] || [ -d "$STATE_DIR/dns-backup" ]; then
+        if confirm "выключить и восстановить исходный DNS?" "n"; then dns_change off || rc=$?; fi
+    else
+        if confirm "включить блокировку рекламы через AdGuard DoT?" "y"; then dns_change on || rc=$?; fi
     fi
     pause
+    return "$rc"
 }
 
 doctor() {
@@ -598,7 +711,6 @@ doctor() {
 #  канал и CPU, поэтому на боевой ноде их лучше запускать в окно низкой
 #  нагрузки. URL всегда печатается перед запуском: не доверяете — не жмите.
 
-CHECKS_TMP="/tmp/nodego-checks"
 
 ensure_pkgs() { # ensure_pkgs <пакет>... — доставить через apt, если чего-то нет
     local -a miss=()
@@ -645,17 +757,17 @@ check_dl() { # check_dl <url> <файл> — скачать и проверит�
     return 0
 }
 
-check_run() { # check_run <url> [аргументы для bash] — скачать и запустить
-    local url="$1"
-    local f=""
-    local rc=0
+check_run() ( # Изолированная оболочка: ловушки не меняют меню.
+    local url="$1" work="" f="" rc=0
     shift
-    if ! ensure_pkgs curl wget; then
-        return 1
-    fi
-    mkdir -p "$CHECKS_TMP" || return 1
-    chmod 700 "$CHECKS_TMP" 2>/dev/null || true
-    f="$CHECKS_TMP/$(basename "${url%%\?*}")"
+    ensure_pkgs curl wget || return 1
+    umask 077
+    work="$(mktemp -d /tmp/nodego-checks.XXXXXXXXXX)" || return 1
+    trap 'rm -rf -- "$work"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    trap 'exit 129' HUP
+    f="$work/check.sh"
     dim "источник: $url"
     if ! check_dl "$url" "$f"; then
         rm -f "$f"
@@ -664,15 +776,15 @@ check_run() { # check_run <url> [аргументы для bash] — скача�
     fi
     dim "скачано $(du -h "$f" 2>/dev/null | cut -f1), запускаю…"
     say ""
-    ( cd "$CHECKS_TMP" && bash "$f" "$@" ) || rc=$?
+    ( cd "$work" && bash "$f" "$@" ) || rc=$?
     say ""
     if [ "$rc" -eq 0 ]; then
-        ok "проверка завершена (результаты и логи — в $CHECKS_TMP)"
+        ok "проверка завершена (временные файлы удаляются)"
     else
-        warn "скрипт вышел с кодом $rc — часть тестов не прошла, это нормально"
+        warn "скрипт вышел с кодом $rc — проверка не завершилась успешно"
     fi
-    return 0
-}
+    return "$rc"
+)
 
 check_head() { # check_head <заголовок> <что смотрим> <время>
     hdr "$1"
@@ -740,10 +852,11 @@ sysbench_cpu() {
     if ! ensure_pkgs sysbench; then
         return 1
     fi
-    mkdir -p "$CHECKS_TMP" 2>/dev/null || true
-    ( cd "$CHECKS_TMP" && sysbench cpu run --threads=1 2>&1 | sed 's/^/  /' ) || true
+    local rc=0
+    sysbench cpu run --threads=1 2>&1 | sed 's/^/  /' || rc=$?
     say ""
     dim "сравнивайте с другой нодой того же класса: заметно ниже — проверяйте steal (top, mpstat)"
+    return "$rc"
 }
 
 check_cpu() {
@@ -756,12 +869,14 @@ check_cpu() {
 check_quick() {
     check_head "Быстрый набор" \
         "исходящий IP, регион по IP и CPU в один поток — без тяжёлых бенчмарков" "~40 c"
-    outbound_check
+    local rc=0
+    outbound_check || rc=$?
     say ""
-    check_run "https://ipregion.xyz"
+    check_run "https://ipregion.xyz" || rc=$?
     say ""
-    sysbench_cpu
+    sysbench_cpu || rc=$?
     pause
+    return "$rc"
 }
 
 menu_checks() {
@@ -822,15 +937,16 @@ backup_now() {
     hdr "Бэкап конфигов"
     if [ ! -x /usr/local/sbin/rw-backup.sh ]; then
         err "скрипт бэкапа не найден"
-        pause; return
+        pause; return 1
     fi
     local f
-    f="$(/usr/local/sbin/rw-backup.sh create 2>&1)"
+    f="$(/usr/local/sbin/rw-backup.sh create 2>&1)" || { err "бэкап не создался"; pause; return 1; }
     if [ -s "${f%%$'\n'*}" ] 2>/dev/null; then
         ok "создан: $f"
         say "  размер: $(du -h "$f" 2>/dev/null | cut -f1)"
     else
         warn "бэкап не создался"
+        pause; return 1
     fi
     say ""
     dim "последние бэкапы:"
@@ -846,7 +962,7 @@ restore_menu() {
     mapfile -t files < <(ls -1t "$dir"/remnanode-*.tar.gz 2>/dev/null || true)
     if [ "${#files[@]}" -eq 0 ]; then
         warn "бэкапов нет ($dir)"
-        pause; return
+        pause; return 1
     fi
     for i in "${!files[@]}"; do
         printf "    %2d) %s  (%s)\n" "$((i+1))" "$(basename "${files[$i]}")" "$(du -h "${files[$i]}" 2>/dev/null | cut -f1)"
@@ -855,7 +971,7 @@ restore_menu() {
     read -r -p "$(echo -e "${C_BLD}Номер [Enter — отмена]: ${C_OFF}")" choice || true
     [ -z "$choice" ] && return
     if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#files[@]}" ]; then
-        warn "неверный номер"; pause; return
+        warn "неверный номер"; pause; return 1
     fi
     local file="${files[$((choice-1))]}"
     say ""
@@ -864,13 +980,16 @@ restore_menu() {
         if /usr/local/sbin/rw-backup.sh restore "$file"; then
             ok "восстановлено"
             if confirm "перезапустить службы сейчас?" "y"; then
-                systemctl restart rw-secondary-ip.service >/dev/null 2>&1 || true
-                ( cd "$NODE_DIR" && docker compose up -d ) >/dev/null 2>&1 || true
-                docker restart selfsteal >/dev/null 2>&1 || true
+                systemctl restart rw-secondary-ip.service >/dev/null 2>&1 || { err "сеть не перезапущена"; pause; return 1; }
+                ( cd "$NODE_DIR" && docker compose up -d ) >/dev/null 2>&1 || { err "нода не запущена"; pause; return 1; }
+                if [ "$USE_SELFSTEAL" = yes ]; then
+                    docker restart selfsteal >/dev/null 2>&1 || { err "Caddy не перезапущен"; pause; return 1; }
+                fi
                 ok "службы перезапущены"
             fi
         else
             err "восстановление не удалось"
+            pause; return 1
         fi
     fi
     pause
@@ -1026,9 +1145,10 @@ menu_configs() {
 ports_list() {
     hdr "Открытые порты (ufw)"
     if have ufw; then
-        ufw status verbose 2>/dev/null | sed 's/^/  /' || true
+        ufw status verbose 2>/dev/null | sed 's/^/  /' || { err "ufw status завершился ошибкой"; pause; return 1; }
     else
         warn "ufw не установлен"
+        pause; return 1
     fi
     pause
 }
@@ -1038,44 +1158,42 @@ ports_add() {
     hdr "Открыть порт"
     read -r -p "$(echo -e "${C_BLD}Порт${C_OFF}: ")" p || true
     p="${p//[[:space:]]/}"
-    if ! is_port "$p"; then err "некорректный порт: '$p'"; pause; return; fi
+    if ! is_port "$p"; then err "некорректный порт: '$p'"; pause; return 1; fi
     read -r -p "$(echo -e "${C_BLD}Протокол${C_OFF} [tcp/udp/both, tcp]: ")" proto || true
     proto="${proto:-tcp}"
     proto="${proto,,}"
     case "$proto" in
         tcp|udp|both) : ;;
-        *) err "протокол: tcp, udp или both"; pause; return ;;
+        *) err "протокол: tcp, udp или both"; pause; return 1 ;;
     esac
     read -r -p "$(echo -e "${C_BLD}Только для IP${C_OFF} [пусто — для всех]: ")" from || true
     from="${from//[[:space:]]/}"
     if [ -n "$from" ] && ! is_ipv4 "$from"; then
         err "некорректный IPv4: '$from'"
         pause
-        return
+        return 1
     fi
     read -r -p "$(echo -e "${C_BLD}Подпись правила${C_OFF} [port $p]: ")" label || true
     label="${label:-port $p}"
-    if ! have ufw; then err "ufw не установлен"; pause; return; fi
-    if [ -n "$from" ]; then
-        if ufw allow from "$from" to any port "$p" proto "$proto" comment "$label" >/dev/null 2>&1; then
-            ok "открыт $p/$proto для $from — «$label»"
+    if ! have ufw; then err "ufw не установлен"; pause; return 1; fi
+    local rc=0 protocols="$proto" protocol
+    [ "$proto" = both ] && protocols="tcp udp"
+    for protocol in $protocols; do
+        if [ -n "$from" ]; then
+            ufw allow from "$from" to any port "$p" proto "$protocol" comment "$label" >/dev/null 2>&1 || rc=$?
         else
-            warn "ufw не принял правило"
+            ufw allow "$p/$protocol" comment "$label" >/dev/null 2>&1 || rc=$?
         fi
-    elif [ "$proto" = "both" ]; then
-        ufw allow "$p/tcp" comment "$label" >/dev/null 2>&1
-        ufw allow "$p/udp" comment "$label" >/dev/null 2>&1
-        ok "открыт $p/tcp и $p/udp — «$label»"
+    done
+    if [ "$rc" -eq 0 ]; then
+        ok "открыт $p/$proto ${from:+для $from} — «$label»"
     else
-        if ufw allow "$p/$proto" comment "$label" >/dev/null 2>&1; then
-            ok "открыт $p/$proto — «$label»"
-        else
-            warn "ufw не принял правило"
-        fi
+        err "ufw не применил все правила; проверьте список (возможно частичное применение)"
     fi
     say ""
     ufw status 2>/dev/null | grep -E "^${p}(/| )" | sed 's/^/  /' || true
     pause
+    return "$rc"
 }
 
 ports_del() {
@@ -1171,21 +1289,20 @@ hy_enable() {
         return 1
     fi
     say "  синхронизирую сертификат…"
-    "$CERT_SYNC" | sed 's/^/  /'
+    "$CERT_SYNC" | sed 's/^/  /' || { err "синхронизация сертификата не удалась"; pause; return 1; }
     if [ ! -s "$HY_CERT/fullchain.crt" ]; then
         err "сертификат не найден — selfsteal ещё не выпустил (проверьте: docker logs selfsteal)"
         pause
         return 1
     fi
     if have ufw; then
-        ufw allow "$CONNECT_PORT/udp" comment "hysteria2 QUIC $CONNECT_PORT" >/dev/null 2>&1 || true
+        ufw allow "$CONNECT_PORT/udp" comment "hysteria2 QUIC $CONNECT_PORT" >/dev/null 2>&1 || { err "UDP не открыт"; pause; return 1; }
         ok "UDP/$CONNECT_PORT открыт в ufw"
     fi
-    set_answer HYSTERIA yes
+    set_answer HYSTERIA yes || return 1
     HYSTERIA="yes"
-    if cfg_run generate; then
-        cfg_run brief
-    fi
+    cfg_run generate || { err "генерация конфига не удалась"; pause; return 1; }
+    cfg_run brief || return 1
     ok "Hysteria2 включена: конфиг $CONFIGS_DIR/hysteria2.json"
     note "дальше: вставьте его в Config Profile, включите в Squads и Hosts, перезапустите ноду"
     pause
@@ -1203,7 +1320,7 @@ hy_disable() {
     fi
     set_answer HYSTERIA no
     HYSTERIA="no"
-    cfg_run generate >/dev/null 2>&1 || true
+    cfg_run generate >/dev/null 2>&1 || { err "обновление конфигов не удалось"; pause; return 1; }
     ok "Hysteria2 выключена, конфиг hysteria2.json удалён"
     note "не забудьте убрать hysteria-инбаунд из профиля панели"
     pause
@@ -1216,11 +1333,12 @@ hy_cert() {
         pause
         return 1
     fi
-    "$CERT_SYNC" | sed 's/^/  /'
+    "$CERT_SYNC" | sed 's/^/  /' || { err "синхронизация сертификата не удалась"; pause; return 1; }
     if [ -s "$HY_CERT/fullchain.crt" ]; then
         ok "сертификат на месте: $HY_CERT/{fullchain.crt,private.key}"
     else
         warn "сертификата нет — Caddy ещё не выпустил или домен не тот"
+        pause; return 1
     fi
     pause
 }
@@ -1231,11 +1349,14 @@ hy_core() {
     if [ "$NODEGO_CLI" = false ]; then
         confirm "обновить Docker-образ ноды до latest (с откатом при сбое)?" "y" || return 0
     fi
+    local rc=0
     if [ -x /usr/local/sbin/rw-node-update.sh ]; then
         /usr/local/sbin/rw-node-update.sh | sed 's/^/  /'
     else
         ( cd "$NODE_DIR" && docker compose pull -q && docker compose up -d ) 2>&1 | sed 's/^/  /'
     fi
+    rc=$?
+    if [ "$rc" -ne 0 ]; then err "обновление ядра не удалось"; pause; return "$rc"; fi
     say "  после обновления: $(node_xray_version)"
     note "свежий Xray умеет hysteria-инбаунд — ядро обновлено"
     pause
@@ -1248,6 +1369,7 @@ hy_test() {
     else
         warn "ядро не приняло конфиг — чаще всего нет сертификата ($HY_CERT) или Xray старый"
         note "обновить сертификат: пункт 4, ядро: пункт 5"
+        pause; return 1
     fi
     pause
 }
@@ -1441,6 +1563,13 @@ cli() {
             shift || true
             cli_hysteria "${1:-status}"
             ;;
+        dns)
+            load_conf
+            case "${2:-}" in
+                on|off) dns_change "$2" ;;
+                *) err "укажите nodego dns on или nodego dns off"; return 1 ;;
+            esac
+            ;;
         certsync) load_conf; "$CERT_SYNC" ;;
         swap)
             load_conf
@@ -1454,13 +1583,15 @@ cli() {
                 err "укажите имя шаблона: ${TEMPLATE_KEYS[*]}"
                 exit 1
             fi
-            tmp="$(mktemp)"
+            local tmp
+            tmp="$(mktemp)" || return 1
             if curl -fsSL --retry 2 "$TEMPLATES_BASE/$2/index.html" -o "$tmp"; then
-                mkdir -p "$SELFSTEAL_DIR/html"
-                cp "$tmp" "$SELFSTEAL_DIR/html/index.html"
+                if ! mkdir -p "$SELFSTEAL_DIR/html" || ! cp "$tmp" "$SELFSTEAL_DIR/html/index.html"; then
+                    rm -f "$tmp"; err "шаблон не записан"; return 1
+                fi
                 rm -f "$tmp"
-                set_answer TEMPLATE "$2"
-                docker restart selfsteal >/dev/null 2>&1 || true
+                set_answer TEMPLATE "$2" || return 1
+                docker restart selfsteal >/dev/null 2>&1 || { err "Caddy не перезапущен"; return 1; }
                 ok "шаблон «$2» применён"
             else
                 rm -f "$tmp"
@@ -1484,6 +1615,7 @@ cli() {
             say "  nodego configs [тип]   готовые конфиги: xhttp|grpc|tcp|hysteria2|all"
             say "  nodego keys            publicKey и shortIds для ручных клиентов"
             say "  nodego ports           открытые порты в ufw"
+            say "  nodego dns on|off      AdGuard: включить / восстановить исходный DNS"
             say "  nodego hysteria ...    status | on | off | cert | core | test"
             say "  nodego preset <имя>    сменить сайт-заглушку"
             say "  nodego doctor          диагностика (7 проверок)"
@@ -1505,7 +1637,7 @@ load_conf
 if [ $# -gt 0 ]; then
     NODEGO_CLI=true
     cli "$@"
-    exit 0
+    exit $?
 fi
 
 while true; do
